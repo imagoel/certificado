@@ -28,6 +28,28 @@
         <label for="assinatura">Assinatura (opcional)</label>
         <input id="assinatura" type="file" accept="image/*" />
 
+        <section class="asset-controls">
+          <h2>Ajuste da Logo</h2>
+          <label for="logoX">Posição X: <span id="logoXVal">600</span></label>
+          <input id="logoX" type="range" min="80" max="1120" step="1" value="600" />
+
+          <label for="logoY">Posição Y: <span id="logoYVal">95</span></label>
+          <input id="logoY" type="range" min="60" max="260" step="1" value="95" />
+
+          <label for="logoSize">Tamanho: <span id="logoSizeVal">150</span></label>
+          <input id="logoSize" type="range" min="60" max="300" step="1" value="150" />
+
+          <h2>Ajuste da Assinatura</h2>
+          <label for="assinaturaX">Posição X: <span id="assinaturaXVal">330</span></label>
+          <input id="assinaturaX" type="range" min="140" max="520" step="1" value="330" />
+
+          <label for="assinaturaY">Posição Y: <span id="assinaturaYVal">662</span></label>
+          <input id="assinaturaY" type="range" min="600" max="720" step="1" value="662" />
+
+          <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230</span></label>
+          <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
+        </section>
+
         <div class="actions">
           <button type="submit">Gerar Certificado</button>
           <button id="download" type="button" disabled>Baixar PNG</button>

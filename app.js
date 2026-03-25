@@ -5,9 +5,28 @@ const assinaturaInput = document.getElementById("assinatura");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+const logoXInput = document.getElementById("logoX");
+const logoYInput = document.getElementById("logoY");
+const logoSizeInput = document.getElementById("logoSize");
+const assinaturaXInput = document.getElementById("assinaturaX");
+const assinaturaYInput = document.getElementById("assinaturaY");
+const assinaturaSizeInput = document.getElementById("assinaturaSize");
+
+const logoXVal = document.getElementById("logoXVal");
+const logoYVal = document.getElementById("logoYVal");
+const logoSizeVal = document.getElementById("logoSizeVal");
+const assinaturaXVal = document.getElementById("assinaturaXVal");
+const assinaturaYVal = document.getElementById("assinaturaYVal");
+const assinaturaSizeVal = document.getElementById("assinaturaSizeVal");
+
 const assets = {
   logo: null,
   assinatura: null,
+};
+
+const layout = {
+  logo: { x: 600, y: 95, maxW: 150, maxH: 95 },
+  assinatura: { x: 330, y: 662, maxW: 230, maxH: 80 },
 };
 
 let lastData = null;
@@ -36,6 +55,28 @@ function drawCenteredImage(image, x, y, maxW, maxH) {
   const drawX = x - size.width / 2;
   const drawY = y - size.height / 2;
   ctx.drawImage(image, drawX, drawY, size.width, size.height);
+}
+
+function updateControlLabels() {
+  logoXVal.textContent = layout.logo.x;
+  logoYVal.textContent = layout.logo.y;
+  logoSizeVal.textContent = layout.logo.maxW;
+  assinaturaXVal.textContent = layout.assinatura.x;
+  assinaturaYVal.textContent = layout.assinatura.y;
+  assinaturaSizeVal.textContent = layout.assinatura.maxW;
+}
+
+function applyLayoutFromControls() {
+  layout.logo.x = Number(logoXInput.value);
+  layout.logo.y = Number(logoYInput.value);
+  layout.logo.maxW = Number(logoSizeInput.value);
+
+  layout.assinatura.x = Number(assinaturaXInput.value);
+  layout.assinatura.y = Number(assinaturaYInput.value);
+  layout.assinatura.maxW = Number(assinaturaSizeInput.value);
+
+  updateControlLabels();
+  renderLastCertificate();
 }
 
 function loadImage(file) {
@@ -69,7 +110,13 @@ function drawCertificate(nome, curso, data) {
   ctx.strokeRect(54, 54, canvas.width - 108, canvas.height - 108);
 
   if (assets.logo) {
-    drawCenteredImage(assets.logo, canvas.width / 2, 95, 150, 95);
+    drawCenteredImage(
+      assets.logo,
+      layout.logo.x,
+      layout.logo.y,
+      layout.logo.maxW,
+      layout.logo.maxH
+    );
   }
 
   ctx.fillStyle = "#1a4f8b";
@@ -107,7 +154,13 @@ function drawCertificate(nome, curso, data) {
   ctx.stroke();
 
   if (assets.assinatura) {
-    drawCenteredImage(assets.assinatura, 330, 662, 230, 80);
+    drawCenteredImage(
+      assets.assinatura,
+      layout.assinatura.x,
+      layout.assinatura.y,
+      layout.assinatura.maxW,
+      layout.assinatura.maxH
+    );
   }
 
   ctx.font = "22px Arial";
@@ -162,6 +215,13 @@ assinaturaInput.addEventListener("change", () => {
   handleAssetChange(assinaturaInput, "assinatura");
 });
 
+logoXInput.addEventListener("input", applyLayoutFromControls);
+logoYInput.addEventListener("input", applyLayoutFromControls);
+logoSizeInput.addEventListener("input", applyLayoutFromControls);
+assinaturaXInput.addEventListener("input", applyLayoutFromControls);
+assinaturaYInput.addEventListener("input", applyLayoutFromControls);
+assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
+
 downloadBtn.addEventListener("click", () => {
   const link = document.createElement("a");
   link.download = "certificado.png";
@@ -170,3 +230,4 @@ downloadBtn.addEventListener("click", () => {
 });
 
 setTodayDate();
+updateControlLabels();
