@@ -3,7 +3,7 @@ const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
 const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const ctx = canvas ? canvas.getContext("2d") : null;
 
 const logoXInput = document.getElementById("logoX");
 const logoYInput = document.getElementById("logoY");
@@ -32,12 +32,14 @@ const layout = {
 let lastData = null;
 
 function formatDate(dateStr) {
+  if (!dateStr || !dateStr.includes("-")) return dateStr || "";
   const [year, month, day] = dateStr.split("-");
   return `${day}/${month}/${year}`;
 }
 
 function setTodayDate() {
   const dateInput = document.getElementById("data");
+  if (!dateInput) return;
   const today = new Date().toISOString().split("T")[0];
   dateInput.value = today;
 }
@@ -51,6 +53,7 @@ function fitRect(srcW, srcH, maxW, maxH) {
 }
 
 function drawCenteredImage(image, x, y, maxW, maxH) {
+  if (!ctx || !image) return;
   const size = fitRect(image.width, image.height, maxW, maxH);
   const drawX = x - size.width / 2;
   const drawY = y - size.height / 2;
@@ -58,22 +61,21 @@ function drawCenteredImage(image, x, y, maxW, maxH) {
 }
 
 function updateControlLabels() {
-  logoXVal.textContent = layout.logo.x;
-  logoYVal.textContent = layout.logo.y;
-  logoSizeVal.textContent = layout.logo.maxW;
-  assinaturaXVal.textContent = layout.assinatura.x;
-  assinaturaYVal.textContent = layout.assinatura.y;
-  assinaturaSizeVal.textContent = layout.assinatura.maxW;
+  if (logoXVal) logoXVal.textContent = layout.logo.x;
+  if (logoYVal) logoYVal.textContent = layout.logo.y;
+  if (logoSizeVal) logoSizeVal.textContent = layout.logo.maxW;
+  if (assinaturaXVal) assinaturaXVal.textContent = layout.assinatura.x;
+  if (assinaturaYVal) assinaturaYVal.textContent = layout.assinatura.y;
+  if (assinaturaSizeVal) assinaturaSizeVal.textContent = layout.assinatura.maxW;
 }
 
 function applyLayoutFromControls() {
-  layout.logo.x = Number(logoXInput.value);
-  layout.logo.y = Number(logoYInput.value);
-  layout.logo.maxW = Number(logoSizeInput.value);
-
-  layout.assinatura.x = Number(assinaturaXInput.value);
-  layout.assinatura.y = Number(assinaturaYInput.value);
-  layout.assinatura.maxW = Number(assinaturaSizeInput.value);
+  if (logoXInput) layout.logo.x = Number(logoXInput.value);
+  if (logoYInput) layout.logo.y = Number(logoYInput.value);
+  if (logoSizeInput) layout.logo.maxW = Number(logoSizeInput.value);
+  if (assinaturaXInput) layout.assinatura.x = Number(assinaturaXInput.value);
+  if (assinaturaYInput) layout.assinatura.y = Number(assinaturaYInput.value);
+  if (assinaturaSizeInput) layout.assinatura.maxW = Number(assinaturaSizeInput.value);
 
   updateControlLabels();
   renderLastCertificate();
@@ -96,6 +98,10 @@ function loadImage(file) {
 }
 
 function drawCertificate(nome, curso, data) {
+  if (!ctx || !canvas) {
+    throw new Error("Canvas não disponível.");
+  }
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "#ffffff";
@@ -175,6 +181,7 @@ function renderLastCertificate() {
 }
 
 async function handleAssetChange(input, key) {
+  if (!input) return;
   const file = input.files[0];
 
   if (!file) {
@@ -193,41 +200,58 @@ async function handleAssetChange(input, key) {
   }
 }
 
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
+if (!form || !downloadBtn || !canvas || !ctx) {
+  alert("Erro de inicialização. Recarregue com Ctrl+F5.");
+} else {
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
 
-  const nome = document.getElementById("nome").value.trim();
-  const curso = document.getElementById("curso").value.trim();
-  const data = document.getElementById("data").value;
+    const nomeInput = document.getElementById("nome");
+    const cursoInput = document.getElementById("curso");
+    const dataInput = document.getElementById("data");
 
-  if (!nome || !curso || !data) return;
+    const nome = nomeInput ? nomeInput.value.trim() : "";
+    const curso = cursoInput ? cursoInput.value.trim() : "";
+    const data = dataInput ? dataInput.value : "";
 
-  lastData = { nome, curso, data };
-  drawCertificate(nome, curso, data);
-  downloadBtn.disabled = false;
-});
+    if (!nome || !curso || !data) return;
 
-logoInput.addEventListener("change", () => {
-  handleAssetChange(logoInput, "logo");
-});
+    try {
+      lastData = { nome, curso, data };
+      drawCertificate(nome, curso, data);
+      downloadBtn.disabled = false;
+    } catch (error) {
+      console.error(error);
+      alert("Falha ao gerar o certificado. Recarregue a página e tente novamente.");
+    }
+  });
 
-assinaturaInput.addEventListener("change", () => {
-  handleAssetChange(assinaturaInput, "assinatura");
-});
+  if (logoInput) {
+    logoInput.addEventListener("change", () => {
+      handleAssetChange(logoInput, "logo");
+    });
+  }
 
-logoXInput.addEventListener("input", applyLayoutFromControls);
-logoYInput.addEventListener("input", applyLayoutFromControls);
-logoSizeInput.addEventListener("input", applyLayoutFromControls);
-assinaturaXInput.addEventListener("input", applyLayoutFromControls);
-assinaturaYInput.addEventListener("input", applyLayoutFromControls);
-assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
+  if (assinaturaInput) {
+    assinaturaInput.addEventListener("change", () => {
+      handleAssetChange(assinaturaInput, "assinatura");
+    });
+  }
 
-downloadBtn.addEventListener("click", () => {
-  const link = document.createElement("a");
-  link.download = "certificado.png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-});
+  if (logoXInput) logoXInput.addEventListener("input", applyLayoutFromControls);
+  if (logoYInput) logoYInput.addEventListener("input", applyLayoutFromControls);
+  if (logoSizeInput) logoSizeInput.addEventListener("input", applyLayoutFromControls);
+  if (assinaturaXInput) assinaturaXInput.addEventListener("input", applyLayoutFromControls);
+  if (assinaturaYInput) assinaturaYInput.addEventListener("input", applyLayoutFromControls);
+  if (assinaturaSizeInput) assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
+
+  downloadBtn.addEventListener("click", () => {
+    const link = document.createElement("a");
+    link.download = "certificado.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  });
+}
 
 setTodayDate();
 updateControlLabels();
