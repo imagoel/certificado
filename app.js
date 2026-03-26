@@ -46,8 +46,72 @@ function formatDate(dateStr) {
 function setTodayDate() {
   const dateInput = document.getElementById("data");
   if (!dateInput) return;
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60000;
+  const today = new Date(now.getTime() - offsetMs).toISOString().split("T")[0];
   dateInput.value = today;
+}
+
+function buildFont(style, weight, size, family) {
+  return `${style} ${weight} ${size}px ${family}`.replace(/\s+/g, " ").trim();
+}
+
+function sanitizeText(text) {
+  return String(text || "").replace(/\s+/g, " ").trim();
+}
+
+function measureTextWithFont(text, style, weight, size, family) {
+  if (!ctx) return 0;
+  ctx.font = buildFont(style, weight, size, family);
+  return ctx.measureText(text).width;
+}
+
+function fitTextToWidth(text, options = {}) {
+  const {
+    style = "normal",
+    weight = "normal",
+    family = "sans-serif",
+    startSize = 24,
+    minSize = 14,
+    maxWidth = 0,
+  } = options;
+
+  const normalized = sanitizeText(text);
+  if (!normalized) return { text: "", size: startSize };
+
+  let size = startSize;
+  while (
+    size > minSize &&
+    measureTextWithFont(normalized, style, weight, size, family) > maxWidth
+  ) {
+    size -= 1;
+  }
+
+  if (measureTextWithFont(normalized, style, weight, size, family) <= maxWidth) {
+    return { text: normalized, size };
+  }
+
+  let trimmed = normalized;
+  while (
+    trimmed.length > 0 &&
+    measureTextWithFont(`${trimmed}...`, style, weight, size, family) > maxWidth
+  ) {
+    trimmed = trimmed.slice(0, -1);
+  }
+
+  return { text: trimmed ? `${trimmed}...` : "...", size };
+}
+
+function drawAdaptiveCenteredText(text, x, y, options = {}) {
+  if (!ctx) return;
+  const fitted = fitTextToWidth(text, options);
+  ctx.font = buildFont(
+    options.style || "normal",
+    options.weight || "normal",
+    fitted.size,
+    options.family || "sans-serif"
+  );
+  ctx.fillText(fitted.text, x, y);
 }
 
 function fitRect(srcW, srcH, maxW, maxH) {
@@ -134,27 +198,51 @@ function drawCertificate(nome, curso, data, linha1, linha2) {
   ctx.fillStyle = "#1a4f8b";
   ctx.textAlign = "center";
   ctx.font = "bold 64px Georgia";
-  ctx.fillText("CERTIFICADO", canvas.width / 2, 190);
+  const centerX = canvas.width / 2;
+  const maxTextWidth = canvas.width - 220;
+  ctx.fillText("CERTIFICADO", centerX, 190);
 
   ctx.fillStyle = "#334";
-  ctx.font = "32px 'Times New Roman'";
-  ctx.fillText(linha1, canvas.width / 2, 270);
+  drawAdaptiveCenteredText(linha1, centerX, 270, {
+    family: "'Times New Roman'",
+    startSize: 32,
+    minSize: 20,
+    maxWidth: maxTextWidth,
+  });
 
   ctx.fillStyle = "#112031";
-  ctx.font = "bold 56px 'Times New Roman'";
-  ctx.fillText(nome, canvas.width / 2, 370);
+  drawAdaptiveCenteredText(nome, centerX, 370, {
+    family: "'Times New Roman'",
+    weight: "bold",
+    startSize: 56,
+    minSize: 30,
+    maxWidth: maxTextWidth,
+  });
 
   ctx.fillStyle = "#334";
-  ctx.font = "30px 'Times New Roman'";
-  ctx.fillText(linha2, canvas.width / 2, 440);
+  drawAdaptiveCenteredText(linha2, centerX, 440, {
+    family: "'Times New Roman'",
+    startSize: 30,
+    minSize: 18,
+    maxWidth: maxTextWidth,
+  });
 
   ctx.fillStyle = "#112031";
-  ctx.font = "italic 46px Georgia";
-  ctx.fillText(curso, canvas.width / 2, 510);
+  drawAdaptiveCenteredText(curso, centerX, 510, {
+    family: "Georgia",
+    style: "italic",
+    startSize: 46,
+    minSize: 24,
+    maxWidth: maxTextWidth,
+  });
 
   ctx.fillStyle = "#334";
-  ctx.font = "28px 'Times New Roman'";
-  ctx.fillText(`Data: ${formatDate(data)}`, canvas.width / 2, 580);
+  drawAdaptiveCenteredText(`Data: ${formatDate(data)}`, centerX, 580, {
+    family: "'Times New Roman'",
+    startSize: 28,
+    minSize: 20,
+    maxWidth: maxTextWidth,
+  });
 
   ctx.beginPath();
   ctx.moveTo(180, 700);
