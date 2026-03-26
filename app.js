@@ -1,4 +1,4 @@
-﻿const form = document.getElementById("cert-form");
+const form = document.getElementById("cert-form");
 const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
@@ -12,12 +12,18 @@ const assinaturaXInput = document.getElementById("assinaturaX");
 const assinaturaYInput = document.getElementById("assinaturaY");
 const assinaturaSizeInput = document.getElementById("assinaturaSize");
 
+const textoLinha1Input = document.getElementById("textoLinha1");
+const textoLinha2Input = document.getElementById("textoLinha2");
+
 const logoXVal = document.getElementById("logoXVal");
 const logoYVal = document.getElementById("logoYVal");
 const logoSizeVal = document.getElementById("logoSizeVal");
 const assinaturaXVal = document.getElementById("assinaturaXVal");
 const assinaturaYVal = document.getElementById("assinaturaYVal");
 const assinaturaSizeVal = document.getElementById("assinaturaSizeVal");
+
+const defaultTextoLinha1 = "Certificamos que";
+const defaultTextoLinha2 = "concluiu com êxito o curso";
 
 const assets = {
   logo: null,
@@ -97,7 +103,7 @@ function loadImage(file) {
   });
 }
 
-function drawCertificate(nome, curso, data) {
+function drawCertificate(nome, curso, data, linha1, linha2) {
   if (!ctx || !canvas) {
     throw new Error("Canvas não disponível.");
   }
@@ -132,7 +138,7 @@ function drawCertificate(nome, curso, data) {
 
   ctx.fillStyle = "#334";
   ctx.font = "32px 'Times New Roman'";
-  ctx.fillText("Certificamos que", canvas.width / 2, 270);
+  ctx.fillText(linha1, canvas.width / 2, 270);
 
   ctx.fillStyle = "#112031";
   ctx.font = "bold 56px 'Times New Roman'";
@@ -140,7 +146,7 @@ function drawCertificate(nome, curso, data) {
 
   ctx.fillStyle = "#334";
   ctx.font = "30px 'Times New Roman'";
-  ctx.fillText("concluiu com êxito o curso", canvas.width / 2, 440);
+  ctx.fillText(linha2, canvas.width / 2, 440);
 
   ctx.fillStyle = "#112031";
   ctx.font = "italic 46px Georgia";
@@ -177,7 +183,13 @@ function drawCertificate(nome, curso, data) {
 
 function renderLastCertificate() {
   if (!lastData) return;
-  drawCertificate(lastData.nome, lastData.curso, lastData.data);
+  drawCertificate(
+    lastData.nome,
+    lastData.curso,
+    lastData.data,
+    lastData.linha1,
+    lastData.linha2
+  );
 }
 
 async function handleAssetChange(input, key) {
@@ -217,8 +229,13 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     if (!nome || !curso || !data) return;
 
     try {
-      lastData = { nome, curso, data };
-      drawCertificate(nome, curso, data);
+      const textoLinha1 = textoLinha1Input ? textoLinha1Input.value.trim() : "";
+      const textoLinha2 = textoLinha2Input ? textoLinha2Input.value.trim() : "";
+      const linha1 = textoLinha1 || defaultTextoLinha1;
+      const linha2 = textoLinha2 || defaultTextoLinha2;
+
+      lastData = { nome, curso, data, linha1, linha2 };
+      drawCertificate(nome, curso, data, linha1, linha2);
       downloadBtn.disabled = false;
     } catch (error) {
       console.error(error);
@@ -244,6 +261,22 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   if (assinaturaXInput) assinaturaXInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaYInput) assinaturaYInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaSizeInput) assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
+
+  if (textoLinha1Input) {
+    textoLinha1Input.addEventListener("input", () => {
+      if (!lastData) return;
+      lastData.linha1 = textoLinha1Input.value.trim() || defaultTextoLinha1;
+      renderLastCertificate();
+    });
+  }
+
+  if (textoLinha2Input) {
+    textoLinha2Input.addEventListener("input", () => {
+      if (!lastData) return;
+      lastData.linha2 = textoLinha2Input.value.trim() || defaultTextoLinha2;
+      renderLastCertificate();
+    });
+  }
 
   downloadBtn.addEventListener("click", () => {
     const link = document.createElement("a");
