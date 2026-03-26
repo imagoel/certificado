@@ -1,9 +1,10 @@
 services:
   certificado:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: certificado-nginx
     container_name: certificado
     restart: unless-stopped
     ports:
       - "17854:80"
-    volumes:
-      - ./:/usr/share/nginx/html:ro
