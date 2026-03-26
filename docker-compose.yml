@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: certificado-nginx
     container_name: certificado
     restart: unless-stopped
     ports:
