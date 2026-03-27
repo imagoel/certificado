@@ -39,6 +39,8 @@ class CertificateResponse(BaseModel):
     emitido_em: datetime
     hash: str
     url_validacao: str
+    arquivo_disponivel: bool = False
+    arquivo_url: Optional[str] = None
 
 
 class ValidationResponse(BaseModel):
@@ -50,3 +52,5 @@ class ValidationResponse(BaseModel):
     carga_h: Optional[int] = None
     concluido: Optional[date] = None
     hash: Optional[str] = None
+    arquivo_disponivel: bool = False
+    arquivo_url: Optional[str] = None

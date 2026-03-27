@@ -58,7 +58,7 @@
 
         <section class="batch-controls">
           <h2>Geração em lote por planilha</h2>
-          <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código do certificado e o QR Code são sempre gerados automaticamente pelo backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
+          <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código, o QR Code e a visualização PNG são gerados e salvos automaticamente no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
 
           <label for="planilha">Planilha de alunos</label>
           <input
@@ -92,7 +92,7 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "http://10.75.2.16:29180";
   </script>
-  <script src="app.js?v=20260327-4"></script>
+  <script src="app.js?v=20260327-5"></script>
 </body>
 </html>
 

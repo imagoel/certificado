@@ -148,6 +148,45 @@ async function registerBatchCertificates(items) {
   });
 }
 
+async function uploadCertificateImage(codigo, pngBlob, fileName) {
+  const certCode = sanitizeText(codigo).toUpperCase();
+  if (!certCode) {
+    throw new Error("Codigo do certificado ausente para upload do PNG.");
+  }
+
+  if (!pngBlob) {
+    throw new Error("PNG do certificado ausente para upload.");
+  }
+
+  const safeName = sanitizeFileName(fileName || certCode, certCode);
+  const formData = new FormData();
+  formData.append("arquivo", pngBlob, `${safeName}.png`);
+
+  const response = await fetch(
+    `${getApiBaseUrl()}/api/certificados/${encodeURIComponent(certCode)}/arquivo`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_error) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      (payload && (payload.detail || payload.message)) ||
+        `Falha ao enviar PNG do certificado (HTTP ${response.status}).`
+    );
+  }
+
+  return payload;
+}
+
 function buildFont(style, weight, size, family) {
   return `${style} ${weight} ${size}px ${family}`.replace(/\s+/g, " ").trim();
 }
@@ -854,6 +893,12 @@ async function handleBatchGenerate() {
 
       const pngBlob = await canvasToPngBlob();
       zip.file(cert.fileName, pngBlob);
+
+      setBatchStatus(
+        `Salvando ${index + 1}/${certificates.length} no servidor: ${cert.nome}`,
+        "info"
+      );
+      await uploadCertificateImage(cert.codigo, pngBlob, cert.fileName);
     }
 
     setBatchStatus("Compactando certificados em ZIP...", "info");
@@ -929,6 +974,8 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 
       lastData = { nome, curso, data, codigo, linha1, linha2, qrText };
       await drawCertificate(nome, curso, data, linha1, linha2, qrText, codigo);
+      const pngBlob = await canvasToPngBlob();
+      await uploadCertificateImage(codigo, pngBlob, codigo);
       downloadBtn.disabled = false;
       setBatchStatus("", "info");
     } catch (error) {

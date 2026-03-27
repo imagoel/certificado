@@ -12,6 +12,8 @@ Projeto dividido em duas partes:
 - geração em lote por planilha (`.xlsx`, `.xls`, `.csv`)
 - exportação do lote em `.zip`
 - registro automático de certificados na API antes da geração do PNG
+- upload automático do PNG para armazenamento local no servidor
+- visualização do certificado salvo na página de validação do QR
 - sem campo manual para URL de validação ou conteúdo do QR
 
 ### Colunas da planilha
@@ -24,6 +26,7 @@ Regras:
 - se planilha vier com `nome` e `sobrenome`, o sistema concatena automaticamente para formar o nome completo
 - o código do certificado é sempre gerado pelo backend
 - a URL do QR é sempre definida pelo backend (campo `url_validacao` da API)
+- o arquivo PNG é enviado automaticamente para o backend após a geração
 - o frontend consulta a API em `http://<host>:29180` por padrão (ou `window.CERT_API_BASE_URL`, se configurado)
 
 ### URL de validacao do QR (automatica)
@@ -52,6 +55,8 @@ Regras:
 - `GET /health`
 - `POST /api/certificados` (registro unitário)
 - `POST /api/certificados/lote` (registro em lote)
+- `POST /api/certificados/{codigo}/arquivo` (upload do PNG)
+- `GET /api/certificados/{codigo}/arquivo` (download/visualização do PNG)
 - `GET /api/validar/{codigo}` (JSON)
 - `GET /validar/{codigo}` (página HTML pública)
 
@@ -66,6 +71,10 @@ Serviços:
 - API: `http://localhost:29180`
 - PostgreSQL: `localhost:25432`
 
+Volumes:
+- `postgres_data`: dados do banco
+- `certificados_media`: arquivos PNG salvos no servidor (`/app/data/certificados` no container da API)
+
 ## Estrutura
 
 - `index.html`, `styles.css`, `app.js`: interface e geração local
@@ -78,4 +87,4 @@ Serviços:
 
 ## Operação recomendada
 
-Use sempre o frontend com a API ativa. Assim, cada certificado é registrado no banco com hash e o QR já sai apontando para a URL oficial de validação.
+Use sempre o frontend com a API ativa. Assim, cada certificado é registrado no banco com hash, o PNG é armazenado no servidor e o QR aponta para a validação pública com opção de visualizar o arquivo.

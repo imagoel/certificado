@@ -3,11 +3,12 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
@@ -22,6 +23,9 @@ from security import calculate_certificate_hash, verify_certificate_hash
 
 CODE_REGEX = re.compile(r"^[A-Z0-9]{1,8}-\d{4}-\d{5}$")
 DEFAULT_PREFIX = os.getenv("CODE_PREFIX", "ABC")
+DEFAULT_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "certificados"))
+CERTIFICADOS_MEDIA_DIR = Path(os.getenv("CERTIFICADOS_MEDIA_DIR", DEFAULT_MEDIA_DIR)).resolve()
+MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "5242880"))
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -49,6 +53,31 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event() -> None:
     Base.metadata.create_all(bind=engine)
+    ensure_certificate_schema()
+    CERTIFICADOS_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def ensure_certificate_schema() -> None:
+    try:
+        inspector = inspect(engine)
+        columns = {column["name"] for column in inspector.get_columns("certificados")}
+    except Exception:
+        return
+
+    statements: list[str] = []
+    if "arquivo_relpath" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN arquivo_relpath VARCHAR(255)")
+    if "arquivo_mime" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN arquivo_mime VARCHAR(100)")
+    if "arquivo_bytes" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN arquivo_bytes INTEGER")
+
+    if not statements:
+        return
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
 
 
 def normalize_prefix(prefix: str | None) -> str:
@@ -66,6 +95,40 @@ def build_validation_url(request: Request, codigo: str) -> str:
     if base_url:
         return f"{base_url}/{codigo}"
     return str(request.url_for("validar_html", codigo=codigo))
+
+
+def sanitize_code(codigo: str) -> str:
+    return (codigo or "").strip().upper()
+
+
+def build_file_relative_path(codigo: str) -> str:
+    normalized = sanitize_code(codigo)
+    year = datetime.utcnow().year
+    parts = normalized.split("-")
+    if len(parts) >= 2 and parts[1].isdigit():
+        year = int(parts[1])
+    return f"{year}/{normalized}.png"
+
+
+def resolve_media_path(relative_path: str) -> Path:
+    candidate = (CERTIFICADOS_MEDIA_DIR / relative_path).resolve()
+    if not str(candidate).startswith(str(CERTIFICADOS_MEDIA_DIR)):
+        raise HTTPException(status_code=400, detail="Caminho de arquivo inválido.")
+    return candidate
+
+
+def has_certificate_file(cert: Certificate) -> bool:
+    if not cert.arquivo_relpath:
+        return False
+    try:
+        file_path = resolve_media_path(cert.arquivo_relpath)
+    except HTTPException:
+        return False
+    return file_path.exists() and file_path.is_file()
+
+
+def build_certificate_file_url(request: Request, codigo: str) -> str:
+    return str(request.url_for("get_certificate_file", codigo=sanitize_code(codigo)))
 
 
 def get_last_sequence(db: Session, prefix: str, year: int) -> int:
@@ -93,6 +156,7 @@ def code_exists(db: Session, codigo: str) -> bool:
 def to_response(
     cert: Certificate, request: Request, validation_url: str | None = None
 ) -> CertificateResponse:
+    file_available = has_certificate_file(cert)
     return CertificateResponse(
         id=cert.id,
         codigo=cert.codigo,
@@ -104,6 +168,8 @@ def to_response(
         emitido_em=cert.emitido_em,
         hash=cert.hash,
         url_validacao=validation_url or build_validation_url(request, cert.codigo),
+        arquivo_disponivel=file_available,
+        arquivo_url=build_certificate_file_url(request, cert.codigo) if file_available else None,
     )
 
 
@@ -122,7 +188,7 @@ def create_certificate(
     year = payload.concluido.year
 
     if payload.codigo:
-        codigo = payload.codigo
+        codigo = sanitize_code(payload.codigo)
     else:
         next_seq = get_last_sequence(db, prefix, year) + 1
         codigo = build_code(prefix, year, next_seq)
@@ -182,7 +248,7 @@ def create_certificates_batch(
             sequence_by_year[year] = get_last_sequence(db, prefix, year)
 
         if item.codigo:
-            codigo = item.codigo
+            codigo = sanitize_code(item.codigo)
         else:
             sequence_by_year[year] += 1
             codigo = build_code(prefix, year, sequence_by_year[year])
@@ -234,11 +300,87 @@ def create_certificates_batch(
     return responses
 
 
-@app.get("/api/validar/{codigo}", response_model=ValidationResponse)
-def validate_certificate_json(codigo: str, db: Session = Depends(get_db)) -> ValidationResponse:
-    cert = db.query(Certificate).filter(Certificate.codigo == codigo.upper()).first()
+def validate_png_upload(uploaded: UploadFile, content: bytes) -> None:
+    if not uploaded.filename:
+        raise HTTPException(status_code=400, detail="Arquivo PNG é obrigatório.")
+
+    if not content:
+        raise HTTPException(status_code=400, detail="Arquivo enviado está vazio.")
+
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Arquivo muito grande. Limite atual: {MAX_UPLOAD_BYTES} bytes.",
+        )
+
+    content_type = (uploaded.content_type or "").lower()
+    if content_type and content_type not in ("image/png", "application/octet-stream"):
+        raise HTTPException(status_code=415, detail="Somente arquivos PNG são aceitos.")
+
+    if not content.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise HTTPException(status_code=415, detail="Arquivo inválido. Envie um PNG válido.")
+
+
+@app.post(
+    "/api/certificados/{codigo}/arquivo",
+    response_model=CertificateResponse,
+    status_code=201,
+)
+async def upload_certificate_file(
+    codigo: str,
+    request: Request,
+    arquivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> CertificateResponse:
+    normalized_code = sanitize_code(codigo)
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
     if not cert:
-        return ValidationResponse(status="nao_encontrado", codigo=codigo.upper(), valido=False)
+        raise HTTPException(status_code=404, detail="Certificado não encontrado.")
+
+    content = await arquivo.read()
+    validate_png_upload(arquivo, content)
+
+    relative_path = build_file_relative_path(cert.codigo)
+    file_path = resolve_media_path(relative_path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_bytes(content)
+
+    cert.arquivo_relpath = relative_path.replace("\\", "/")
+    cert.arquivo_mime = "image/png"
+    cert.arquivo_bytes = len(content)
+    db.commit()
+    db.refresh(cert)
+    return to_response(cert, request)
+
+
+@app.get("/api/certificados/{codigo}/arquivo", name="get_certificate_file")
+def get_certificate_file(codigo: str, db: Session = Depends(get_db)) -> FileResponse:
+    normalized_code = sanitize_code(codigo)
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
+    if not cert or not cert.arquivo_relpath:
+        raise HTTPException(status_code=404, detail="Arquivo de certificado não encontrado.")
+
+    file_path = resolve_media_path(cert.arquivo_relpath)
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Arquivo de certificado não encontrado.")
+
+    return FileResponse(
+        path=file_path,
+        media_type=cert.arquivo_mime or "image/png",
+        filename=f"{cert.codigo}.png",
+    )
+
+
+@app.get("/api/validar/{codigo}", response_model=ValidationResponse)
+def validate_certificate_json(
+    codigo: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ValidationResponse:
+    normalized_code = sanitize_code(codigo)
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
+    if not cert:
+        return ValidationResponse(status="nao_encontrado", codigo=normalized_code, valido=False)
 
     valido = verify_certificate_hash(
         expected_hash=cert.hash,
@@ -249,6 +391,7 @@ def validate_certificate_json(codigo: str, db: Session = Depends(get_db)) -> Val
         carga_h=cert.carga_h,
         concluido=cert.concluido.isoformat(),
     )
+    file_available = has_certificate_file(cert)
 
     return ValidationResponse(
         status="valido" if valido else "invalido",
@@ -259,6 +402,8 @@ def validate_certificate_json(codigo: str, db: Session = Depends(get_db)) -> Val
         carga_h=cert.carga_h,
         concluido=cert.concluido,
         hash=cert.hash,
+        arquivo_disponivel=file_available,
+        arquivo_url=build_certificate_file_url(request, cert.codigo) if file_available else None,
     )
 
 
@@ -268,7 +413,8 @@ def validate_certificate_html(
     codigo: str,
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
-    cert = db.query(Certificate).filter(Certificate.codigo == codigo.upper()).first()
+    normalized_code = sanitize_code(codigo)
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
 
     if not cert:
         return templates.TemplateResponse(
@@ -276,8 +422,9 @@ def validate_certificate_html(
             {
                 "request": request,
                 "status": "nao_encontrado",
-                "codigo": codigo.upper(),
+                "codigo": normalized_code,
                 "certificado": None,
+                "arquivo_url": None,
             },
         )
 
@@ -290,6 +437,7 @@ def validate_certificate_html(
         carga_h=cert.carga_h,
         concluido=cert.concluido.isoformat(),
     )
+    file_available = has_certificate_file(cert)
 
     return templates.TemplateResponse(
         "validacao.html",
@@ -298,5 +446,6 @@ def validate_certificate_html(
             "status": "valido" if valido else "invalido",
             "codigo": cert.codigo,
             "certificado": cert,
+            "arquivo_url": build_certificate_file_url(request, cert.codigo) if file_available else None,
         },
     )

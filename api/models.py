@@ -20,3 +20,6 @@ class Certificate(Base):
         DateTime, default=datetime.utcnow, nullable=False
     )
     hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    arquivo_relpath: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    arquivo_mime: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    arquivo_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
