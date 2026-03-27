@@ -54,3 +54,11 @@ class ValidationResponse(BaseModel):
     hash: Optional[str] = None
     arquivo_disponivel: bool = False
     arquivo_url: Optional[str] = None
+
+
+class PaginatedCertificateResponse(BaseModel):
+    total: int
+    pagina: int
+    por_pagina: int
+    paginas: int
+    itens: list[CertificateResponse]

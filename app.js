@@ -4,10 +4,11 @@ const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
 const planilhaInput = document.getElementById("planilha");
 const batchGenerateBtn = document.getElementById("batch-generate");
-const downloadTemplateBtn = document.getElementById("download-template");
+
 const batchStatus = document.getElementById("batch-status");
 const canvas = document.getElementById("canvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
+const cargaHInput = document.getElementById("carga_h");
 
 const logoXInput = document.getElementById("logoX");
 const logoYInput = document.getElementById("logoY");
@@ -121,7 +122,7 @@ async function registerSingleCertificate(cert) {
     codigo: cert.codigo || null,
     nome: cert.nome,
     curso: cert.curso,
-    carga_h: 0,
+    carga_h: cert.carga_h || 0,
     concluido: cert.data,
   };
 
@@ -299,12 +300,22 @@ function loadImage(file) {
   });
 }
 
-function loadImageFromSource(src) {
+function loadImageFromBlob(blob) {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Não foi possível gerar o QR Code."));
-    image.src = src;
+    const objectUrl = URL.createObjectURL(blob);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Não foi possível gerar o QR Code."));
+    };
+
+    image.src = objectUrl;
   });
 }
 
@@ -317,21 +328,16 @@ async function buildQrImage(qrText) {
   }
 
   const promise = (async () => {
-    if (!window.QRCode || typeof window.QRCode.toDataURL !== "function") {
-      throw new Error("Biblioteca de QR Code indisponível.");
+    const response = await fetch(
+      `${getApiBaseUrl()}/api/qrcode?texto=${encodeURIComponent(text)}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Falha ao gerar o QR Code (HTTP ${response.status}).`);
     }
 
-    const dataUrl = await window.QRCode.toDataURL(text, {
-      errorCorrectionLevel: "M",
-      margin: 1,
-      width: 260,
-      color: {
-        dark: "#112031",
-        light: "#0000",
-      },
-    });
-
-    return loadImageFromSource(dataUrl);
+    const qrBlob = await response.blob();
+    return loadImageFromBlob(qrBlob);
   })();
 
   qrImageCache.set(text, promise);
@@ -344,7 +350,7 @@ async function buildQrImage(qrText) {
   }
 }
 
-async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", codigo = "") {
+async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", codigo = "", cargaH = 0) {
   if (!ctx || !canvas) {
     throw new Error("Canvas não disponível.");
   }
@@ -424,9 +430,22 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   });
 
   const codigoLabel = sanitizeText(codigo);
+  const cargaLabel = cargaH > 0 ? `Carga horária: ${cargaH}h` : "";
+
+  let infoY = 620;
   if (codigoLabel) {
     ctx.fillStyle = "#334";
-    drawAdaptiveCenteredText(`Código: ${codigoLabel}`, centerX, 620, {
+    drawAdaptiveCenteredText(`Código: ${codigoLabel}`, centerX, infoY, {
+      family: "Arial",
+      startSize: 18,
+      minSize: 14,
+      maxWidth: maxTextWidth,
+    });
+    infoY += 30;
+  }
+  if (cargaLabel) {
+    ctx.fillStyle = "#334";
+    drawAdaptiveCenteredText(cargaLabel, centerX, infoY, {
       family: "Arial",
       startSize: 18,
       minSize: 14,
@@ -487,7 +506,8 @@ async function renderLastCertificate() {
       lastData.linha1,
       lastData.linha2,
       lastData.qrText || "",
-      lastData.codigo || ""
+      lastData.codigo || "",
+      lastData.cargaH || 0
     );
   } catch (error) {
     console.error(error);
@@ -774,18 +794,7 @@ function buildTimestamp() {
   return `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
 }
 
-function downloadTemplateCsv() {
-  const lines = [
-    "nome",
-    "Maria da Silva",
-    "Joao Pereira",
-  ];
 
-  const csv = `\uFEFF${lines.join("\n")}`;
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  downloadBlob(blob, "modelo_certificados.csv");
-  setBatchStatus("Modelo CSV baixado com sucesso.", "success");
-}
 
 async function handleBatchGenerate() {
   if (!planilhaInput || !batchGenerateBtn) return;
@@ -952,6 +961,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     const nome = nomeInput ? nomeInput.value.trim() : "";
     const curso = cursoInput ? cursoInput.value.trim() : "";
     const data = dataInput ? dataInput.value : "";
+    const cargaH = cargaHInput ? Math.max(0, parseInt(cargaHInput.value, 10) || 0) : 0;
 
     if (!nome || !curso || !data) return;
 
@@ -967,13 +977,14 @@ if (!form || !downloadBtn || !canvas || !ctx) {
         nome,
         curso,
         data,
+        carga_h: cargaH,
       });
 
       const codigo = sanitizeText(registered.codigo).toUpperCase();
       const qrText = sanitizeText(registered.url_validacao);
 
-      lastData = { nome, curso, data, codigo, linha1, linha2, qrText };
-      await drawCertificate(nome, curso, data, linha1, linha2, qrText, codigo);
+      lastData = { nome, curso, data, cargaH, codigo, linha1, linha2, qrText };
+      await drawCertificate(nome, curso, data, linha1, linha2, qrText, codigo, cargaH);
       const pngBlob = await canvasToPngBlob();
       await uploadCertificateImage(codigo, pngBlob, codigo);
       downloadBtn.disabled = false;
@@ -1034,9 +1045,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     });
   }
 
-  if (downloadTemplateBtn) {
-    downloadTemplateBtn.addEventListener("click", downloadTemplateCsv);
-  }
+
 
   if (batchGenerateBtn) {
     batchGenerateBtn.addEventListener("click", () => {

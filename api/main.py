@@ -1,11 +1,14 @@
+import math
 import os
 import re
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
+import qrcode
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
@@ -17,6 +20,7 @@ from schemas import (
     CertificateBatchCreate,
     CertificateCreate,
     CertificateResponse,
+    PaginatedCertificateResponse,
     ValidationResponse,
 )
 from security import calculate_certificate_hash, verify_certificate_hash
@@ -176,6 +180,66 @@ def to_response(
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/qrcode")
+def generate_qr_code(
+    texto: str = Query(..., min_length=1, max_length=2048, description="Conteudo do QR Code"),
+) -> Response:
+    content = texto.strip()
+    if not content:
+        raise HTTPException(status_code=422, detail="O texto do QR Code e obrigatorio.")
+
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=1,
+    )
+    qr.add_data(content)
+    qr.make(fit=True)
+
+    image = qr.make_image(fill_color="#112031", back_color="white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return Response(content=buffer.getvalue(), media_type="image/png")
+
+
+
+@app.get("/api/certificados", response_model=PaginatedCertificateResponse)
+def list_certificates(
+    request: Request,
+    pagina: int = Query(default=1, ge=1, description="Número da página"),
+    por_pagina: int = Query(default=20, ge=1, le=100, description="Itens por página"),
+    nome: str = Query(default="", description="Filtrar por nome (busca parcial)"),
+    curso: str = Query(default="", description="Filtrar por curso (busca parcial)"),
+    db: Session = Depends(get_db),
+) -> PaginatedCertificateResponse:
+    query = db.query(Certificate)
+
+    if nome.strip():
+        query = query.filter(Certificate.nome.ilike(f"%{nome.strip()}%"))
+    if curso.strip():
+        query = query.filter(Certificate.curso.ilike(f"%{curso.strip()}%"))
+
+    total = query.count()
+    paginas = max(1, math.ceil(total / por_pagina))
+    offset = (pagina - 1) * por_pagina
+
+    certificates = (
+        query.order_by(Certificate.id.desc())
+        .offset(offset)
+        .limit(por_pagina)
+        .all()
+    )
+
+    return PaginatedCertificateResponse(
+        total=total,
+        pagina=pagina,
+        por_pagina=por_pagina,
+        paginas=paginas,
+        itens=[to_response(cert, request) for cert in certificates],
+    )
 
 
 @app.post("/api/certificados", response_model=CertificateResponse, status_code=201)

@@ -22,6 +22,9 @@
         <label for="data">Data de conclusão</label>
         <input id="data" type="date" required />
 
+        <label for="carga_h">Carga horária (opcional)</label>
+        <input id="carga_h" type="number" min="0" max="2000" placeholder="Ex.: 40" />
+
         <label for="textoLinha1">Texto (linha 1, opcional)</label>
         <input id="textoLinha1" type="text" value="Certificamos que" />
 
@@ -58,7 +61,7 @@
 
         <section class="batch-controls">
           <h2>Geração em lote por planilha</h2>
-          <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código, o QR Code e a visualização PNG são gerados e salvos automaticamente no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
+          <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código e o QR Code são gerados automaticamente pela API; o certificado final é montado no navegador e salvo no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
 
           <label for="planilha">Planilha de alunos</label>
           <input
@@ -68,7 +71,6 @@
           />
 
           <div class="actions">
-            <button id="download-template" type="button" class="secondary-btn">Baixar Modelo CSV</button>
             <button id="batch-generate" type="button">Gerar Lote (ZIP)</button>
           </div>
           <p id="batch-status" class="status" aria-live="polite"></p>
@@ -88,11 +90,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <script>
-    window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "http://10.75.2.16:29180";
+    window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "http://localhost:29180";
   </script>
-  <script src="app.js?v=20260327-5"></script>
+  <script src="app.js?v=20260327-6"></script>
 </body>
 </html>
-

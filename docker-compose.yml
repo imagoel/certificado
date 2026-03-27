@@ -17,12 +17,12 @@ services:
     container_name: certificado-api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+psycopg2://certificados:certificados@postgres:5432/certificados
-      CODE_PREFIX: ABC
-      PUBLIC_VALIDATION_BASE_URL: http://10.75.2.16:29180/validar
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      CODE_PREFIX: ${CODE_PREFIX:-ABC}
+      PUBLIC_VALIDATION_BASE_URL: ${PUBLIC_VALIDATION_BASE_URL:-http://localhost:29180/validar}
       CERTIFICADOS_MEDIA_DIR: /app/data/certificados
-      CERTIFICADOS_MAX_UPLOAD_BYTES: 5242880
-      CORS_ALLOW_ORIGINS: "*"
+      CERTIFICADOS_MAX_UPLOAD_BYTES: ${CERTIFICADOS_MAX_UPLOAD_BYTES:-5242880}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-*}
     depends_on:
       - postgres
     ports:
@@ -35,9 +35,9 @@ services:
     container_name: certificado-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: certificados
-      POSTGRES_USER: certificados
-      POSTGRES_PASSWORD: certificados
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "25432:5432"
     volumes:
