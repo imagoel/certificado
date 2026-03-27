@@ -1,6 +1,7 @@
 FROM nginx:alpine
 
-# Copia os arquivos do site para o diretório público do Nginx.
-# Assim, o container não depende de bind-mount do host.
-COPY . /usr/share/nginx/html
+# Copia apenas os assets estáticos do frontend.
+COPY index.html /usr/share/nginx/html/index.html
+COPY styles.css /usr/share/nginx/html/styles.css
+COPY app.js /usr/share/nginx/html/app.js
 

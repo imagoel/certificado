@@ -2,6 +2,10 @@ const form = document.getElementById("cert-form");
 const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
+const planilhaInput = document.getElementById("planilha");
+const batchGenerateBtn = document.getElementById("batch-generate");
+const downloadTemplateBtn = document.getElementById("download-template");
+const batchStatus = document.getElementById("batch-status");
 const canvas = document.getElementById("canvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
 
@@ -33,9 +37,32 @@ const assets = {
 const layout = {
   logo: { x: 600, y: 95, maxW: 150, maxH: 95 },
   assinatura: { x: 330, y: 662, maxW: 230, maxH: 80 },
+  qr: { x: 1020, y: 615, maxW: 130, maxH: 130 },
+};
+
+const fieldAliases = {
+  nome: ["nome", "nomecompleto", "nomealuno", "primeironome", "firstname", "aluno", "participante"],
+  sobrenome: ["sobrenome", "sobrenomealuno", "sobrenomedoaluno", "ultimonome", "lastname", "surname"],
+  curso: ["curso", "nomecurso", "treinamento", "evento"],
+  data: ["data", "concluido", "conclusao", "dataconclusao", "datadeconclusao"],
+  linha1: ["linha1", "textolinha1", "texto1", "frase1"],
+  linha2: ["linha2", "textolinha2", "texto2", "frase2"],
+  arquivo: ["arquivo", "nomearquivo", "filename", "file"],
 };
 
 let lastData = null;
+let renderTicket = 0;
+let isBatchRunning = false;
+
+const qrImageCache = new Map();
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function sanitizeText(text) {
+  return String(text || "").replace(/\s+/g, " ").trim();
+}
 
 function formatDate(dateStr) {
   if (!dateStr || !dateStr.includes("-")) return dateStr || "";
@@ -43,21 +70,86 @@ function formatDate(dateStr) {
   return `${day}/${month}/${year}`;
 }
 
+function toDateInputValue(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
 function setTodayDate() {
   const dateInput = document.getElementById("data");
   if (!dateInput) return;
-  const now = new Date();
-  const offsetMs = now.getTimezoneOffset() * 60000;
-  const today = new Date(now.getTime() - offsetMs).toISOString().split("T")[0];
-  dateInput.value = today;
+  dateInput.value = toDateInputValue(new Date());
+}
+
+function getApiBaseUrl() {
+  const fromWindow = sanitizeText(window.CERT_API_BASE_URL || "");
+  if (fromWindow) return fromWindow.replace(/\/+$/, "");
+  if (window.location.port === "29180") {
+    return window.location.origin.replace(/\/+$/, "");
+  }
+  const host = window.location.hostname || "localhost";
+  return `${window.location.protocol}//${host}:29180`;
+}
+
+async function apiJsonRequest(path, options = {}) {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_error) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      (payload && (payload.detail || payload.message)) ||
+        `Falha na API de certificados (HTTP ${response.status}).`
+    );
+  }
+
+  return payload;
+}
+
+async function registerSingleCertificate(cert) {
+  const payload = {
+    codigo: cert.codigo || null,
+    nome: cert.nome,
+    curso: cert.curso,
+    carga_h: 0,
+    concluido: cert.data,
+  };
+
+  return apiJsonRequest("/api/certificados", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+async function registerBatchCertificates(items) {
+  const payload = {
+    itens: items.map((item) => ({
+      codigo: item.codigo || null,
+      nome: item.nome,
+      curso: item.curso,
+      carga_h: 0,
+      concluido: item.data,
+    })),
+  };
+
+  return apiJsonRequest("/api/certificados/lote", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 function buildFont(style, weight, size, family) {
   return `${style} ${weight} ${size}px ${family}`.replace(/\s+/g, " ").trim();
-}
-
-function sanitizeText(text) {
-  return String(text || "").replace(/\s+/g, " ").trim();
 }
 
 function measureTextWithFont(text, style, weight, size, family) {
@@ -140,6 +232,7 @@ function updateControlLabels() {
 }
 
 function applyLayoutFromControls() {
+  if (isBatchRunning) return;
   if (logoXInput) layout.logo.x = Number(logoXInput.value);
   if (logoYInput) layout.logo.y = Number(logoYInput.value);
   if (logoSizeInput) layout.logo.maxW = Number(logoSizeInput.value);
@@ -148,7 +241,7 @@ function applyLayoutFromControls() {
   if (assinaturaSizeInput) layout.assinatura.maxW = Number(assinaturaSizeInput.value);
 
   updateControlLabels();
-  renderLastCertificate();
+  void renderLastCertificate();
 }
 
 function loadImage(file) {
@@ -167,10 +260,57 @@ function loadImage(file) {
   });
 }
 
-function drawCertificate(nome, curso, data, linha1, linha2) {
+function loadImageFromSource(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Não foi possível gerar o QR Code."));
+    image.src = src;
+  });
+}
+
+async function buildQrImage(qrText) {
+  const text = sanitizeText(qrText);
+  if (!text) return null;
+
+  if (qrImageCache.has(text)) {
+    return qrImageCache.get(text);
+  }
+
+  const promise = (async () => {
+    if (!window.QRCode || typeof window.QRCode.toDataURL !== "function") {
+      throw new Error("Biblioteca de QR Code indisponível.");
+    }
+
+    const dataUrl = await window.QRCode.toDataURL(text, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 260,
+      color: {
+        dark: "#112031",
+        light: "#0000",
+      },
+    });
+
+    return loadImageFromSource(dataUrl);
+  })();
+
+  qrImageCache.set(text, promise);
+
+  try {
+    return await promise;
+  } catch (error) {
+    qrImageCache.delete(text);
+    throw error;
+  }
+}
+
+async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", codigo = "") {
   if (!ctx || !canvas) {
     throw new Error("Canvas não disponível.");
   }
+
+  const myTicket = ++renderTicket;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -244,6 +384,17 @@ function drawCertificate(nome, curso, data, linha1, linha2) {
     maxWidth: maxTextWidth,
   });
 
+  const codigoLabel = sanitizeText(codigo);
+  if (codigoLabel) {
+    ctx.fillStyle = "#334";
+    drawAdaptiveCenteredText(`Código: ${codigoLabel}`, centerX, 620, {
+      family: "Arial",
+      startSize: 18,
+      minSize: 14,
+      maxWidth: maxTextWidth,
+    });
+  }
+
   ctx.beginPath();
   ctx.moveTo(180, 700);
   ctx.lineTo(480, 700);
@@ -263,21 +414,45 @@ function drawCertificate(nome, curso, data, linha1, linha2) {
     );
   }
 
+  const qrValue = sanitizeText(qrText);
+  if (qrValue) {
+    const qrImage = await buildQrImage(qrValue);
+    if (myTicket !== renderTicket) return;
+
+    drawCenteredImage(
+      qrImage,
+      layout.qr.x,
+      layout.qr.y,
+      layout.qr.maxW,
+      layout.qr.maxH
+    );
+
+    ctx.fillStyle = "#334";
+    ctx.font = "16px Arial";
+    ctx.fillText("Validação", layout.qr.x, layout.qr.y + layout.qr.maxH / 2 + 16);
+  }
+
   ctx.font = "22px Arial";
   ctx.fillStyle = "#444";
   ctx.fillText("Assinatura do Responsável", 330, 735);
   ctx.fillText("Instituição", 870, 735);
 }
 
-function renderLastCertificate() {
+async function renderLastCertificate() {
   if (!lastData) return;
-  drawCertificate(
-    lastData.nome,
-    lastData.curso,
-    lastData.data,
-    lastData.linha1,
-    lastData.linha2
-  );
+  try {
+    await drawCertificate(
+      lastData.nome,
+      lastData.curso,
+      lastData.data,
+      lastData.linha1,
+      lastData.linha2,
+      lastData.qrText || "",
+      lastData.codigo || ""
+    );
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 async function handleAssetChange(input, key) {
@@ -286,13 +461,13 @@ async function handleAssetChange(input, key) {
 
   if (!file) {
     assets[key] = null;
-    renderLastCertificate();
+    void renderLastCertificate();
     return;
   }
 
   try {
     assets[key] = await loadImage(file);
-    renderLastCertificate();
+    void renderLastCertificate();
   } catch (error) {
     alert(error.message);
     input.value = "";
@@ -300,11 +475,430 @@ async function handleAssetChange(input, key) {
   }
 }
 
+function setBatchStatus(message, type = "info") {
+  if (!batchStatus) return;
+
+  if (!message) {
+    batchStatus.textContent = "";
+    batchStatus.className = "status";
+    return;
+  }
+
+  batchStatus.textContent = message;
+  batchStatus.className = `status ${type}`;
+}
+
+function normalizeHeader(value) {
+  return sanitizeText(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function resolveCanonicalField(rawHeader) {
+  const normalized = normalizeHeader(rawHeader);
+  for (const [field, aliases] of Object.entries(fieldAliases)) {
+    if (aliases.includes(normalized)) return field;
+  }
+  return null;
+}
+
+function normalizeSpreadsheetDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return toDateInputValue(value);
+  }
+
+  if (
+    typeof value === "number" &&
+    window.XLSX &&
+    window.XLSX.SSF &&
+    typeof window.XLSX.SSF.parse_date_code === "function"
+  ) {
+    const parsed = window.XLSX.SSF.parse_date_code(value);
+    if (parsed && parsed.y && parsed.m && parsed.d) {
+      return `${parsed.y}-${pad2(parsed.m)}-${pad2(parsed.d)}`;
+    }
+  }
+
+  const text = sanitizeText(value);
+  if (!text) return "";
+
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+
+  const br = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (br) return `${br[3]}-${pad2(br[2])}-${pad2(br[1])}`;
+
+  const ymd = text.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
+  if (ymd) return `${ymd[1]}-${pad2(ymd[2])}-${pad2(ymd[3])}`;
+
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) {
+    return toDateInputValue(parsed);
+  }
+
+  return "";
+}
+
+function sanitizeFileName(text, fallback) {
+  const normalized = sanitizeText(text)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9-_]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return normalized || fallback;
+}
+
+function isRowEmpty(row) {
+  return Object.values(row).every((value) => sanitizeText(value) === "");
+}
+
+function extractSingleCellValue(row) {
+  const values = Object.values(row)
+    .map((value) => sanitizeText(value))
+    .filter((value) => value.length > 0);
+
+  return values.length === 1 ? values[0] : "";
+}
+
+function buildFullName(firstName, lastName) {
+  const first = sanitizeText(firstName);
+  const last = sanitizeText(lastName);
+
+  if (!first && !last) return "";
+  if (!first) return last;
+  if (!last) return first;
+
+  const firstLower = first.toLowerCase();
+  const lastLower = last.toLowerCase();
+  if (firstLower === lastLower || firstLower.endsWith(` ${lastLower}`)) {
+    return first;
+  }
+
+  return `${first} ${last}`;
+}
+
+function mapRowToCertificate(row, rowNumber, defaults = {}) {
+  const mapped = {};
+
+  Object.entries(row).forEach(([header, value]) => {
+    const field = resolveCanonicalField(header);
+    if (!field) return;
+    if (mapped[field] === undefined || mapped[field] === "") {
+      mapped[field] = value;
+    }
+  });
+
+  const defaultCurso = sanitizeText(defaults.curso);
+  const defaultData = normalizeSpreadsheetDate(defaults.data);
+  const defaultLinha1 = sanitizeText(defaults.linha1) || defaultTextoLinha1;
+  const defaultLinha2 = sanitizeText(defaults.linha2) || defaultTextoLinha2;
+
+  const nome = buildFullName(mapped.nome, mapped.sobrenome) || extractSingleCellValue(row);
+  const curso = sanitizeText(mapped.curso) || defaultCurso;
+  const data = normalizeSpreadsheetDate(mapped.data) || defaultData;
+
+  const missingFields = [];
+  if (!nome) missingFields.push("nome");
+  if (!curso) missingFields.push("curso");
+  if (!data) missingFields.push("data");
+
+  if (missingFields.length > 0) {
+    return { error: `linha ${rowNumber} (faltando: ${missingFields.join(", ")})` };
+  }
+
+  const linha1 = sanitizeText(mapped.linha1) || defaultLinha1;
+  const linha2 = sanitizeText(mapped.linha2) || defaultLinha2;
+  const arquivoBase =
+    sanitizeText(mapped.arquivo) ||
+    `${String(rowNumber).padStart(4, "0")}_${sanitizeFileName(nome, "aluno")}`;
+  const fileName = `${sanitizeFileName(arquivoBase, `certificado_${rowNumber}`)}.png`;
+
+  return { nome, curso, data, codigo: "", linha1, linha2, fileName };
+}
+
+function detectCsvDelimiter(headerLine) {
+  const semicolonCount = (headerLine.match(/;/g) || []).length;
+  const commaCount = (headerLine.match(/,/g) || []).length;
+  return semicolonCount > commaCount ? ";" : ",";
+}
+
+function parseCsvLine(line, delimiter) {
+  const result = [];
+  let value = "";
+  let insideQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const nextChar = line[index + 1];
+
+    if (char === "\"") {
+      if (insideQuotes && nextChar === "\"") {
+        value += "\"";
+        index += 1;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+      continue;
+    }
+
+    if (char === delimiter && !insideQuotes) {
+      result.push(value);
+      value = "";
+      continue;
+    }
+
+    value += char;
+  }
+
+  result.push(value);
+  return result;
+}
+
+function parseCsvRows(text) {
+  const normalizedText = text.replace(/^\uFEFF/, "");
+  const lines = normalizedText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (!lines.length) return [];
+
+  const delimiter = detectCsvDelimiter(lines[0]);
+  const headers = parseCsvLine(lines[0], delimiter).map((item) => item.trim());
+  const rows = [];
+
+  for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
+    const values = parseCsvLine(lines[lineIndex], delimiter);
+    const row = {};
+
+    headers.forEach((header, headerIndex) => {
+      row[header] = values[headerIndex] || "";
+    });
+
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+async function readSpreadsheetRows(file) {
+  const fileName = (file.name || "").toLowerCase();
+  if (fileName.endsWith(".csv")) {
+    const csvText = await file.text();
+    return parseCsvRows(csvText);
+  }
+
+  if (!window.XLSX) {
+    throw new Error("Biblioteca de planilha indisponível.");
+  }
+
+  const bytes = await file.arrayBuffer();
+  const workbook = window.XLSX.read(bytes, { type: "array", cellDates: true });
+  if (!workbook.SheetNames || !workbook.SheetNames.length) return [];
+
+  const firstSheetName = workbook.SheetNames[0];
+  const firstSheet = workbook.Sheets[firstSheetName];
+  return window.XLSX.utils.sheet_to_json(firstSheet, { defval: "", raw: true });
+}
+
+function canvasToPngBlob() {
+  return new Promise((resolve, reject) => {
+    if (!canvas) {
+      reject(new Error("Canvas não disponível."));
+      return;
+    }
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Não foi possível converter o certificado para PNG."));
+        return;
+      }
+      resolve(blob);
+    }, "image/png");
+  });
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function buildTimestamp() {
+  const now = new Date();
+  return `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+}
+
+function downloadTemplateCsv() {
+  const lines = [
+    "nome",
+    "Maria da Silva",
+    "Joao Pereira",
+  ];
+
+  const csv = `\uFEFF${lines.join("\n")}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  downloadBlob(blob, "modelo_certificados.csv");
+  setBatchStatus("Modelo CSV baixado com sucesso.", "success");
+}
+
+async function handleBatchGenerate() {
+  if (!planilhaInput || !batchGenerateBtn) return;
+  if (isBatchRunning) return;
+
+  const file = planilhaInput.files && planilhaInput.files[0];
+  if (!file) {
+    setBatchStatus("Selecione uma planilha antes de gerar o lote.", "error");
+    return;
+  }
+
+  const isCsvFile = (file.name || "").toLowerCase().endsWith(".csv");
+
+  if (!isCsvFile && !window.XLSX) {
+    setBatchStatus("Falha: biblioteca de planilha não carregou.", "error");
+    return;
+  }
+
+  if (!window.JSZip) {
+    setBatchStatus("Falha: biblioteca ZIP não carregou.", "error");
+    return;
+  }
+
+  isBatchRunning = true;
+  batchGenerateBtn.disabled = true;
+
+  const previousLastData = lastData ? { ...lastData } : null;
+  const batchDefaults = {
+    curso: (() => {
+      const input = document.getElementById("curso");
+      return input ? input.value : "";
+    })(),
+    data: (() => {
+      const input = document.getElementById("data");
+      return input ? input.value : "";
+    })(),
+    linha1: textoLinha1Input ? textoLinha1Input.value : defaultTextoLinha1,
+    linha2: textoLinha2Input ? textoLinha2Input.value : defaultTextoLinha2,
+  };
+
+  try {
+    setBatchStatus("Lendo planilha...", "info");
+    const rows = await readSpreadsheetRows(file);
+    if (!rows.length) {
+      throw new Error("A planilha está vazia.");
+    }
+
+    const certificates = [];
+    const invalidRows = [];
+
+    rows.forEach((row, index) => {
+      const rowNumber = index + 2;
+      if (isRowEmpty(row)) return;
+      const item = mapRowToCertificate(row, rowNumber, batchDefaults);
+      if (item.error) {
+        invalidRows.push(item.error);
+        return;
+      }
+      certificates.push(item);
+    });
+
+    if (invalidRows.length) {
+      const preview = invalidRows.slice(0, 5).join(", ");
+      const suffix = invalidRows.length > 5 ? ", ..." : "";
+      throw new Error(
+        `Existem linhas com campos obrigatórios faltando (${invalidRows.length}): ${preview}${suffix}.`
+      );
+    }
+
+    if (!certificates.length) {
+      throw new Error("Nenhuma linha válida encontrada para gerar certificados.");
+    }
+
+    setBatchStatus("Registrando lote no backend...", "info");
+    const registered = await registerBatchCertificates(certificates);
+    if (!Array.isArray(registered) || registered.length !== certificates.length) {
+      throw new Error(
+        "A API retornou quantidade inesperada de certificados. Tente novamente."
+      );
+    }
+
+    certificates.forEach((cert, index) => {
+      cert.codigo = sanitizeText(registered[index].codigo).toUpperCase();
+      cert.qrText = sanitizeText(registered[index].url_validacao);
+    });
+
+    const zip = new window.JSZip();
+
+    for (let index = 0; index < certificates.length; index += 1) {
+      const cert = certificates[index];
+      setBatchStatus(
+        `Gerando ${index + 1}/${certificates.length}: ${cert.nome}`,
+        "info"
+      );
+
+      await drawCertificate(
+        cert.nome,
+        cert.curso,
+        cert.data,
+        cert.linha1,
+        cert.linha2,
+        cert.qrText,
+        cert.codigo
+      );
+
+      const pngBlob = await canvasToPngBlob();
+      zip.file(cert.fileName, pngBlob);
+    }
+
+    setBatchStatus("Compactando certificados em ZIP...", "info");
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const zipName = `certificados_lote_${buildTimestamp()}.zip`;
+    downloadBlob(zipBlob, zipName);
+
+    if (!previousLastData && certificates.length) {
+      const lastGenerated = certificates[certificates.length - 1];
+      lastData = {
+        nome: lastGenerated.nome,
+        curso: lastGenerated.curso,
+        data: lastGenerated.data,
+        codigo: lastGenerated.codigo,
+        linha1: lastGenerated.linha1,
+        linha2: lastGenerated.linha2,
+        qrText: lastGenerated.qrText,
+      };
+      downloadBtn.disabled = false;
+    }
+
+    setBatchStatus(
+      `Lote concluído: ${certificates.length} certificado(s) gerado(s).`,
+      "success"
+    );
+  } catch (error) {
+    console.error(error);
+    setBatchStatus(error.message || "Falha ao gerar lote.", "error");
+  } finally {
+    if (previousLastData) {
+      lastData = previousLastData;
+      await renderLastCertificate();
+    }
+
+    batchGenerateBtn.disabled = false;
+    isBatchRunning = false;
+  }
+}
+
 if (!form || !downloadBtn || !canvas || !ctx) {
   alert("Erro de inicialização. Recarregue com Ctrl+F5.");
 } else {
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (isBatchRunning) return;
 
     const nomeInput = document.getElementById("nome");
     const cursoInput = document.getElementById("curso");
@@ -322,24 +916,40 @@ if (!form || !downloadBtn || !canvas || !ctx) {
       const linha1 = textoLinha1 || defaultTextoLinha1;
       const linha2 = textoLinha2 || defaultTextoLinha2;
 
-      lastData = { nome, curso, data, linha1, linha2 };
-      drawCertificate(nome, curso, data, linha1, linha2);
+      setBatchStatus("Registrando certificado no backend...", "info");
+      const registered = await registerSingleCertificate({
+        codigo: null,
+        nome,
+        curso,
+        data,
+      });
+
+      const codigo = sanitizeText(registered.codigo).toUpperCase();
+      const qrText = sanitizeText(registered.url_validacao);
+
+      lastData = { nome, curso, data, codigo, linha1, linha2, qrText };
+      await drawCertificate(nome, curso, data, linha1, linha2, qrText, codigo);
       downloadBtn.disabled = false;
+      setBatchStatus("", "info");
     } catch (error) {
       console.error(error);
-      alert("Falha ao gerar o certificado. Recarregue a página e tente novamente.");
+      const message =
+        error && error.message
+          ? error.message
+          : "Falha ao gerar o certificado. Tente novamente.";
+      setBatchStatus(message, "error");
     }
   });
 
   if (logoInput) {
     logoInput.addEventListener("change", () => {
-      handleAssetChange(logoInput, "logo");
+      void handleAssetChange(logoInput, "logo");
     });
   }
 
   if (assinaturaInput) {
     assinaturaInput.addEventListener("change", () => {
-      handleAssetChange(assinaturaInput, "assinatura");
+      void handleAssetChange(assinaturaInput, "assinatura");
     });
   }
 
@@ -352,17 +962,38 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 
   if (textoLinha1Input) {
     textoLinha1Input.addEventListener("input", () => {
-      if (!lastData) return;
+      if (!lastData || isBatchRunning) return;
       lastData.linha1 = textoLinha1Input.value.trim() || defaultTextoLinha1;
-      renderLastCertificate();
+      void renderLastCertificate();
     });
   }
 
   if (textoLinha2Input) {
     textoLinha2Input.addEventListener("input", () => {
-      if (!lastData) return;
+      if (!lastData || isBatchRunning) return;
       lastData.linha2 = textoLinha2Input.value.trim() || defaultTextoLinha2;
-      renderLastCertificate();
+      void renderLastCertificate();
+    });
+  }
+
+  if (planilhaInput) {
+    planilhaInput.addEventListener("change", () => {
+      const file = planilhaInput.files && planilhaInput.files[0];
+      if (!file) {
+        setBatchStatus("", "info");
+        return;
+      }
+      setBatchStatus(`Planilha selecionada: ${file.name}`, "info");
+    });
+  }
+
+  if (downloadTemplateBtn) {
+    downloadTemplateBtn.addEventListener("click", downloadTemplateCsv);
+  }
+
+  if (batchGenerateBtn) {
+    batchGenerateBtn.addEventListener("click", () => {
+      void handleBatchGenerate();
     });
   }
 

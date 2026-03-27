@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Validação de Certificado</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <h1>Validação de Certificado</h1>
+    <p class="code">Código consultado: <strong>{{ codigo }}</strong></p>
+
+    {% if status == "valido" and certificado %}
+      <section class="card ok">
+        <h2>Status: Válido</h2>
+        <p><strong>Nome:</strong> {{ certificado.nome }}</p>
+        <p><strong>Curso:</strong> {{ certificado.curso }}</p>
+        <p><strong>Carga horária:</strong> {{ certificado.carga_h }} horas</p>
+        <p><strong>Data de conclusão:</strong> {{ certificado.concluido.strftime("%d/%m/%Y") }}</p>
+      </section>
+    {% elif status == "invalido" and certificado %}
+      <section class="card invalid">
+        <h2>Status: Inválido</h2>
+        <p>Os dados associados ao código foram encontrados, mas a verificação de integridade falhou.</p>
+      </section>
+    {% else %}
+      <section class="card invalid">
+        <h2>Status: Não encontrado</h2>
+        <p>Não existe certificado emitido para este código.</p>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>

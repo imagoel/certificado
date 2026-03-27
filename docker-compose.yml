@@ -1,9 +1,43 @@
 services:
-  certificado:
+  certificado-web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: certificado
+    container_name: certificado-web
     restart: unless-stopped
     ports:
-      - "17854:80"
+      - "28754:80"
+    depends_on:
+      - certificado-api
+
+  certificado-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: certificado-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://certificados:certificados@postgres:5432/certificados
+      CODE_PREFIX: ABC
+      PUBLIC_VALIDATION_BASE_URL: http://10.75.2.16:29180/validar
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      - postgres
+    ports:
+      - "29180:8000"
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: certificado-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: certificados
+      POSTGRES_USER: certificados
+      POSTGRES_PASSWORD: certificados
+    ports:
+      - "25432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

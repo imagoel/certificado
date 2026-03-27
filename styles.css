@@ -89,6 +89,7 @@ input[type="file"] {
   display: flex;
   gap: 10px;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 button {
@@ -101,9 +102,53 @@ button {
   cursor: pointer;
 }
 
+.secondary-btn {
+  background: #526781;
+}
+
 button[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.batch-controls {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.batch-controls h2 {
+  margin: 8px 0;
+  font-size: 1rem;
+  color: #1a4f8b;
+}
+
+.hint {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.status {
+  margin: 8px 0 0;
+  min-height: 1.2rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.status.info {
+  color: #1a4f8b;
+}
+
+.status.success {
+  color: #12763a;
+}
+
+.status.error {
+  color: #b32929;
 }
 
 .preview-wrap {

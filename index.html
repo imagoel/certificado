@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
-  <link rel="stylesheet" href="styles.css?v=20260326" />
+  <link rel="stylesheet" href="styles.css?v=20260327-3" />
 </head>
 <body>
   <main class="container">
@@ -56,6 +56,24 @@
           <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
         </section>
 
+        <section class="batch-controls">
+          <h2>Geração em lote por planilha</h2>
+          <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código do certificado e o QR Code são sempre gerados automaticamente pelo backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
+
+          <label for="planilha">Planilha de alunos</label>
+          <input
+            id="planilha"
+            type="file"
+            accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+          />
+
+          <div class="actions">
+            <button id="download-template" type="button" class="secondary-btn">Baixar Modelo CSV</button>
+            <button id="batch-generate" type="button">Gerar Lote (ZIP)</button>
+          </div>
+          <p id="batch-status" class="status" aria-live="polite"></p>
+        </section>
+
         <div class="actions">
           <button type="submit">Gerar Certificado</button>
           <button id="download" type="button" disabled>Baixar PNG</button>
@@ -68,7 +86,13 @@
     </section>
   </main>
 
-  <script src="app.js?v=20260326"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script>
+    window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "http://10.75.2.16:29180";
+  </script>
+  <script src="app.js?v=20260327-4"></script>
 </body>
 </html>
 

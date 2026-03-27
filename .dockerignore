@@ -5,3 +5,5 @@ docker-compose.yml
 README.md
 task.md
 .vscode
+api/__pycache__
+api/*.pyc
