@@ -21,3 +21,22 @@ def test_operador_nao_pode_acessar_rotas_admin(client, seed_data, login):
 
     assert audit_response.status_code == 403
     assert users_response.status_code == 403
+
+
+def test_admin_nao_cria_usuario_com_papel_invalido(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+
+    response = client.post(
+        "/api/admin/usuarios",
+        json={
+            "nome": "Papel Invalido",
+            "username": "papel.invalido",
+            "password": "senha123",
+            "papel": "qualquer_coisa",
+            "ativo": True,
+            "secretaria_ids": [seed_data["seafi_id"]],
+        },
+    )
+
+    assert response.status_code == 422
+    assert "papel" in response.text.lower()

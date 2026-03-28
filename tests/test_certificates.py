@@ -88,24 +88,23 @@ def test_admin_exclui_certificado_com_confirmacao_e_senha(client, seed_data, log
     assert any(item["evento"] == "certificado_excluido" for item in matching_events)
 
 
-def test_codigo_manual_alto_avanca_proxima_emissao_automatica(client, seed_data, login):
+def test_emissoes_automaticas_avancam_sequencia_do_mesmo_ano(client, seed_data, login):
     login("operador", seed_data["operador_password"])
 
-    manual_response = client.post(
+    first_response = client.post(
         "/api/certificados",
         json={
-            "codigo": "ABC-2026-01000",
-            "nome": "Manual Alto",
+            "nome": "Primeiro Automatico",
             "cpf": None,
             "curso": "Teste de Sequencia",
             "carga_h": 8,
             "concluido": "2026-03-28",
         },
     )
-    automatic_response = client.post(
+    second_response = client.post(
         "/api/certificados",
         json={
-            "nome": "Automatico Seguinte",
+            "nome": "Segundo Automatico",
             "cpf": None,
             "curso": "Teste de Sequencia",
             "carga_h": 8,
@@ -113,13 +112,32 @@ def test_codigo_manual_alto_avanca_proxima_emissao_automatica(client, seed_data,
         },
     )
 
-    assert manual_response.status_code == 201
-    assert automatic_response.status_code == 201
-    assert manual_response.json()["codigo"] == "ABC-2026-01000"
-    assert automatic_response.json()["codigo"] == "ABC-2026-01001"
+    assert first_response.status_code == 201
+    assert second_response.status_code == 201
+    assert first_response.json()["codigo"] == "ABC-2026-00001"
+    assert second_response.json()["codigo"] == "ABC-2026-00002"
 
 
-def test_lote_reserva_codigos_sem_colidir_com_manual_no_mesmo_ano(client, seed_data, login):
+def test_payload_com_codigo_manual_e_ignorado_pela_api(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    response = client.post(
+        "/api/certificados",
+        json={
+            "codigo": "ABC-2026-00999",
+            "nome": "Tentativa Codigo Manual",
+            "cpf": None,
+            "curso": "Teste de Sequencia",
+            "carga_h": 4,
+            "concluido": "2026-03-28",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["codigo"] == "ABC-2026-00001"
+
+
+def test_lote_reserva_codigos_automaticos_sequenciais_no_mesmo_ano(client, seed_data, login):
     login("operador", seed_data["operador_password"])
 
     batch_response = client.post(
@@ -135,15 +153,14 @@ def test_lote_reserva_codigos_sem_colidir_com_manual_no_mesmo_ano(client, seed_d
                     "concluido": "2026-03-28",
                 },
                 {
-                    "codigo": "ABC-2026-00010",
-                    "nome": "Manual no Meio",
+                    "nome": "Auto Segundo",
                     "cpf": None,
                     "curso": "Lote Sequencial",
                     "carga_h": 4,
                     "concluido": "2026-03-28",
                 },
                 {
-                    "nome": "Auto Depois",
+                    "nome": "Auto Terceiro",
                     "cpf": None,
                     "curso": "Lote Sequencial",
                     "carga_h": 4,
@@ -155,7 +172,7 @@ def test_lote_reserva_codigos_sem_colidir_com_manual_no_mesmo_ano(client, seed_d
 
     assert batch_response.status_code == 201
     codes = [item["codigo"] for item in batch_response.json()]
-    assert codes == ["ABC-2026-00011", "ABC-2026-00010", "ABC-2026-00012"]
+    assert codes == ["ABC-2026-00001", "ABC-2026-00002", "ABC-2026-00003"]
 
 
 def test_lote_acima_do_limite_retorna_422(client, seed_data, login):

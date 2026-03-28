@@ -27,12 +27,7 @@ from common import (
     utc_now,
     validate_png_upload,
 )
-from certificate_sequences import (
-    build_reserved_codes,
-    ensure_sequence_floor,
-    parse_code_parts,
-    reserve_sequence_block,
-)
+from certificate_sequences import build_reserved_codes, reserve_sequence_block
 from database import get_db
 from models import Certificate, Secretaria, Usuario
 from schemas import (
@@ -147,11 +142,8 @@ def create_certificate(
     default_prefix = normalize_prefix(DEFAULT_PREFIX)
     year = payload.concluido.year
 
-    if payload.codigo:
-        codigo = sanitize_code(payload.codigo)
-    else:
-        start_sequence, _end_sequence = reserve_sequence_block(db, default_prefix, year, 1)
-        codigo = build_code(default_prefix, year, start_sequence)
+    start_sequence, _end_sequence = reserve_sequence_block(db, default_prefix, year, 1)
+    codigo = build_code(default_prefix, year, start_sequence)
 
     if not CODE_REGEX.match(codigo):
         raise HTTPException(
@@ -161,10 +153,6 @@ def create_certificate(
 
     if code_exists(db, codigo):
         raise HTTPException(status_code=409, detail=f"O codigo '{codigo}' ja existe.")
-
-    manual_parts = parse_code_parts(codigo)
-    if payload.codigo and manual_parts:
-        ensure_sequence_floor(db, manual_parts.prefixo, manual_parts.ano, manual_parts.numero)
 
     cert_hash = calculate_certificate_hash(
         codigo=codigo,
@@ -218,44 +206,12 @@ def create_certificates_batch(
         return []
 
     prefix = normalize_prefix(payload.prefixo)
-    used_codes: set[str] = set()
-    manual_floor_by_key: dict[tuple[str, int], int] = {}
     automatic_count_by_key: dict[tuple[str, int], int] = {}
     created: list[Certificate] = []
-    resolved_codes: list[str] = []
 
     for item in payload.itens:
-        codigo = sanitize_code(item.codigo) if item.codigo else ""
-
-        if not CODE_REGEX.match(codigo):
-            if codigo:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Codigo invalido em lote: '{codigo}'. Padrao esperado PREFIXO-AAAA-00001.",
-                )
-
-        if codigo:
-            if codigo in used_codes:
-                raise HTTPException(status_code=409, detail=f"Codigo duplicado no lote: '{codigo}'.")
-            used_codes.add(codigo)
-
-            if code_exists(db, codigo):
-                raise HTTPException(
-                    status_code=409, detail=f"O codigo '{codigo}' ja existe no banco."
-                )
-
-            parts = parse_code_parts(codigo)
-            if parts:
-                key = (parts.prefixo, parts.ano)
-                manual_floor_by_key[key] = max(manual_floor_by_key.get(key, 0), parts.numero)
-        else:
-            key = (prefix, item.concluido.year)
-            automatic_count_by_key[key] = automatic_count_by_key.get(key, 0) + 1
-
-        resolved_codes.append(codigo)
-
-    for (manual_prefix, manual_year), manual_floor in manual_floor_by_key.items():
-        ensure_sequence_floor(db, manual_prefix, manual_year, manual_floor)
+        key = (prefix, item.concluido.year)
+        automatic_count_by_key[key] = automatic_count_by_key.get(key, 0) + 1
 
     automatic_codes_by_key: dict[tuple[str, int], list[str]] = {}
     for (auto_prefix, auto_year), quantidade in automatic_count_by_key.items():
@@ -267,20 +223,17 @@ def create_certificates_batch(
             start_sequence,
         )
 
-    for item, resolved_code in zip(payload.itens, resolved_codes, strict=False):
-        codigo = resolved_code
-        if not codigo:
-            key = (prefix, item.concluido.year)
-            codigo = automatic_codes_by_key[key].pop(0)
-            if codigo in used_codes or code_exists(db, codigo):
-                raise HTTPException(
-                    status_code=409,
-                    detail=(
-                        f"Conflito ao reservar o codigo '{codigo}'. "
-                        "Tente novamente para obter uma nova sequencia."
-                    ),
-                )
-            used_codes.add(codigo)
+    for item in payload.itens:
+        key = (prefix, item.concluido.year)
+        codigo = automatic_codes_by_key[key].pop(0)
+        if not CODE_REGEX.match(codigo) or code_exists(db, codigo):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Conflito ao reservar o codigo '{codigo}'. "
+                    "Tente novamente para obter uma nova sequencia."
+                ),
+            )
 
         cert_hash = calculate_certificate_hash(
             codigo=codigo,

@@ -1,34 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from sqlalchemy import case
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
-from common import CODE_REGEX, build_code, sanitize_code, utc_now
+from common import build_code, utc_now
 from models import Certificate, CertificateSequence
-
-
-@dataclass(frozen=True)
-class SequenceParts:
-    prefixo: str
-    ano: int
-    numero: int
-
-
-def parse_code_parts(codigo: str) -> SequenceParts | None:
-    normalized = sanitize_code(codigo)
-    if not CODE_REGEX.match(normalized):
-        return None
-
-    prefixo, ano_text, numero_text = normalized.split("-", 2)
-    return SequenceParts(
-        prefixo=prefixo,
-        ano=int(ano_text),
-        numero=int(numero_text),
-    )
 
 
 def _get_insert_factory(db: Session):
@@ -95,30 +72,6 @@ def reserve_sequence_block(db: Session, prefixo: str, ano: int, quantidade: int 
     end_sequence = db.execute(update_stmt).scalar_one()
     start_sequence = end_sequence - quantidade + 1
     return start_sequence, end_sequence
-
-
-def ensure_sequence_floor(db: Session, prefixo: str, ano: int, numero_minimo: int) -> int:
-    if numero_minimo < 0:
-        raise ValueError("O piso da sequencia nao pode ser negativo.")
-
-    _ensure_sequence_row(db, prefixo, ano)
-
-    table = CertificateSequence.__table__
-    update_stmt = (
-        table.update()
-        .where(table.c.prefixo == prefixo, table.c.ano == ano)
-        .values(
-            ultimo_numero=case(
-                (table.c.ultimo_numero < numero_minimo, numero_minimo),
-                else_=table.c.ultimo_numero,
-            ),
-            atualizado_em=utc_now(),
-        )
-        .returning(table.c.ultimo_numero)
-    )
-    return db.execute(update_stmt).scalar_one()
-
-
 def build_reserved_codes(prefixo: str, ano: int, quantidade: int, start_sequence: int) -> list[str]:
     return [
         build_code(prefixo, ano, start_sequence + offset)

@@ -1,28 +1,20 @@
 import os
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500")))
+UserRole = Literal["admin_global", "operador"]
 
 
 class CertificateCreate(BaseModel):
-    codigo: Optional[str] = Field(default=None, max_length=20)
     nome: str = Field(min_length=2, max_length=200)
     cpf: Optional[str] = Field(default=None, max_length=14)
     curso: str = Field(min_length=2, max_length=200)
     carga_h: int = Field(default=0, ge=0, le=2000)
     concluido: date
-
-    @field_validator("codigo")
-    @classmethod
-    def normalize_code(cls, value: Optional[str]) -> Optional[str]:
-        if value is None:
-            return None
-        normalized = value.strip().upper()
-        return normalized or None
 
 
 class CertificateBatchCreate(BaseModel):
@@ -109,7 +101,7 @@ class UserSessionResponse(BaseModel):
     id: int
     nome: str
     username: str
-    papel: str
+    papel: UserRole
 
 
 class SessionResponse(BaseModel):
@@ -144,36 +136,38 @@ class UserAdminCreate(BaseModel):
     nome: str = Field(min_length=2, max_length=150)
     username: str = Field(min_length=3, max_length=80)
     password: str = Field(min_length=4, max_length=200)
-    papel: str = Field(default="operador", min_length=4, max_length=40)
+    papel: UserRole = Field(default="operador")
     ativo: bool = True
     secretaria_ids: list[int] = Field(default_factory=list)
 
-    @field_validator("papel")
+    @field_validator("papel", mode="before")
     @classmethod
-    def normalize_role(cls, value: str) -> str:
-        return value.strip().lower()
+    def normalize_role(cls, value):
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
 
 
 class UserAdminUpdate(BaseModel):
     nome: Optional[str] = Field(default=None, min_length=2, max_length=150)
     password: Optional[str] = Field(default=None, min_length=4, max_length=200)
-    papel: Optional[str] = Field(default=None, min_length=4, max_length=40)
+    papel: Optional[UserRole] = None
     ativo: Optional[bool] = None
     secretaria_ids: Optional[list[int]] = None
 
-    @field_validator("papel")
+    @field_validator("papel", mode="before")
     @classmethod
-    def normalize_role(cls, value: Optional[str]) -> Optional[str]:
-        if value is None:
-            return None
-        return value.strip().lower()
+    def normalize_role(cls, value):
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
 
 
 class UserAdminResponse(BaseModel):
     id: int
     nome: str
     username: str
-    papel: str
+    papel: UserRole
     ativo: bool
     ultimo_login_em: Optional[datetime] = None
     criado_em: datetime

@@ -1581,7 +1581,6 @@ async function refreshProtectedData(options = {}) {
 
 async function registerSingleCertificate(cert) {
   const payload = {
-    codigo: cert.codigo || null,
     nome: cert.nome,
     curso: cert.curso,
     carga_h: cert.carga_h || 0,
@@ -1597,7 +1596,6 @@ async function registerSingleCertificate(cert) {
 async function registerBatchCertificates(items) {
   const payload = {
     itens: items.map((item) => ({
-      codigo: item.codigo || null,
       nome: item.nome,
       curso: item.curso,
       carga_h: Number.isFinite(item.carga_h) ? item.carga_h : 0,
@@ -1611,7 +1609,17 @@ async function registerBatchCertificates(items) {
   });
 }
 
-async function uploadCertificateImage(codigo, pngBlob, fileName) {
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetryPngUpload(error) {
+  if (!error) return false;
+  if (typeof error.status !== "number") return true;
+  return error.status === 408 || error.status === 429 || error.status >= 500;
+}
+
+async function uploadCertificateImage(codigo, pngBlob, fileName, options = {}) {
   const certCode = sanitizeText(codigo).toUpperCase();
   if (!certCode) {
     throw new Error("Codigo do certificado ausente para upload do PNG.");
@@ -1622,35 +1630,62 @@ async function uploadCertificateImage(codigo, pngBlob, fileName) {
   }
 
   const safeName = sanitizeFileName(fileName || certCode, certCode);
-  const formData = new FormData();
-  formData.append("arquivo", pngBlob, `${safeName}.png`);
+  const maxAttempts = Math.max(1, Number.parseInt(options.maxAttempts, 10) || 3);
 
-  const response = await fetch(
-    `${getApiBaseUrl()}/api/certificados/${encodeURIComponent(certCode)}/arquivo`,
-    {
-      method: "POST",
-      credentials: "include",
-      body: formData,
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const formData = new FormData();
+    formData.append("arquivo", pngBlob, `${safeName}.png`);
+
+    try {
+      const response = await fetch(
+        `${getApiBaseUrl()}/api/certificados/${encodeURIComponent(certCode)}/arquivo`,
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }
+      );
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (_error) {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        const error = new Error(
+          (payload && (payload.detail || payload.message)) ||
+            `Falha ao enviar PNG do certificado (HTTP ${response.status}).`
+        );
+        error.status = response.status;
+        error.operation = "png_upload";
+        error.codigo = certCode;
+        error.attempt = attempt;
+        error.maxAttempts = maxAttempts;
+        if (attempt < maxAttempts && shouldRetryPngUpload(error)) {
+          await wait(700 * attempt);
+          continue;
+        }
+        throw error;
+      }
+
+      return payload;
+    } catch (error) {
+      if (!error.operation) {
+        error.operation = "png_upload";
+        error.codigo = certCode;
+        error.attempt = attempt;
+        error.maxAttempts = maxAttempts;
+      }
+      if (attempt < maxAttempts && shouldRetryPngUpload(error)) {
+        await wait(700 * attempt);
+        continue;
+      }
+      throw error;
     }
-  );
-
-  let payload = null;
-  try {
-    payload = await response.json();
-  } catch (_error) {
-    payload = null;
   }
-
-  if (!response.ok) {
-    const error = new Error(
-      (payload && (payload.detail || payload.message)) ||
-        `Falha ao enviar PNG do certificado (HTTP ${response.status}).`
-    );
-    error.status = response.status;
-    throw error;
-  }
-
-  return payload;
+  return null;
 }
 
 function buildFont(style, weight, size, family) {
@@ -2696,6 +2731,7 @@ async function executeBatchGeneration(prepared) {
 
   try {
     const certificates = prepared.certificates.map((item) => ({ ...item }));
+    const failedUploads = [];
 
     setBatchStatus("Registrando lote no backend...", "info");
     const registered = await registerBatchCertificates(certificates);
@@ -2734,7 +2770,19 @@ async function executeBatchGeneration(prepared) {
         `Salvando ${index + 1}/${certificates.length} no servidor: ${cert.nome}`,
         "info"
       );
-      await uploadCertificateImage(cert.codigo, pngBlob, cert.fileName);
+      try {
+        await uploadCertificateImage(cert.codigo, pngBlob, cert.fileName);
+      } catch (error) {
+        if (error && error.status === 401) {
+          throw error;
+        }
+        console.error(error);
+        failedUploads.push({
+          codigo: cert.codigo,
+          nome: cert.nome,
+          message: error && error.message ? error.message : "Falha no upload do PNG.",
+        });
+      }
     }
 
     setBatchStatus("Compactando certificados em ZIP...", "info");
@@ -2757,10 +2805,22 @@ async function executeBatchGeneration(prepared) {
       downloadBtn.disabled = false;
     }
 
-    setBatchStatus(
-      `Lote concluído: ${certificates.length} certificado(s) gerado(s), com PNGs salvos no servidor e ZIP baixado com sucesso.`,
-      "success"
-    );
+    if (failedUploads.length) {
+      const preview = failedUploads
+        .slice(0, 3)
+        .map((item) => `${item.codigo} (${item.nome})`)
+        .join(", ");
+      const suffix = failedUploads.length > 3 ? ", ..." : "";
+      setBatchStatus(
+        `Lote concluído com ressalvas: ${certificates.length} certificado(s) gerado(s), ZIP baixado, mas ${failedUploads.length} PNG(s) não foram salvos no servidor. Verifique: ${preview}${suffix}.`,
+        "error"
+      );
+    } else {
+      setBatchStatus(
+        `Lote concluído: ${certificates.length} certificado(s) gerado(s), com PNGs salvos no servidor e ZIP baixado com sucesso.`,
+        "success"
+      );
+    }
     await loadCertificates(1);
   } catch (error) {
     console.error(error);
@@ -2899,7 +2959,6 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 
       setBatchStatus("Registrando certificado no backend...", "info");
       const registered = await registerSingleCertificate({
-        codigo: null,
         nome,
         curso,
         data,
@@ -2922,10 +2981,15 @@ if (!form || !downloadBtn || !canvas || !ctx) {
         await handleUnauthorized();
         return;
       }
-      const message =
-        error && error.message
+      const message = (() => {
+        if (error && error.operation === "png_upload") {
+          const codeLabel = sanitizeText(error.codigo).toUpperCase() || "sem código";
+          return `Certificado ${codeLabel} registrado, mas o PNG não foi salvo no servidor após ${error.maxAttempts || 1} tentativa(s).`;
+        }
+        return error && error.message
           ? error.message
           : "Falha ao gerar o certificado. Tente novamente.";
+      })();
       setBatchStatus(message, "error");
     }
   });
