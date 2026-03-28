@@ -4,96 +4,435 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
-  <link rel="stylesheet" href="styles.css?v=20260327-4" />
+  <link rel="stylesheet" href="styles.css?v=20260327-5" />
 </head>
 <body>
   <main class="container">
-    <h1>Gerador de Certificados</h1>
-    <p class="subtitle">Preencha os dados e gere seu certificado em segundos.</p>
+    <section id="login-shell" class="panel auth-panel">
+      <h1>Acesso ao Sistema</h1>
+      <p class="subtitle">Entre com seu usuário e senha para gerar certificados.</p>
 
-    <section class="panel">
-      <form id="cert-form" class="form">
-        <label for="nome">Nome do participante</label>
-        <input id="nome" type="text" placeholder="Ex.: Maria da Silva" required />
+      <form id="login-form" class="form">
+        <label for="login-username">Usuário</label>
+        <input id="login-username" type="text" autocomplete="username" required />
 
-        <label for="curso">Nome do curso</label>
-        <input id="curso" type="text" placeholder="Ex.: Introdução ao Git" required />
-
-        <label for="data">Data de conclusão</label>
-        <input id="data" type="date" required />
-
-        <label for="carga_h">Carga horária (opcional)</label>
-        <input id="carga_h" type="number" min="0" max="2000" placeholder="Ex.: 40" />
-
-        <label for="textoLinha1">Texto (linha 1, opcional)</label>
-        <input id="textoLinha1" type="text" value="Certificamos que" />
-
-        <label for="textoLinha2">Texto (linha 2, opcional)</label>
-        <input id="textoLinha2" type="text" value="concluiu com êxito o curso" />
-
-        <label for="logo">Logo da instituição (opcional)</label>
-        <input id="logo" type="file" accept="image/*" />
-
-        <label for="assinatura">Assinatura (opcional)</label>
-        <input id="assinatura" type="file" accept="image/*" />
-
-        <section class="asset-controls">
-          <h2>Ajuste da Logo</h2>
-          <label for="logoX">Posição X: <span id="logoXVal">600</span></label>
-          <input id="logoX" type="range" min="80" max="1120" step="1" value="600" />
-
-          <label for="logoY">Posição Y: <span id="logoYVal">95</span></label>
-          <input id="logoY" type="range" min="60" max="260" step="1" value="95" />
-
-          <label for="logoSize">Tamanho: <span id="logoSizeVal">150</span></label>
-          <input id="logoSize" type="range" min="60" max="300" step="1" value="150" />
-
-          <h2>Ajuste da Assinatura</h2>
-          <label for="assinaturaX">Posição X: <span id="assinaturaXVal">330</span></label>
-          <input id="assinaturaX" type="range" min="140" max="520" step="1" value="330" />
-
-          <label for="assinaturaY">Posição Y: <span id="assinaturaYVal">662</span></label>
-          <input id="assinaturaY" type="range" min="600" max="720" step="1" value="662" />
-
-          <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230</span></label>
-          <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
-        </section>
-
-        <section class="batch-controls">
-          <h2>Geração em lote por planilha</h2>
-          <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código e o QR Code são gerados automaticamente pela API; o certificado final é montado no navegador e salvo no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
-
-          <label for="planilha">Planilha de alunos</label>
-          <input
-            id="planilha"
-            type="file"
-            accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-          />
-
-          <div class="actions">
-            <button id="batch-generate" type="button">Gerar Lote (ZIP)</button>
-          </div>
-          <p id="batch-status" class="status" aria-live="polite"></p>
-        </section>
+        <label for="login-password">Senha</label>
+        <input id="login-password" type="password" autocomplete="current-password" required />
 
         <div class="actions">
-          <button type="submit">Gerar Certificado</button>
-          <button id="download" type="button" disabled>Baixar PNG</button>
+          <button type="submit">Entrar</button>
         </div>
+        <p id="login-status" class="status" aria-live="polite"></p>
       </form>
     </section>
 
-    <section class="preview-wrap">
-      <canvas id="canvas" width="1200" height="850" aria-label="Pré-visualização do certificado"></canvas>
-    </section>
+    <section id="app-shell" hidden>
+      <section class="panel app-session">
+        <div>
+          <h1>Gerador de Certificados</h1>
+          <p class="subtitle">Ambiente interno para emitir, consultar e administrar certificados.</p>
+        </div>
 
-    <footer class="site-footer" aria-label="Marca do painel">
-      <img
-        class="site-footer-logo"
-        src="assets/minha-logo.png"
-        alt="Immanuel Vicente"
-      />
-    </footer>
+        <div class="session-meta">
+          <p id="session-user" class="session-user"></p>
+
+          <div id="secretaria-wrap" class="secretaria-wrap" hidden>
+            <label for="secretaria-select">Secretaria ativa</label>
+            <select id="secretaria-select"></select>
+          </div>
+
+          <button id="logout-btn" type="button" class="secondary-btn">Sair</button>
+        </div>
+      </section>
+
+      <section class="panel section-switcher">
+        <button id="tab-generator" class="section-tab is-active" type="button" data-section="generator">Gerar</button>
+        <button id="tab-certificates" class="section-tab" type="button" data-section="certificates">Certificados</button>
+        <button id="tab-admin" class="section-tab" type="button" data-section="admin" hidden>Administração</button>
+      </section>
+
+      <section id="generator-section" class="stack-section">
+        <section class="panel">
+          <form id="cert-form" class="form">
+            <label for="nome">Nome do participante</label>
+            <input id="nome" type="text" placeholder="Ex.: Maria da Silva" required />
+
+            <label for="curso">Nome do curso</label>
+            <input id="curso" type="text" placeholder="Ex.: Introdução ao Git" required />
+
+            <label for="data">Data de conclusão</label>
+            <input id="data" type="date" required />
+
+            <label for="carga_h">Carga horária (opcional)</label>
+            <input id="carga_h" type="number" min="0" max="2000" placeholder="Ex.: 40" />
+
+            <label for="textoLinha1">Texto (linha 1, opcional)</label>
+            <input id="textoLinha1" type="text" value="Certificamos que" />
+
+            <label for="textoLinha2">Texto (linha 2, opcional)</label>
+            <input id="textoLinha2" type="text" value="concluiu com êxito o curso" />
+
+            <label for="logo">Logo da instituição (opcional)</label>
+            <input id="logo" type="file" accept="image/*" />
+
+            <label for="assinatura">Assinatura (opcional)</label>
+            <input id="assinatura" type="file" accept="image/*" />
+
+            <section class="asset-controls">
+              <h2>Ajuste da Logo</h2>
+              <label for="logoX">Posição X: <span id="logoXVal">600</span></label>
+              <input id="logoX" type="range" min="80" max="1120" step="1" value="600" />
+
+              <label for="logoY">Posição Y: <span id="logoYVal">95</span></label>
+              <input id="logoY" type="range" min="60" max="260" step="1" value="95" />
+
+              <label for="logoSize">Tamanho: <span id="logoSizeVal">150</span></label>
+              <input id="logoSize" type="range" min="60" max="300" step="1" value="150" />
+
+              <h2>Ajuste da Assinatura</h2>
+              <label for="assinaturaX">Posição X: <span id="assinaturaXVal">330</span></label>
+              <input id="assinaturaX" type="range" min="140" max="520" step="1" value="330" />
+
+              <label for="assinaturaY">Posição Y: <span id="assinaturaYVal">662</span></label>
+              <input id="assinaturaY" type="range" min="600" max="720" step="1" value="662" />
+
+              <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230</span></label>
+              <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
+            </section>
+
+            <section class="batch-controls">
+              <h2>Geração em lote por planilha</h2>
+              <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código e o QR Code são gerados automaticamente pela API; o certificado final é montado no navegador e salvo no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
+
+              <label for="planilha">Planilha de alunos</label>
+              <input
+                id="planilha"
+                type="file"
+                accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+              />
+
+              <div class="actions">
+                <button id="batch-generate" type="button">Gerar Lote (ZIP)</button>
+              </div>
+              <p id="batch-status" class="status" aria-live="polite"></p>
+            </section>
+
+            <div class="actions">
+              <button type="submit">Gerar Certificado</button>
+              <button id="download" type="button" disabled>Baixar PNG</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="preview-wrap">
+          <canvas id="canvas" width="1200" height="850" aria-label="Pré-visualização do certificado"></canvas>
+        </section>
+      </section>
+
+      <section id="certificates-section" class="stack-section" hidden>
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Certificados Gerados</h2>
+              <p class="subtitle">Filtre, visualize e reimprima certificados já emitidos.</p>
+            </div>
+            <p id="cert-list-summary" class="summary-pill"></p>
+          </div>
+
+          <form id="cert-list-filters" class="filter-grid">
+            <div class="field-stack field-span-2">
+              <label for="cert-filter-busca">Busca</label>
+              <input id="cert-filter-busca" type="text" placeholder="Nome, curso ou código" />
+            </div>
+
+            <div class="field-stack">
+              <label for="cert-filter-secretaria">Secretaria</label>
+              <select id="cert-filter-secretaria">
+                <option value="">Todas</option>
+              </select>
+            </div>
+
+            <div class="field-stack">
+              <label for="cert-filter-concluido-de">Concluído de</label>
+              <input id="cert-filter-concluido-de" type="date" />
+            </div>
+
+            <div class="field-stack">
+              <label for="cert-filter-concluido-ate">Concluído até</label>
+              <input id="cert-filter-concluido-ate" type="date" />
+            </div>
+
+            <div class="field-stack">
+              <label for="cert-filter-emitido-de">Emitido de</label>
+              <input id="cert-filter-emitido-de" type="date" />
+            </div>
+
+            <div class="field-stack">
+              <label for="cert-filter-emitido-ate">Emitido até</label>
+              <input id="cert-filter-emitido-ate" type="date" />
+            </div>
+
+            <label class="checkbox-field compact-checkbox">
+              <input id="cert-filter-com-arquivo" type="checkbox" />
+              Somente com PNG salvo
+            </label>
+
+            <div class="actions actions-end">
+              <button type="submit">Filtrar</button>
+              <button id="cert-filter-reset" type="button" class="secondary-btn">Limpar</button>
+            </div>
+          </form>
+
+          <p id="cert-list-status" class="status" aria-live="polite"></p>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Participante</th>
+                  <th>Curso</th>
+                  <th>Secretaria</th>
+                  <th>Conclusão</th>
+                  <th>Emitido em</th>
+                  <th>Emitido por</th>
+                  <th>Arquivo</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="cert-list-body">
+                <tr>
+                  <td colspan="9" class="empty-state">Faça login para carregar os certificados.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-row">
+            <button id="cert-prev-page" type="button" class="secondary-btn">Anterior</button>
+            <span id="cert-page-indicator" class="pagination-indicator">Página 1</span>
+            <button id="cert-next-page" type="button" class="secondary-btn">Próxima</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Auditoria</h2>
+              <p class="subtitle">Acompanhe logins, emissões, uploads e ações administrativas recentes.</p>
+            </div>
+            <p id="audit-summary" class="summary-pill"></p>
+          </div>
+
+          <form id="audit-form" class="filter-grid audit-grid">
+            <div class="field-stack field-span-2">
+              <label for="audit-search">Busca</label>
+              <input id="audit-search" type="text" placeholder="Usuário, certificado ou descrição" />
+            </div>
+
+            <div class="field-stack">
+              <label for="audit-event">Evento</label>
+              <select id="audit-event">
+                <option value="">Todos</option>
+                <option value="auth_login">Login</option>
+                <option value="troca_secretaria">Troca de secretaria</option>
+                <option value="certificado_criado">Certificado criado</option>
+                <option value="certificado_lote_criado">Lote criado</option>
+                <option value="certificado_png_enviado">PNG enviado</option>
+                <option value="certificado_png_acessado">PNG acessado</option>
+                <option value="usuario_criado">Usuário criado</option>
+                <option value="usuario_atualizado">Usuário atualizado</option>
+                <option value="secretaria_criada">Secretaria criada</option>
+                <option value="secretaria_atualizada">Secretaria atualizada</option>
+              </select>
+            </div>
+
+            <div class="field-stack">
+              <label for="audit-secretaria">Secretaria</label>
+              <select id="audit-secretaria">
+                <option value="">Todas</option>
+              </select>
+            </div>
+
+            <div class="actions actions-end">
+              <button type="submit">Filtrar</button>
+              <button id="audit-reset" type="button" class="secondary-btn">Limpar</button>
+            </div>
+          </form>
+
+          <p id="audit-status" class="status" aria-live="polite"></p>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Quando</th>
+                  <th>Evento</th>
+                  <th>Usuário</th>
+                  <th>Secretaria</th>
+                  <th>Certificado</th>
+                  <th>Detalhes</th>
+                </tr>
+              </thead>
+              <tbody id="audit-list-body">
+                <tr>
+                  <td colspan="6" class="empty-state">Carregando auditoria...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-row">
+            <button id="audit-prev-page" type="button" class="secondary-btn">Anterior</button>
+            <span id="audit-page-indicator" class="pagination-indicator">Página 1</span>
+            <button id="audit-next-page" type="button" class="secondary-btn">Próxima</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="admin-section" class="stack-section" hidden>
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Usuários</h2>
+              <p class="subtitle">Cadastre operadores e controle quem acessa cada secretaria.</p>
+            </div>
+          </div>
+
+          <form id="user-form" class="form">
+            <input id="user-edit-id" type="hidden" />
+
+            <div class="grid-two">
+              <div class="field-stack">
+                <label for="user-name">Nome</label>
+                <input id="user-name" type="text" placeholder="Ex.: Maria da Silva" required />
+              </div>
+
+              <div class="field-stack">
+                <label for="user-username">Usuário</label>
+                <input id="user-username" type="text" placeholder="Ex.: maria.silva" required />
+              </div>
+            </div>
+
+            <div class="grid-two">
+              <div class="field-stack">
+                <label for="user-password">Senha</label>
+                <input id="user-password" type="password" placeholder="Obrigatória no cadastro" />
+              </div>
+
+              <div class="field-stack">
+                <label for="user-role">Papel</label>
+                <select id="user-role">
+                  <option value="operador">Operador</option>
+                  <option value="admin_global">Admin global</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid-two">
+              <label class="checkbox-field">
+                <input id="user-active" type="checkbox" checked />
+                Usuário ativo
+              </label>
+
+              <div class="field-stack">
+                <label for="user-secretarias">Secretarias vinculadas</label>
+                <select id="user-secretarias" multiple size="6"></select>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="submit">Salvar Usuário</button>
+              <button id="user-form-reset" type="button" class="secondary-btn">Limpar</button>
+            </div>
+            <p id="user-form-status" class="status" aria-live="polite"></p>
+          </form>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Usuário</th>
+                  <th>Papel</th>
+                  <th>Secretarias</th>
+                  <th>Status</th>
+                  <th>Último login</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="user-list-body">
+                <tr>
+                  <td colspan="7" class="empty-state">Carregando usuários...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Secretarias</h2>
+              <p class="subtitle">Cadastre e mantenha as secretarias disponíveis no sistema.</p>
+            </div>
+          </div>
+
+          <form id="secretaria-form" class="form">
+            <input id="secretaria-edit-id" type="hidden" />
+
+            <div class="grid-two">
+              <div class="field-stack">
+                <label for="secretaria-sigla">Sigla</label>
+                <input id="secretaria-sigla" type="text" placeholder="Ex.: SEMED" required />
+              </div>
+
+              <div class="field-stack">
+                <label for="secretaria-name">Nome</label>
+                <input id="secretaria-name" type="text" placeholder="Ex.: Secretaria de Educação" required />
+              </div>
+            </div>
+
+            <label class="checkbox-field">
+              <input id="secretaria-active" type="checkbox" checked />
+              Secretaria ativa
+            </label>
+
+            <div class="actions">
+              <button type="submit">Salvar Secretaria</button>
+              <button id="secretaria-form-reset" type="button" class="secondary-btn">Limpar</button>
+            </div>
+            <p id="secretaria-form-status" class="status" aria-live="polite"></p>
+          </form>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Sigla</th>
+                  <th>Nome</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="secretaria-list-body">
+                <tr>
+                  <td colspan="4" class="empty-state">Carregando secretarias...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <footer class="site-footer" aria-label="Marca do painel">
+        <img
+          class="site-footer-logo"
+          src="assets/minha-logo.png"
+          alt="Immanuel Vicente"
+        />
+      </footer>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -101,6 +440,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "http://localhost:29180";
   </script>
-  <script src="app.js?v=20260327-7"></script>
+  <script src="app.js?v=20260327-8"></script>
 </body>
 </html>

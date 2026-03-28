@@ -4,6 +4,68 @@ const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
 const planilhaInput = document.getElementById("planilha");
 const batchGenerateBtn = document.getElementById("batch-generate");
+const loginForm = document.getElementById("login-form");
+const loginShell = document.getElementById("login-shell");
+const appShell = document.getElementById("app-shell");
+const loginStatus = document.getElementById("login-status");
+const logoutBtn = document.getElementById("logout-btn");
+const sessionUser = document.getElementById("session-user");
+const secretariaWrap = document.getElementById("secretaria-wrap");
+const secretariaSelect = document.getElementById("secretaria-select");
+const generatorSection = document.getElementById("generator-section");
+const certificatesSection = document.getElementById("certificates-section");
+const adminSection = document.getElementById("admin-section");
+const sectionTabs = Array.from(document.querySelectorAll("[data-section]"));
+const adminTab = document.getElementById("tab-admin");
+
+const certListForm = document.getElementById("cert-list-filters");
+const certFilterBuscaInput = document.getElementById("cert-filter-busca");
+const certFilterSecretariaSelect = document.getElementById("cert-filter-secretaria");
+const certFilterConcluidoDeInput = document.getElementById("cert-filter-concluido-de");
+const certFilterConcluidoAteInput = document.getElementById("cert-filter-concluido-ate");
+const certFilterEmitidoDeInput = document.getElementById("cert-filter-emitido-de");
+const certFilterEmitidoAteInput = document.getElementById("cert-filter-emitido-ate");
+const certFilterComArquivoInput = document.getElementById("cert-filter-com-arquivo");
+const certFilterResetBtn = document.getElementById("cert-filter-reset");
+const certListStatus = document.getElementById("cert-list-status");
+const certListSummary = document.getElementById("cert-list-summary");
+const certListBody = document.getElementById("cert-list-body");
+const certPrevPageBtn = document.getElementById("cert-prev-page");
+const certNextPageBtn = document.getElementById("cert-next-page");
+const certPageIndicator = document.getElementById("cert-page-indicator");
+
+const userForm = document.getElementById("user-form");
+const userEditIdInput = document.getElementById("user-edit-id");
+const userNameInput = document.getElementById("user-name");
+const userUsernameInput = document.getElementById("user-username");
+const userPasswordInput = document.getElementById("user-password");
+const userRoleSelect = document.getElementById("user-role");
+const userActiveInput = document.getElementById("user-active");
+const userSecretariasSelect = document.getElementById("user-secretarias");
+const userFormResetBtn = document.getElementById("user-form-reset");
+const userFormStatus = document.getElementById("user-form-status");
+const userListBody = document.getElementById("user-list-body");
+
+const secretariaForm = document.getElementById("secretaria-form");
+const secretariaEditIdInput = document.getElementById("secretaria-edit-id");
+const secretariaSiglaInput = document.getElementById("secretaria-sigla");
+const secretariaNameInput = document.getElementById("secretaria-name");
+const secretariaActiveInput = document.getElementById("secretaria-active");
+const secretariaFormResetBtn = document.getElementById("secretaria-form-reset");
+const secretariaFormStatus = document.getElementById("secretaria-form-status");
+const secretariaListBody = document.getElementById("secretaria-list-body");
+
+const auditForm = document.getElementById("audit-form");
+const auditSearchInput = document.getElementById("audit-search");
+const auditEventSelect = document.getElementById("audit-event");
+const auditSecretariaSelect = document.getElementById("audit-secretaria");
+const auditResetBtn = document.getElementById("audit-reset");
+const auditStatus = document.getElementById("audit-status");
+const auditSummary = document.getElementById("audit-summary");
+const auditListBody = document.getElementById("audit-list-body");
+const auditPrevPageBtn = document.getElementById("audit-prev-page");
+const auditNextPageBtn = document.getElementById("audit-next-page");
+const auditPageIndicator = document.getElementById("audit-page-indicator");
 
 const batchStatus = document.getElementById("batch-status");
 const canvas = document.getElementById("canvas");
@@ -54,10 +116,50 @@ const fieldAliases = {
 let lastData = null;
 let renderTicket = 0;
 let isBatchRunning = false;
+let sessionState = null;
+let currentSection = "generator";
+
+const certListState = {
+  page: 1,
+  perPage: 10,
+  total: 0,
+  totalPages: 1,
+  filters: {
+    busca: "",
+    secretariaId: "",
+    concluidoDe: "",
+    concluidoAte: "",
+    emitidoDe: "",
+    emitidoAte: "",
+    somenteComArquivo: false,
+  },
+};
+
+const adminState = {
+  users: [],
+  secretarias: [],
+};
+
+const auditState = {
+  page: 1,
+  perPage: 12,
+  total: 0,
+  totalPages: 1,
+  filters: {
+    busca: "",
+    evento: "",
+    secretariaId: "",
+  },
+};
 
 const qrImageCache = new Map();
 const logoAspectRatio = 95 / 150;
 const assinaturaAspectRatio = 80 / 230;
+const viewSections = {
+  generator: generatorSection,
+  certificates: certificatesSection,
+  admin: adminSection,
+};
 
 function pad2(value) {
   return String(value).padStart(2, "0");
@@ -95,6 +197,7 @@ function getApiBaseUrl() {
 
 async function apiJsonRequest(path, options = {}) {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    credentials: "include",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -110,13 +213,791 @@ async function apiJsonRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(
+    const error = new Error(
       (payload && (payload.detail || payload.message)) ||
         `Falha na API de certificados (HTTP ${response.status}).`
     );
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
+}
+
+function setLoginStatus(message, type = "info") {
+  if (!loginStatus) return;
+
+  if (!message) {
+    loginStatus.textContent = "";
+    loginStatus.className = "status";
+    return;
+  }
+
+  loginStatus.textContent = message;
+  loginStatus.className = `status ${type}`;
+}
+
+function setStatusMessage(element, message, type = "info") {
+  if (!element) return;
+
+  if (!message) {
+    element.textContent = "";
+    element.className = "status";
+    return;
+  }
+
+  element.textContent = message;
+  element.className = `status ${type}`;
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return "-";
+  const parsed = new Date(dateStr);
+  if (Number.isNaN(parsed.getTime())) return dateStr;
+  return parsed.toLocaleString("pt-BR");
+}
+
+function buildQueryString(params = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    const text = sanitizeText(value);
+    if (!text && typeof value !== "number") return;
+    searchParams.set(key, String(value));
+  });
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
+function isAdminSession(session = sessionState) {
+  return Boolean(session && session.usuario && session.usuario.papel === "admin_global");
+}
+
+function switchSection(sectionName) {
+  currentSection = viewSections[sectionName] ? sectionName : "generator";
+
+  Object.entries(viewSections).forEach(([name, element]) => {
+    if (!element) return;
+    element.hidden = name !== currentSection;
+  });
+
+  sectionTabs.forEach((button) => {
+    const isActive = button.dataset.section === currentSection;
+    button.classList.toggle("is-active", isActive);
+  });
+}
+
+function populateSecretariaOptions(select, secretarias, selectedValue = "", includeAll = false) {
+  if (!select) return;
+
+  const selectedText = selectedValue === null || selectedValue === undefined
+    ? ""
+    : String(selectedValue);
+  select.innerHTML = "";
+
+  if (includeAll) {
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Todas";
+    if (!selectedText) {
+      allOption.selected = true;
+    }
+    select.appendChild(allOption);
+  }
+
+  (Array.isArray(secretarias) ? secretarias : []).forEach((secretaria) => {
+    const option = document.createElement("option");
+    option.value = String(secretaria.id);
+    option.textContent = `${secretaria.sigla} - ${secretaria.nome}`;
+    option.selected = String(secretaria.id) === selectedText;
+    select.appendChild(option);
+  });
+}
+
+function getMultiSelectValues(select) {
+  if (!select) return [];
+  return Array.from(select.selectedOptions).map((option) => Number(option.value));
+}
+
+function setMultiSelectValues(select, values = []) {
+  if (!select) return;
+  const selected = new Set((values || []).map((value) => Number(value)));
+  Array.from(select.options).forEach((option) => {
+    option.selected = selected.has(Number(option.value));
+  });
+}
+
+function createInlineButton(label, onClick, className = "secondary-btn") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+  button.className = className;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function setAuthenticatedView(authenticated) {
+  if (loginShell) loginShell.hidden = authenticated;
+  if (appShell) appShell.hidden = !authenticated;
+}
+
+function renderSession(session) {
+  sessionState = session;
+  setAuthenticatedView(true);
+  setLoginStatus("", "info");
+
+  if (sessionUser && session && session.usuario) {
+    sessionUser.textContent = `${session.usuario.nome} (${session.usuario.papel})`;
+  }
+
+  const secretarias = Array.isArray(session.secretarias) ? session.secretarias : [];
+  populateSecretariaOptions(secretariaSelect, secretarias, session.secretaria_ativa_id, false);
+  if (secretariaWrap) secretariaWrap.hidden = secretarias.length <= 1;
+  populateSecretariaOptions(
+    certFilterSecretariaSelect,
+    secretarias,
+    certListState.filters.secretariaId,
+    true
+  );
+  populateSecretariaOptions(
+    auditSecretariaSelect,
+    secretarias,
+    auditState.filters.secretariaId,
+    true
+  );
+  if (
+    certFilterSecretariaSelect &&
+    certListState.filters.secretariaId &&
+    !Array.from(certFilterSecretariaSelect.options).some(
+      (option) => option.value === String(certListState.filters.secretariaId)
+    )
+  ) {
+    certListState.filters.secretariaId = "";
+    certFilterSecretariaSelect.value = "";
+  }
+
+  if (adminTab) {
+    adminTab.hidden = !isAdminSession(session);
+  }
+  if (!isAdminSession(session) && currentSection === "admin") {
+    switchSection("generator");
+  }
+}
+
+function clearSessionUi(message = "") {
+  sessionState = null;
+  certListState.page = 1;
+  certListState.total = 0;
+  certListState.totalPages = 1;
+  certListState.filters.busca = "";
+  certListState.filters.secretariaId = "";
+  certListState.filters.concluidoDe = "";
+  certListState.filters.concluidoAte = "";
+  certListState.filters.emitidoDe = "";
+  certListState.filters.emitidoAte = "";
+  certListState.filters.somenteComArquivo = false;
+  auditState.page = 1;
+  auditState.total = 0;
+  auditState.totalPages = 1;
+  auditState.filters.busca = "";
+  auditState.filters.evento = "";
+  auditState.filters.secretariaId = "";
+  setAuthenticatedView(false);
+  downloadBtn.disabled = true;
+  if (sessionUser) sessionUser.textContent = "";
+  if (secretariaSelect) secretariaSelect.innerHTML = "";
+  if (secretariaWrap) secretariaWrap.hidden = true;
+  if (certFilterBuscaInput) certFilterBuscaInput.value = "";
+  if (certFilterConcluidoDeInput) certFilterConcluidoDeInput.value = "";
+  if (certFilterConcluidoAteInput) certFilterConcluidoAteInput.value = "";
+  if (certFilterEmitidoDeInput) certFilterEmitidoDeInput.value = "";
+  if (certFilterEmitidoAteInput) certFilterEmitidoAteInput.value = "";
+  if (certFilterComArquivoInput) certFilterComArquivoInput.checked = false;
+  if (certFilterSecretariaSelect) {
+    certFilterSecretariaSelect.innerHTML = '<option value="">Todas</option>';
+  }
+  if (auditSearchInput) auditSearchInput.value = "";
+  if (auditEventSelect) auditEventSelect.value = "";
+  if (auditSecretariaSelect) {
+    auditSecretariaSelect.innerHTML = '<option value="">Todas</option>';
+  }
+  if (certListBody) {
+    certListBody.innerHTML = `
+      <tr>
+        <td colspan="9" class="empty-state">Faça login para carregar os certificados.</td>
+      </tr>
+    `;
+  }
+  if (certListSummary) certListSummary.textContent = "";
+  if (certPageIndicator) certPageIndicator.textContent = "Página 1";
+  if (adminTab) adminTab.hidden = true;
+  if (userListBody) {
+    userListBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-state">Faça login como administrador para gerenciar usuários.</td>
+      </tr>
+    `;
+  }
+  if (secretariaListBody) {
+    secretariaListBody.innerHTML = `
+      <tr>
+        <td colspan="4" class="empty-state">Faça login como administrador para gerenciar secretarias.</td>
+      </tr>
+    `;
+  }
+  if (auditListBody) {
+    auditListBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">Faça login como administrador para visualizar a auditoria.</td>
+      </tr>
+    `;
+  }
+  if (auditSummary) auditSummary.textContent = "";
+  if (auditPageIndicator) auditPageIndicator.textContent = "Página 1";
+  adminState.users = [];
+  adminState.secretarias = [];
+  resetUserForm();
+  resetSecretariaForm();
+  switchSection("generator");
+  if (message) {
+    setLoginStatus(message, "error");
+  }
+}
+
+async function fetchSession() {
+  const response = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
+    credentials: "include",
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_error) {
+    payload = null;
+  }
+
+  if (!response.ok || !payload || !payload.autenticado) {
+    return null;
+  }
+
+  return payload;
+}
+
+async function refreshSession(message = "") {
+  try {
+    const session = await fetchSession();
+    if (!session) {
+      clearSessionUi(message);
+      return null;
+    }
+
+    renderSession(session);
+    await refreshProtectedData({ page: 1 });
+    return session;
+  } catch (error) {
+    console.error(error);
+    clearSessionUi("Nao foi possivel validar a sessao.");
+    return null;
+  }
+}
+
+async function handleUnauthorized(message = "Sua sessao expirou. Entre novamente.") {
+  clearSessionUi(message);
+}
+
+function setCertListStatus(message, type = "info") {
+  setStatusMessage(certListStatus, message, type);
+}
+
+function setUserFormStatus(message, type = "info") {
+  setStatusMessage(userFormStatus, message, type);
+}
+
+function setSecretariaFormStatus(message, type = "info") {
+  setStatusMessage(secretariaFormStatus, message, type);
+}
+
+function setAuditStatus(message, type = "info") {
+  setStatusMessage(auditStatus, message, type);
+}
+
+function resetUserForm() {
+  if (userForm) userForm.reset();
+  if (userEditIdInput) userEditIdInput.value = "";
+  if (userActiveInput) userActiveInput.checked = true;
+  if (userRoleSelect) userRoleSelect.value = "operador";
+  if (userUsernameInput) userUsernameInput.disabled = false;
+  if (userPasswordInput) {
+    userPasswordInput.value = "";
+    userPasswordInput.placeholder = "Obrigatória no cadastro";
+  }
+  setMultiSelectValues(userSecretariasSelect, []);
+  setUserFormStatus("", "info");
+}
+
+function resetSecretariaForm() {
+  if (secretariaForm) secretariaForm.reset();
+  if (secretariaEditIdInput) secretariaEditIdInput.value = "";
+  if (secretariaActiveInput) secretariaActiveInput.checked = true;
+  setSecretariaFormStatus("", "info");
+}
+
+function buildStatusPill(active, activeLabel = "Ativo", inactiveLabel = "Inativo") {
+  const span = document.createElement("span");
+  span.className = `status-pill ${active ? "ok" : "warn"}`;
+  span.textContent = active ? activeLabel : inactiveLabel;
+  return span;
+}
+
+function fillUserForm(usuario) {
+  if (!usuario) return;
+  if (userEditIdInput) userEditIdInput.value = String(usuario.id);
+  if (userNameInput) userNameInput.value = usuario.nome || "";
+  if (userUsernameInput) {
+    userUsernameInput.value = usuario.username || "";
+    userUsernameInput.disabled = true;
+  }
+  if (userPasswordInput) {
+    userPasswordInput.value = "";
+    userPasswordInput.placeholder = "Preencha somente para trocar a senha";
+  }
+  if (userRoleSelect) userRoleSelect.value = usuario.papel || "operador";
+  if (userActiveInput) userActiveInput.checked = Boolean(usuario.ativo);
+  setMultiSelectValues(
+    userSecretariasSelect,
+    (usuario.secretarias || []).map((secretaria) => secretaria.id)
+  );
+  setUserFormStatus(`Editando usuário ${usuario.username}.`, "info");
+}
+
+function fillSecretariaForm(secretaria) {
+  if (!secretaria) return;
+  if (secretariaEditIdInput) secretariaEditIdInput.value = String(secretaria.id);
+  if (secretariaSiglaInput) secretariaSiglaInput.value = secretaria.sigla || "";
+  if (secretariaNameInput) secretariaNameInput.value = secretaria.nome || "";
+  if (secretariaActiveInput) secretariaActiveInput.checked = Boolean(secretaria.ativa);
+  setSecretariaFormStatus(`Editando secretaria ${secretaria.sigla}.`, "info");
+}
+
+function renderCertificateRows(items) {
+  if (!certListBody) return;
+
+  if (!items.length) {
+    certListBody.innerHTML = `
+      <tr>
+        <td colspan="9" class="empty-state">Nenhum certificado encontrado com os filtros atuais.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  certListBody.innerHTML = "";
+
+  items.forEach((item) => {
+    const row = document.createElement("tr");
+
+    const codeCell = document.createElement("td");
+    const codeChip = document.createElement("span");
+    codeChip.className = "code-chip";
+    codeChip.textContent = item.codigo || "-";
+    codeCell.appendChild(codeChip);
+
+    const nameCell = document.createElement("td");
+    nameCell.textContent = item.nome || "-";
+
+    const courseCell = document.createElement("td");
+    courseCell.textContent = item.curso || "-";
+
+    const secretariaCell = document.createElement("td");
+    secretariaCell.textContent = item.secretaria_sigla || "-";
+
+    const concluidoCell = document.createElement("td");
+    concluidoCell.textContent = formatDate(item.concluido);
+
+    const emittedCell = document.createElement("td");
+    emittedCell.textContent = formatDateTime(item.emitido_em);
+
+    const emittedByCell = document.createElement("td");
+    emittedByCell.textContent = item.emitido_por_username || "-";
+
+    const fileCell = document.createElement("td");
+    fileCell.appendChild(
+      buildStatusPill(item.arquivo_disponivel, "PNG salvo", "Sem PNG")
+    );
+
+    const actionsCell = document.createElement("td");
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "inline-actions";
+
+    actionsWrap.appendChild(
+      createInlineButton("Validar", () => {
+        window.open(item.url_validacao, "_blank", "noopener,noreferrer");
+      })
+    );
+
+    const pngButton = createInlineButton("Abrir PNG", () => {
+      if (item.arquivo_admin_url || item.arquivo_url) {
+        window.open(item.arquivo_admin_url || item.arquivo_url, "_blank", "noopener,noreferrer");
+      }
+    });
+    pngButton.disabled = !(item.arquivo_admin_url || item.arquivo_url);
+    actionsWrap.appendChild(pngButton);
+
+    const preencherButton = createInlineButton("Preencher", () => {
+      const nomeInput = document.getElementById("nome");
+      const cursoInput = document.getElementById("curso");
+      const dataInput = document.getElementById("data");
+      if (nomeInput) nomeInput.value = item.nome || "";
+      if (cursoInput) cursoInput.value = item.curso || "";
+      if (dataInput) dataInput.value = item.concluido || "";
+      if (cargaHInput) cargaHInput.value = item.carga_h || 0;
+      switchSection("generator");
+    });
+    actionsWrap.appendChild(preencherButton);
+
+    actionsCell.appendChild(actionsWrap);
+
+    row.append(
+      codeCell,
+      nameCell,
+      courseCell,
+      secretariaCell,
+      concluidoCell,
+      emittedCell,
+      emittedByCell,
+      fileCell,
+      actionsCell
+    );
+
+    certListBody.appendChild(row);
+  });
+}
+
+function renderUsersTable() {
+  if (!userListBody) return;
+
+  if (!adminState.users.length) {
+    userListBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-state">Nenhum usuário cadastrado.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  userListBody.innerHTML = "";
+
+  adminState.users.forEach((usuario) => {
+    const row = document.createElement("tr");
+
+    const nameCell = document.createElement("td");
+    nameCell.textContent = usuario.nome || "-";
+
+    const usernameCell = document.createElement("td");
+    usernameCell.textContent = usuario.username || "-";
+
+    const roleCell = document.createElement("td");
+    roleCell.textContent = usuario.papel || "-";
+
+    const secretariasCell = document.createElement("td");
+    secretariasCell.textContent = (usuario.secretarias || []).length
+      ? usuario.secretarias.map((secretaria) => secretaria.sigla).join(", ")
+      : "-";
+
+    const statusCell = document.createElement("td");
+    statusCell.appendChild(buildStatusPill(usuario.ativo));
+
+    const loginCell = document.createElement("td");
+    loginCell.textContent = formatDateTime(usuario.ultimo_login_em);
+
+    const actionsCell = document.createElement("td");
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "inline-actions";
+    actionsWrap.appendChild(
+      createInlineButton("Editar", () => {
+        fillUserForm(usuario);
+        switchSection("admin");
+      })
+    );
+    actionsCell.appendChild(actionsWrap);
+
+    row.append(
+      nameCell,
+      usernameCell,
+      roleCell,
+      secretariasCell,
+      statusCell,
+      loginCell,
+      actionsCell
+    );
+    userListBody.appendChild(row);
+  });
+}
+
+function renderSecretariasTable() {
+  if (!secretariaListBody) return;
+
+  if (!adminState.secretarias.length) {
+    secretariaListBody.innerHTML = `
+      <tr>
+        <td colspan="4" class="empty-state">Nenhuma secretaria cadastrada.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  secretariaListBody.innerHTML = "";
+
+  adminState.secretarias.forEach((secretaria) => {
+    const row = document.createElement("tr");
+
+    const siglaCell = document.createElement("td");
+    siglaCell.textContent = secretaria.sigla || "-";
+
+    const nomeCell = document.createElement("td");
+    nomeCell.textContent = secretaria.nome || "-";
+
+    const statusCell = document.createElement("td");
+    statusCell.appendChild(buildStatusPill(secretaria.ativa));
+
+    const actionsCell = document.createElement("td");
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "inline-actions";
+    actionsWrap.appendChild(
+      createInlineButton("Editar", () => {
+        fillSecretariaForm(secretaria);
+        switchSection("admin");
+      })
+    );
+    actionsCell.appendChild(actionsWrap);
+
+    row.append(siglaCell, nomeCell, statusCell, actionsCell);
+    secretariaListBody.appendChild(row);
+  });
+}
+
+function renderAuditRows(items) {
+  if (!auditListBody) return;
+
+  if (!items.length) {
+    auditListBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">Nenhum evento de auditoria encontrado.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  auditListBody.innerHTML = "";
+
+  items.forEach((item) => {
+    const row = document.createElement("tr");
+
+    const whenCell = document.createElement("td");
+    whenCell.textContent = formatDateTime(item.criado_em);
+
+    const eventCell = document.createElement("td");
+    const chip = document.createElement("span");
+    chip.className = "code-chip";
+    chip.textContent = item.evento || "-";
+    eventCell.appendChild(chip);
+
+    const userCell = document.createElement("td");
+    userCell.textContent = item.usuario_username || item.usuario_nome || "-";
+
+    const secretariaCell = document.createElement("td");
+    secretariaCell.textContent = item.secretaria_sigla || "-";
+
+    const certCell = document.createElement("td");
+    certCell.textContent = item.certificado_codigo || "-";
+
+    const detailsCell = document.createElement("td");
+    detailsCell.textContent = item.descricao || "-";
+
+    row.append(whenCell, eventCell, userCell, secretariaCell, certCell, detailsCell);
+    auditListBody.appendChild(row);
+  });
+}
+
+async function loadCertificates(page = certListState.page) {
+  if (!sessionState) return;
+
+  certListState.page = page;
+  setCertListStatus("Carregando certificados...", "info");
+
+  try {
+    const payload = await apiJsonRequest(
+      `/api/certificados${buildQueryString({
+        pagina: certListState.page,
+        por_pagina: certListState.perPage,
+        busca: certListState.filters.busca,
+        secretaria_id: certListState.filters.secretariaId,
+        concluido_de: certListState.filters.concluidoDe,
+        concluido_ate: certListState.filters.concluidoAte,
+        emitido_de: certListState.filters.emitidoDe,
+        emitido_ate: certListState.filters.emitidoAte,
+        somente_com_arquivo: certListState.filters.somenteComArquivo || "",
+      })}`
+    );
+
+    certListState.total = payload.total || 0;
+    certListState.totalPages = payload.paginas || 1;
+    renderCertificateRows(payload.itens || []);
+
+    if (certListSummary) {
+      certListSummary.textContent = `${certListState.total} certificado(s) encontrado(s)`;
+    }
+    if (certPageIndicator) {
+      certPageIndicator.textContent = `Página ${payload.pagina} de ${payload.paginas}`;
+    }
+    if (certPrevPageBtn) certPrevPageBtn.disabled = payload.pagina <= 1;
+    if (certNextPageBtn) certNextPageBtn.disabled = payload.pagina >= payload.paginas;
+    setCertListStatus("", "info");
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setCertListStatus(
+      (error && error.message) || "Nao foi possivel carregar os certificados.",
+      "error"
+    );
+  }
+}
+
+async function loadAuditEvents(page = auditState.page) {
+  if (!sessionState || !isAdminSession()) return;
+
+  auditState.page = page;
+  setAuditStatus("Carregando auditoria...", "info");
+
+  try {
+    const payload = await apiJsonRequest(
+      `/api/admin/auditoria${buildQueryString({
+        pagina: auditState.page,
+        por_pagina: auditState.perPage,
+        busca: auditState.filters.busca,
+        evento: auditState.filters.evento,
+        secretaria_id: auditState.filters.secretariaId,
+      })}`
+    );
+
+    auditState.total = payload.total || 0;
+    auditState.totalPages = payload.paginas || 1;
+    renderAuditRows(payload.itens || []);
+    if (auditSummary) {
+      auditSummary.textContent = `${auditState.total} evento(s)`;
+    }
+    if (auditPageIndicator) {
+      auditPageIndicator.textContent = `Página ${payload.pagina} de ${payload.paginas}`;
+    }
+    if (auditPrevPageBtn) auditPrevPageBtn.disabled = payload.pagina <= 1;
+    if (auditNextPageBtn) auditNextPageBtn.disabled = payload.pagina >= payload.paginas;
+    setAuditStatus("", "info");
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    if (error && error.status === 403) {
+      if (auditListBody) {
+        auditListBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="empty-state">A auditoria é restrita ao administrador.</td>
+          </tr>
+        `;
+      }
+      return;
+    }
+    setAuditStatus(
+      (error && error.message) || "Nao foi possivel carregar a auditoria.",
+      "error"
+    );
+  }
+}
+
+async function loadAdminData() {
+  if (!sessionState || !isAdminSession()) return;
+
+  try {
+    const editingUserId = sanitizeText(userEditIdInput ? userEditIdInput.value : "");
+    const editingSecretariaId = sanitizeText(
+      secretariaEditIdInput ? secretariaEditIdInput.value : ""
+    );
+    const [secretarias, usuarios] = await Promise.all([
+      apiJsonRequest("/api/admin/secretarias"),
+      apiJsonRequest("/api/admin/usuarios"),
+    ]);
+
+    adminState.secretarias = Array.isArray(secretarias) ? secretarias : [];
+    adminState.users = Array.isArray(usuarios) ? usuarios : [];
+    populateSecretariaOptions(
+      userSecretariasSelect,
+      adminState.secretarias,
+      "",
+      false
+    );
+    populateSecretariaOptions(
+      auditSecretariaSelect,
+      adminState.secretarias,
+      auditState.filters.secretariaId,
+      true
+    );
+    renderSecretariasTable();
+    renderUsersTable();
+
+    if (editingUserId) {
+      const currentUser = adminState.users.find((usuario) => String(usuario.id) === editingUserId);
+      if (currentUser) {
+        fillUserForm(currentUser);
+      }
+    }
+
+    if (editingSecretariaId) {
+      const currentSecretaria = adminState.secretarias.find(
+        (secretaria) => String(secretaria.id) === editingSecretariaId
+      );
+      if (currentSecretaria) {
+        fillSecretariaForm(currentSecretaria);
+      }
+    }
+
+    await loadAuditEvents(auditState.page || 1);
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    if (error && error.status === 403) {
+      if (adminTab) adminTab.hidden = true;
+      if (currentSection === "admin") switchSection("generator");
+      return;
+    }
+    setUserFormStatus(
+      (error && error.message) || "Nao foi possivel carregar os usuarios.",
+      "error"
+    );
+    setSecretariaFormStatus(
+      (error && error.message) || "Nao foi possivel carregar as secretarias.",
+      "error"
+    );
+  }
+}
+
+async function refreshProtectedData(options = {}) {
+  if (!sessionState) return;
+
+  await loadCertificates(options.page || certListState.page || 1);
+  if (isAdminSession()) {
+    await loadAdminData();
+  }
 }
 
 async function registerSingleCertificate(cert) {
@@ -169,6 +1050,7 @@ async function uploadCertificateImage(codigo, pngBlob, fileName) {
     `${getApiBaseUrl()}/api/certificados/${encodeURIComponent(certCode)}/arquivo`,
     {
       method: "POST",
+      credentials: "include",
       body: formData,
     }
   );
@@ -181,10 +1063,12 @@ async function uploadCertificateImage(codigo, pngBlob, fileName) {
   }
 
   if (!response.ok) {
-    throw new Error(
+    const error = new Error(
       (payload && (payload.detail || payload.message)) ||
         `Falha ao enviar PNG do certificado (HTTP ${response.status}).`
     );
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
@@ -873,6 +1757,10 @@ function buildTimestamp() {
 async function handleBatchGenerate() {
   if (!planilhaInput || !batchGenerateBtn) return;
   if (isBatchRunning) return;
+  if (!sessionState) {
+    await handleUnauthorized();
+    return;
+  }
 
   const file = planilhaInput.files && planilhaInput.files[0];
   if (!file) {
@@ -1007,8 +1895,13 @@ async function handleBatchGenerate() {
       `Lote concluído: ${certificates.length} certificado(s) gerado(s).`,
       "success"
     );
+    await loadCertificates(1);
   } catch (error) {
     console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
     setBatchStatus(error.message || "Falha ao gerar lote.", "error");
   } finally {
     if (previousLastData) {
@@ -1027,6 +1920,10 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (isBatchRunning) return;
+    if (!sessionState) {
+      await handleUnauthorized();
+      return;
+    }
 
     const nomeInput = document.getElementById("nome");
     const cursoInput = document.getElementById("curso");
@@ -1063,8 +1960,13 @@ if (!form || !downloadBtn || !canvas || !ctx) {
       await uploadCertificateImage(codigo, pngBlob, codigo);
       downloadBtn.disabled = false;
       setBatchStatus("", "info");
+      await loadCertificates(1);
     } catch (error) {
       console.error(error);
+      if (error && error.status === 401) {
+        await handleUnauthorized();
+        return;
+      }
       const message =
         error && error.message
           ? error.message
@@ -1129,11 +2031,348 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 
   downloadBtn.addEventListener("click", () => {
     const link = document.createElement("a");
-    link.download = "certificado.png";
+    link.download = `${(lastData && lastData.codigo) || "certificado"}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   });
 }
 
+sectionTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    const { section } = button.dataset;
+    if (section === "admin" && !isAdminSession()) return;
+    switchSection(section || "generator");
+    if (section === "certificates" && sessionState) {
+      void loadCertificates(certListState.page || 1);
+    }
+    if (section === "admin" && sessionState && isAdminSession()) {
+      void loadAdminData();
+    }
+  });
+});
+
+if (certListForm) {
+  certListForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    certListState.filters.busca = certFilterBuscaInput ? certFilterBuscaInput.value.trim() : "";
+    certListState.filters.secretariaId = certFilterSecretariaSelect
+      ? certFilterSecretariaSelect.value
+      : "";
+    certListState.filters.concluidoDe = certFilterConcluidoDeInput
+      ? certFilterConcluidoDeInput.value
+      : "";
+    certListState.filters.concluidoAte = certFilterConcluidoAteInput
+      ? certFilterConcluidoAteInput.value
+      : "";
+    certListState.filters.emitidoDe = certFilterEmitidoDeInput
+      ? certFilterEmitidoDeInput.value
+      : "";
+    certListState.filters.emitidoAte = certFilterEmitidoAteInput
+      ? certFilterEmitidoAteInput.value
+      : "";
+    certListState.filters.somenteComArquivo = certFilterComArquivoInput
+      ? certFilterComArquivoInput.checked
+      : false;
+    certListState.page = 1;
+    await loadCertificates(1);
+  });
+}
+
+if (certFilterResetBtn) {
+  certFilterResetBtn.addEventListener("click", async () => {
+    certListState.filters.busca = "";
+    certListState.filters.secretariaId = "";
+    certListState.filters.concluidoDe = "";
+    certListState.filters.concluidoAte = "";
+    certListState.filters.emitidoDe = "";
+    certListState.filters.emitidoAte = "";
+    certListState.filters.somenteComArquivo = false;
+    certListState.page = 1;
+    if (certFilterBuscaInput) certFilterBuscaInput.value = "";
+    if (certFilterSecretariaSelect) certFilterSecretariaSelect.value = "";
+    if (certFilterConcluidoDeInput) certFilterConcluidoDeInput.value = "";
+    if (certFilterConcluidoAteInput) certFilterConcluidoAteInput.value = "";
+    if (certFilterEmitidoDeInput) certFilterEmitidoDeInput.value = "";
+    if (certFilterEmitidoAteInput) certFilterEmitidoAteInput.value = "";
+    if (certFilterComArquivoInput) certFilterComArquivoInput.checked = false;
+    await loadCertificates(1);
+  });
+}
+
+if (certPrevPageBtn) {
+  certPrevPageBtn.addEventListener("click", () => {
+    if (certListState.page > 1) {
+      void loadCertificates(certListState.page - 1);
+    }
+  });
+}
+
+if (certNextPageBtn) {
+  certNextPageBtn.addEventListener("click", () => {
+    if (certListState.page < certListState.totalPages) {
+      void loadCertificates(certListState.page + 1);
+    }
+  });
+}
+
+if (auditForm) {
+  auditForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    auditState.filters.busca = auditSearchInput ? auditSearchInput.value.trim() : "";
+    auditState.filters.evento = auditEventSelect ? auditEventSelect.value : "";
+    auditState.filters.secretariaId = auditSecretariaSelect
+      ? auditSecretariaSelect.value
+      : "";
+    auditState.page = 1;
+    await loadAuditEvents(1);
+  });
+}
+
+if (auditResetBtn) {
+  auditResetBtn.addEventListener("click", async () => {
+    auditState.filters.busca = "";
+    auditState.filters.evento = "";
+    auditState.filters.secretariaId = "";
+    auditState.page = 1;
+    if (auditSearchInput) auditSearchInput.value = "";
+    if (auditEventSelect) auditEventSelect.value = "";
+    if (auditSecretariaSelect) auditSecretariaSelect.value = "";
+    await loadAuditEvents(1);
+  });
+}
+
+if (auditPrevPageBtn) {
+  auditPrevPageBtn.addEventListener("click", () => {
+    if (auditState.page > 1) {
+      void loadAuditEvents(auditState.page - 1);
+    }
+  });
+}
+
+if (auditNextPageBtn) {
+  auditNextPageBtn.addEventListener("click", () => {
+    if (auditState.page < auditState.totalPages) {
+      void loadAuditEvents(auditState.page + 1);
+    }
+  });
+}
+
+if (userRoleSelect) {
+  userRoleSelect.addEventListener("change", () => {
+    const isAdmin = userRoleSelect.value === "admin_global";
+    if (userSecretariasSelect) {
+      userSecretariasSelect.disabled = false;
+      if (isAdmin && !userEditIdInput?.value) {
+        setMultiSelectValues(userSecretariasSelect, []);
+      }
+    }
+  });
+}
+
+if (userFormResetBtn) {
+  userFormResetBtn.addEventListener("click", () => {
+    resetUserForm();
+  });
+}
+
+if (userForm) {
+  userForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!isAdminSession()) return;
+
+    const editingId = sanitizeText(userEditIdInput ? userEditIdInput.value : "");
+    const payload = {
+      nome: userNameInput ? userNameInput.value.trim() : "",
+      username: userUsernameInput ? userUsernameInput.value.trim() : "",
+      password: userPasswordInput ? userPasswordInput.value : "",
+      papel: userRoleSelect ? userRoleSelect.value : "operador",
+      ativo: userActiveInput ? userActiveInput.checked : true,
+      secretaria_ids: getMultiSelectValues(userSecretariasSelect),
+    };
+
+    if (!payload.nome || !payload.username) {
+      setUserFormStatus("Preencha nome e usuário.", "error");
+      return;
+    }
+    if (!editingId && !payload.password) {
+      setUserFormStatus("Informe uma senha para o novo usuário.", "error");
+      return;
+    }
+    if (payload.papel !== "admin_global" && payload.secretaria_ids.length === 0) {
+      setUserFormStatus("Selecione pelo menos uma secretaria para o operador.", "error");
+      return;
+    }
+
+    try {
+      setUserFormStatus("Salvando usuário...", "info");
+      if (editingId) {
+        const updatePayload = {
+          nome: payload.nome,
+          papel: payload.papel,
+          ativo: payload.ativo,
+          secretaria_ids: payload.secretaria_ids,
+        };
+        if (payload.password) {
+          updatePayload.password = payload.password;
+        }
+        await apiJsonRequest(`/api/admin/usuarios/${editingId}`, {
+          method: "PATCH",
+          body: JSON.stringify(updatePayload),
+        });
+      } else {
+        await apiJsonRequest("/api/admin/usuarios", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      }
+
+      resetUserForm();
+      setUserFormStatus("Usuário salvo com sucesso.", "success");
+      await loadAdminData();
+    } catch (error) {
+      console.error(error);
+      if (error && error.status === 401) {
+        await handleUnauthorized();
+        return;
+      }
+      setUserFormStatus(
+        (error && error.message) || "Nao foi possivel salvar o usuario.",
+        "error"
+      );
+    }
+  });
+}
+
+if (secretariaFormResetBtn) {
+  secretariaFormResetBtn.addEventListener("click", () => {
+    resetSecretariaForm();
+  });
+}
+
+if (secretariaForm) {
+  secretariaForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!isAdminSession()) return;
+
+    const editingId = sanitizeText(secretariaEditIdInput ? secretariaEditIdInput.value : "");
+    const payload = {
+      sigla: secretariaSiglaInput ? secretariaSiglaInput.value.trim() : "",
+      nome: secretariaNameInput ? secretariaNameInput.value.trim() : "",
+      ativa: secretariaActiveInput ? secretariaActiveInput.checked : true,
+    };
+
+    if (!payload.sigla || !payload.nome) {
+      setSecretariaFormStatus("Preencha sigla e nome da secretaria.", "error");
+      return;
+    }
+
+    try {
+      setSecretariaFormStatus("Salvando secretaria...", "info");
+      if (editingId) {
+        await apiJsonRequest(`/api/admin/secretarias/${editingId}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await apiJsonRequest("/api/admin/secretarias", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      }
+
+      resetSecretariaForm();
+      setSecretariaFormStatus("Secretaria salva com sucesso.", "success");
+      await refreshSession();
+      await loadAdminData();
+    } catch (error) {
+      console.error(error);
+      if (error && error.status === 401) {
+        await handleUnauthorized();
+        return;
+      }
+      setSecretariaFormStatus(
+        (error && error.message) || "Nao foi possivel salvar a secretaria.",
+        "error"
+      );
+    }
+  });
+}
+
+if (loginForm) {
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const usernameInput = document.getElementById("login-username");
+    const passwordInput = document.getElementById("login-password");
+    const username = usernameInput ? usernameInput.value.trim() : "";
+    const password = passwordInput ? passwordInput.value : "";
+
+    if (!username || !password) {
+      setLoginStatus("Informe usuário e senha.", "error");
+      return;
+    }
+
+    try {
+      setLoginStatus("Entrando...", "info");
+      const session = await apiJsonRequest("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
+      renderSession(session);
+      await refreshProtectedData({ page: 1 });
+      switchSection("generator");
+      if (passwordInput) passwordInput.value = "";
+    } catch (error) {
+      console.error(error);
+      setLoginStatus(
+        (error && error.message) || "Nao foi possivel fazer login.",
+        "error"
+      );
+    }
+  });
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await apiJsonRequest("/api/auth/logout", { method: "POST", body: "{}" });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      clearSessionUi();
+      setLoginStatus("Sessao encerrada.", "info");
+    }
+  });
+}
+
+if (secretariaSelect) {
+  secretariaSelect.addEventListener("change", async () => {
+    const secretariaId = Number(secretariaSelect.value);
+    if (!secretariaId) return;
+
+    try {
+      const session = await apiJsonRequest("/api/auth/select-secretaria", {
+        method: "POST",
+        body: JSON.stringify({ secretaria_id: secretariaId }),
+      });
+      renderSession(session);
+      certListState.page = 1;
+      await refreshProtectedData({ page: 1 });
+      await renderLastCertificate();
+    } catch (error) {
+      console.error(error);
+      if (error && error.status === 401) {
+        await handleUnauthorized();
+        return;
+      }
+      setBatchStatus(
+        (error && error.message) || "Nao foi possivel trocar a secretaria.",
+        "error"
+      );
+    }
+  });
+}
+
 setTodayDate();
 updateControlLabels();
+void refreshSession();

@@ -11,6 +11,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -42,6 +46,61 @@ h1 {
   margin-bottom: 18px;
 }
 
+.auth-panel {
+  max-width: 420px;
+  margin: 64px auto 18px;
+}
+
+.stack-section {
+  display: grid;
+  gap: 18px;
+}
+
+.app-session {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.session-meta {
+  min-width: 280px;
+  display: grid;
+  gap: 10px;
+  justify-items: stretch;
+}
+
+.session-user {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fbff;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.secretaria-wrap {
+  display: grid;
+  gap: 6px;
+}
+
+.section-switcher {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.section-tab {
+  background: #e8f1ff;
+  color: #1a4f8b;
+}
+
+.section-tab.is-active {
+  background: #1a4f8b;
+  color: #fff;
+}
+
 .form {
   display: grid;
   gap: 10px;
@@ -56,6 +115,14 @@ input {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
 }
 
 input[type="file"] {
@@ -126,6 +193,24 @@ button[disabled] {
   color: #1a4f8b;
 }
 
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.summary-pill {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1a4f8b;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .hint {
   margin: 0 0 8px;
   color: var(--muted);
@@ -159,6 +244,148 @@ button[disabled] {
   padding: 16px;
 }
 
+.filter-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.audit-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.field-stack {
+  display: grid;
+  gap: 6px;
+}
+
+.field-span-2 {
+  grid-column: span 2;
+}
+
+.actions-end {
+  align-self: end;
+}
+
+.grid-two {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.compact-checkbox {
+  align-self: end;
+  min-height: 42px;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+select[multiple] {
+  min-height: 150px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th {
+  background: #f7fbff;
+  color: #1a4f8b;
+  font-size: 0.92rem;
+}
+
+.data-table tbody tr:hover {
+  background: #fbfdff;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 18px;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-actions button {
+  padding: 8px 10px;
+}
+
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pagination-indicator {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.status-pill.ok {
+  background: #e8f7ee;
+  color: #12763a;
+}
+
+.status-pill.warn {
+  background: #fff4dd;
+  color: #9a6700;
+}
+
+.code-chip {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f2f7ff;
+  color: #1a4f8b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 #canvas {
   width: 100%;
   height: auto;
@@ -180,9 +407,36 @@ button[disabled] {
 }
 
 @media (max-width: 700px) {
+  .app-session {
+    flex-direction: column;
+  }
+
+  .session-meta {
+    width: 100%;
+    min-width: 0;
+  }
+
   .site-footer-logo {
     right: 16px;
     bottom: 14px;
     width: min(160px, 36vw);
+  }
+
+  .panel-header {
+    flex-direction: column;
+  }
+
+  .summary-pill {
+    white-space: normal;
+  }
+
+  .filter-grid,
+  .grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-end,
+  .pagination-row {
+    justify-content: flex-start;
   }
 }
