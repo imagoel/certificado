@@ -1,7 +1,11 @@
+import os
 from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500")))
 
 
 class CertificateCreate(BaseModel):
@@ -24,6 +28,15 @@ class CertificateCreate(BaseModel):
 class CertificateBatchCreate(BaseModel):
     prefixo: str = Field(default="ABC", min_length=1, max_length=8)
     itens: list[CertificateCreate]
+
+    @field_validator("itens")
+    @classmethod
+    def validate_batch_size(cls, value: list[CertificateCreate]) -> list[CertificateCreate]:
+        if len(value) > MAX_BATCH_ITEMS:
+            raise ValueError(
+                f"O lote excede o limite de {MAX_BATCH_ITEMS} certificado(s) por envio."
+            )
+        return value
 
 
 class CertificateResponse(BaseModel):

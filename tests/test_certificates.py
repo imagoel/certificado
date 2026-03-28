@@ -146,3 +146,28 @@ def test_lote_reserva_codigos_sem_colidir_com_manual_no_mesmo_ano(client, seed_d
     assert batch_response.status_code == 201
     codes = [item["codigo"] for item in batch_response.json()]
     assert codes == ["ABC-2026-00011", "ABC-2026-00010", "ABC-2026-00012"]
+
+
+def test_lote_acima_do_limite_retorna_422(client, seed_data, login):
+    from schemas import MAX_BATCH_ITEMS
+
+    login("operador", seed_data["operador_password"])
+
+    payload = {
+        "prefixo": "ABC",
+        "itens": [
+            {
+                "nome": f"Aluno {index}",
+                "cpf": None,
+                "curso": "Lote Grande",
+                "carga_h": 4,
+                "concluido": "2026-03-28",
+            }
+            for index in range(MAX_BATCH_ITEMS + 1)
+        ],
+    }
+
+    response = client.post("/api/certificados/lote", json=payload)
+
+    assert response.status_code == 422
+    assert str(MAX_BATCH_ITEMS) in response.text
