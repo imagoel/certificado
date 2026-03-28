@@ -207,6 +207,10 @@ input[type="file"] {
   flex-wrap: wrap;
 }
 
+.asset-inline-actions {
+  margin-top: 4px;
+}
+
 button {
   border: 0;
   border-radius: 8px;

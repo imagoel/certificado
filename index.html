@@ -87,6 +87,14 @@
             <label for="assinatura">Assinatura (opcional)</label>
             <input id="assinatura" type="file" accept="image/*" />
 
+            <label for="template">Molde do certificado (opcional)</label>
+            <input id="template" type="file" accept="image/*" />
+            <p class="hint">O molde funciona como fundo do certificado. Nome, curso, data, QR Code, assinatura e logo continuam nas posições atuais.</p>
+            <div class="actions asset-inline-actions">
+              <button id="template-remove" type="button" class="secondary-btn" disabled>Remover molde</button>
+            </div>
+            <p id="template-status" class="status" aria-live="polite"></p>
+
             <section class="asset-controls">
               <h2>Ajuste da Logo</h2>
               <label for="logoX">Posição X: <span id="logoXVal">600</span></label>

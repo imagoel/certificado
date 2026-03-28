@@ -2,6 +2,8 @@ const form = document.getElementById("cert-form");
 const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
+const templateInput = document.getElementById("template");
+const templateRemoveBtn = document.getElementById("template-remove");
 const planilhaInput = document.getElementById("planilha");
 const batchPreviewBtn = document.getElementById("batch-preview");
 const batchGenerateBtn = document.getElementById("batch-generate");
@@ -91,7 +93,11 @@ const batchPreviewSummary = document.getElementById("batch-preview-summary");
 const batchPreviewBody = document.getElementById("batch-preview-body");
 const canvas = document.getElementById("canvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
+const nomeInput = document.getElementById("nome");
+const cursoInput = document.getElementById("curso");
+const dataInput = document.getElementById("data");
 const cargaHInput = document.getElementById("carga_h");
+const templateStatus = document.getElementById("template-status");
 
 const batchConfirmDialog = document.getElementById("batch-confirm-dialog");
 const batchConfirmForm = document.getElementById("batch-confirm-form");
@@ -121,6 +127,7 @@ const defaultTextoLinha1 = "Certificamos que";
 const defaultTextoLinha2 = "concluiu com êxito o curso";
 
 const assets = {
+  template: null,
   logo: null,
   assinatura: null,
 };
@@ -184,6 +191,7 @@ const auditState = {
 };
 
 const qrImageCache = new Map();
+const certificateAspectRatio = 1200 / 850;
 const logoAspectRatio = 95 / 150;
 const assinaturaAspectRatio = 80 / 230;
 const viewSections = {
@@ -1359,6 +1367,25 @@ function applyLayoutFromControls() {
   void renderLastCertificate();
 }
 
+function setTemplateStatus(message, type = "info") {
+  if (!templateStatus) return;
+
+  if (!message) {
+    templateStatus.textContent = "";
+    templateStatus.className = "status";
+    return;
+  }
+
+  templateStatus.textContent = message;
+  templateStatus.className = `status ${type}`;
+}
+
+function syncTemplateControls() {
+  if (templateRemoveBtn) {
+    templateRemoveBtn.disabled = !assets.template;
+  }
+}
+
 function trimAssetImage(image) {
   const sourceCanvas = document.createElement("canvas");
   sourceCanvas.width = image.width;
@@ -1422,13 +1449,13 @@ function trimAssetImage(image) {
   return trimmedCanvas;
 }
 
-function loadImage(file) {
+function loadImage(file, { trim = true } = {}) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onload = () => {
       const image = new Image();
-      image.onload = () => resolve(trimAssetImage(image));
+      image.onload = () => resolve(trim ? trimAssetImage(image) : image);
       image.onerror = () => reject(new Error("Não foi possível carregar a imagem."));
       image.src = reader.result;
     };
@@ -1455,6 +1482,63 @@ function loadImageFromBlob(blob) {
 
     image.src = objectUrl;
   });
+}
+
+function getTemplateWarning(image) {
+  if (!image) return "";
+  const ratio = image.width / image.height;
+  const deviation = Math.abs(ratio - certificateAspectRatio) / certificateAspectRatio;
+  if (deviation <= 0.06) return "";
+  return "Molde ajustado automaticamente. Como a proporção dele difere do certificado, podem sobrar margens na prévia.";
+}
+
+function drawDefaultCertificateFrame() {
+  if (!ctx || !canvas) return;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#1a4f8b";
+  ctx.lineWidth = 16;
+  ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+  ctx.strokeStyle = "#d9b14c";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(54, 54, canvas.width - 108, canvas.height - 108);
+}
+
+function drawTemplateBackground(image) {
+  if (!ctx || !canvas || !image) return;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const fitted = fitRect(image.width, image.height, canvas.width, canvas.height);
+  const drawX = (canvas.width - fitted.width) / 2;
+  const drawY = (canvas.height - fitted.height) / 2;
+  ctx.drawImage(image, drawX, drawY, fitted.width, fitted.height);
+}
+
+function getPreviewCertificateData() {
+  const nome = sanitizeText(nomeInput ? nomeInput.value : "") || "Nome do participante";
+  const curso = sanitizeText(cursoInput ? cursoInput.value : "") || "Nome do curso";
+  const data = sanitizeText(dataInput ? dataInput.value : "") || toDateInputValue(new Date());
+  const linha1 =
+    sanitizeText(textoLinha1Input ? textoLinha1Input.value : "") || defaultTextoLinha1;
+  const linha2 =
+    sanitizeText(textoLinha2Input ? textoLinha2Input.value : "") || defaultTextoLinha2;
+  const cargaResult = normalizeCargaHorariaResult(cargaHInput ? cargaHInput.value : "");
+
+  return {
+    nome,
+    curso,
+    data,
+    linha1,
+    linha2,
+    qrText: "",
+    codigo: "",
+    cargaH: cargaResult.value || 0,
+  };
 }
 
 async function buildQrImage(qrText) {
@@ -1497,16 +1581,11 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = "#1a4f8b";
-  ctx.lineWidth = 16;
-  ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-
-  ctx.strokeStyle = "#d9b14c";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(54, 54, canvas.width - 108, canvas.height - 108);
+  if (assets.template) {
+    drawTemplateBackground(assets.template);
+  } else {
+    drawDefaultCertificateFrame();
+  }
 
   if (assets.logo) {
     drawCenteredImage(
@@ -1631,40 +1710,57 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
 }
 
 async function renderLastCertificate() {
-  if (!lastData) return;
+  const preview = lastData || getPreviewCertificateData();
   try {
     await drawCertificate(
-      lastData.nome,
-      lastData.curso,
-      lastData.data,
-      lastData.linha1,
-      lastData.linha2,
-      lastData.qrText || "",
-      lastData.codigo || "",
-      lastData.cargaH || 0
+      preview.nome,
+      preview.curso,
+      preview.data,
+      preview.linha1,
+      preview.linha2,
+      preview.qrText || "",
+      preview.codigo || "",
+      preview.cargaH || 0
     );
   } catch (error) {
     console.error(error);
   }
 }
 
-async function handleAssetChange(input, key) {
+async function handleAssetChange(input, key, options = {}) {
   if (!input) return;
   const file = input.files[0];
 
   if (!file) {
     assets[key] = null;
+    if (key === "template") {
+      syncTemplateControls();
+      setTemplateStatus("Nenhum molde carregado. O certificado seguirá usando o fundo padrão.", "info");
+    }
     void renderLastCertificate();
     return;
   }
 
   try {
-    assets[key] = await loadImage(file);
+    assets[key] = await loadImage(file, options);
+    if (key === "template") {
+      syncTemplateControls();
+      const warning = getTemplateWarning(assets.template);
+      setTemplateStatus(
+        warning ||
+          `Molde ${file.name} carregado. Ele será aplicado no preview, na geração individual e nos lotes.`,
+        warning ? "info" : "success"
+      );
+    }
     void renderLastCertificate();
   } catch (error) {
     alert(error.message);
     input.value = "";
     assets[key] = null;
+    if (key === "template") {
+      syncTemplateControls();
+      setTemplateStatus("Não foi possível carregar o molde informado.", "error");
+    }
   }
 }
 
@@ -2137,7 +2233,10 @@ async function prepareBatchCertificates(file) {
 
 function openBatchConfirmDialog(prepared) {
   const total = prepared.certificates.length;
-  const summary = `${total} certificado(s) serão gerado(s), terão os PNGs salvos no servidor e um arquivo ZIP será baixado neste navegador.`;
+  const moldeInfo = assets.template
+    ? " O molde carregado no formulário também será aplicado em todos os certificados deste lote."
+    : "";
+  const summary = `${total} certificado(s) serão gerado(s), terão os PNGs salvos no servidor e um arquivo ZIP será baixado neste navegador.${moldeInfo}`;
 
   if (
     !batchConfirmDialog ||
@@ -2422,6 +2521,25 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     });
   }
 
+  if (templateInput) {
+    templateInput.addEventListener("change", () => {
+      void handleAssetChange(templateInput, "template", { trim: false });
+    });
+  }
+
+  if (templateRemoveBtn) {
+    templateRemoveBtn.addEventListener("click", () => {
+      assets.template = null;
+      if (templateInput) templateInput.value = "";
+      syncTemplateControls();
+      setTemplateStatus(
+        "Molde removido. O preview voltou a usar o fundo padrão do certificado.",
+        "info"
+      );
+      void renderLastCertificate();
+    });
+  }
+
   if (assinaturaInput) {
     assinaturaInput.addEventListener("change", () => {
       void handleAssetChange(assinaturaInput, "assinatura");
@@ -2437,19 +2555,31 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 
   if (textoLinha1Input) {
     textoLinha1Input.addEventListener("input", () => {
-      if (!lastData || isBatchRunning) return;
-      lastData.linha1 = textoLinha1Input.value.trim() || defaultTextoLinha1;
+      if (isBatchRunning) return;
+      if (lastData) {
+        lastData.linha1 = textoLinha1Input.value.trim() || defaultTextoLinha1;
+      }
       void renderLastCertificate();
     });
   }
 
   if (textoLinha2Input) {
     textoLinha2Input.addEventListener("input", () => {
-      if (!lastData || isBatchRunning) return;
-      lastData.linha2 = textoLinha2Input.value.trim() || defaultTextoLinha2;
+      if (isBatchRunning) return;
+      if (lastData) {
+        lastData.linha2 = textoLinha2Input.value.trim() || defaultTextoLinha2;
+      }
       void renderLastCertificate();
     });
   }
+
+  [nomeInput, cursoInput, dataInput, cargaHInput].forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", () => {
+      if (isBatchRunning || lastData) return;
+      void renderLastCertificate();
+    });
+  });
 
   if (planilhaInput) {
     planilhaInput.addEventListener("change", () => {
@@ -2933,4 +3063,7 @@ setTodayDate();
 syncUserFormState();
 syncSecretariaFormState();
 updateControlLabels();
+syncTemplateControls();
+setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");
+void renderLastCertificate();
 void refreshSession();
