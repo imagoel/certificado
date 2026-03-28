@@ -136,6 +136,7 @@ Servicos:
 Volumes:
 - `postgres_data`: dados do banco
 - `certificados_media`: arquivos PNG salvos no servidor (`/app/data/certificados` no container da API)
+- `templates_media`: moldes persistidos por secretaria (`/app/data/templates` no container da API)
 
 Em deploy por Portainer + repositorio Git privado:
 - mantenha o `docker-compose.yml` no repositorio
@@ -146,7 +147,7 @@ Em deploy por Portainer + repositorio Git privado:
 
 ## Provisionamento Inicial
 
-Depois de subir os containers, rode os seeds iniciais dentro do container da API:
+Depois de subir os containers, voce pode rodar os seeds iniciais dentro do container da API:
 
 ```bash
 docker exec certificado-api python manage.py seed-secretarias
@@ -163,6 +164,7 @@ Opcionalmente, o bootstrap inicial pode ser automatico no startup da API:
 Com essa opcao ligada:
 - as secretarias iniciais sao criadas automaticamente se estiverem ausentes
 - o admin inicial so e criado/atualizado se ainda nao existir nenhum `admin_global`
+- se `AUTO_BOOTSTRAP_ADMIN=true` e faltarem `BOOTSTRAP_ADMIN_USERNAME` ou `BOOTSTRAP_ADMIN_PASSWORD`, a API falha no startup para evitar uma stack "saudavel" sem acesso administrativo
 
 Em seguida:
 1. abra `http://localhost:28754`
@@ -212,6 +214,7 @@ Variaveis principais em `.env`:
 - `PUBLIC_VALIDATION_BASE_URL=http://localhost:29180/validar`
 - `CERTIFICADOS_MAX_UPLOAD_BYTES=5242880`
 - `CERTIFICADOS_MAX_BATCH_ITEMS=500`
+- `TEMPLATES_MEDIA_DIR=/app/data/templates`
 - `TEMPLATES_MAX_UPLOAD_BYTES=10485760`
 - `SESSION_SECRET=troque-esta-chave-local`
 - `CERTIFICATE_HASH_SECRET=troque-esta-chave-do-certificado`
@@ -245,6 +248,7 @@ Observacoes:
 - o backend agora limita tentativas de login por `usuario + IP`; ajuste `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_SECONDS` e `LOGIN_BLOCK_SECONDS` conforme a operacao
 - o backend limita o lote de certificados por `CERTIFICADOS_MAX_BATCH_ITEMS`; acima disso a API responde `422`
 - o upload de moldes por secretaria aceita `png`, `jpg`, `jpeg` e `webp`; ajuste `TEMPLATES_MAX_UPLOAD_BYTES` se precisar aumentar o limite
+- os moldes cadastrados agora ficam em volume persistente separado (`templates_media`)
 - hashes antigos em SHA-256 continuam validando; novos certificados passam a usar HMAC-SHA256
 - o comando `create-admin` pode ser usado novamente para trocar a senha temporaria do administrador
 - com `AUTO_SEED_SECRETARIAS=true` e `AUTO_BOOTSTRAP_ADMIN=true`, a stack sobe no Portainer sem precisar rodar comandos manuais no console

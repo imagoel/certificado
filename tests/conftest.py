@@ -57,6 +57,7 @@ def app_ctx(tmp_path, monkeypatch):
 
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
     monkeypatch.setenv("CERTIFICADOS_MEDIA_DIR", str(media_dir))
+    monkeypatch.setenv("TEMPLATES_MEDIA_DIR", str(tmp_path / "templates"))
     monkeypatch.setenv("APP_ENV", "development")
     monkeypatch.setenv("PUBLIC_VALIDATION_BASE_URL", "http://testserver/validar")
     monkeypatch.setenv("SESSION_SECRET", "teste-session-secret-1234567890")

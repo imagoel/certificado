@@ -93,17 +93,16 @@ def run_startup_bootstrap(db: Session) -> list[str]:
         password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "")
 
         if not username or not password:
-            messages.append(
-                "Bootstrap admin ignorado: defina BOOTSTRAP_ADMIN_USERNAME e BOOTSTRAP_ADMIN_PASSWORD."
+            raise RuntimeError(
+                "AUTO_BOOTSTRAP_ADMIN=true exige BOOTSTRAP_ADMIN_USERNAME e BOOTSTRAP_ADMIN_PASSWORD."
             )
-        else:
-            messages.append(
-                ensure_startup_admin(
-                    db,
-                    nome=nome,
-                    username=username,
-                    password=password,
-                )
+        messages.append(
+            ensure_startup_admin(
+                db,
+                nome=nome,
+                username=username,
+                password=password,
             )
+        )
 
     return messages

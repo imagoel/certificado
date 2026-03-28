@@ -22,6 +22,7 @@ services:
       CODE_PREFIX: ${CODE_PREFIX:-ABC}
       PUBLIC_VALIDATION_BASE_URL: ${PUBLIC_VALIDATION_BASE_URL}
       CERTIFICADOS_MEDIA_DIR: /app/data/certificados
+      TEMPLATES_MEDIA_DIR: /app/data/templates
       CERTIFICADOS_MAX_UPLOAD_BYTES: ${CERTIFICADOS_MAX_UPLOAD_BYTES:-5242880}
       CERTIFICADOS_MAX_BATCH_ITEMS: ${CERTIFICADOS_MAX_BATCH_ITEMS:-500}
       TEMPLATES_MAX_UPLOAD_BYTES: ${TEMPLATES_MAX_UPLOAD_BYTES:-10485760}
@@ -49,6 +50,7 @@ services:
       - "${API_PORT:-29180}:8000"
     volumes:
       - certificados_media:/app/data/certificados
+      - templates_media:/app/data/templates
 
   postgres:
     image: postgres:15-alpine
@@ -69,3 +71,4 @@ services:
 volumes:
   postgres_data:
   certificados_media:
+  templates_media:
