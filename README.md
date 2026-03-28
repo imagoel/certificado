@@ -271,11 +271,17 @@ Com esse modelo:
 ## Estrutura
 
 - `index.html`, `styles.css`, `app.js`: login, interface, pre-visualizacao e geracao local do PNG final
-- `api/main.py`: rotas da API e sessao autenticada
+- `api/main.py`: bootstrap da API, middlewares e inclusao dos routers
+- `api/common.py`: configuracao compartilhada, dependencias, builders e helpers do dominio
+- `api/routes_auth.py`: login, logout e troca de secretaria
+- `api/routes_admin.py`: usuarios, secretarias, auditoria e exclusao administrativa
+- `api/routes_certificates.py`: listagem, emissao e arquivos dos certificados
+- `api/routes_public.py`: health, QR Code e validacao publica
 - `api/models.py`: modelos de usuarios, secretarias e certificados
 - `api/security.py`: hash de certificado e senha
 - `api/schemas.py`: contratos da API
 - `api/manage.py`: comandos de seed administrativo
+- `api/migrations.py`, `api/alembic/`: migracoes versionadas do banco
 - `api/templates/validacao.html`: pagina publica de validacao
 - `api/static/style.css`: estilo da pagina de validacao
 

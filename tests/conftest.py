@@ -22,6 +22,11 @@ MODULES_TO_RELOAD = [
     "security",
     "bootstrap",
     "migrations",
+    "common",
+    "routes_auth",
+    "routes_admin",
+    "routes_certificates",
+    "routes_public",
     "main",
 ]
 
@@ -89,7 +94,7 @@ def client(app_ctx):
 
 @pytest.fixture()
 def seed_data(app_ctx):
-    db = app_ctx.main.SessionLocal()
+    db = app_ctx.database.SessionLocal()
     try:
         seafi = app_ctx.models.Secretaria(
             sigla="SEAFI",

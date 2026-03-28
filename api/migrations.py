@@ -12,6 +12,7 @@ from database import Base, DATABASE_URL, engine
 BASE_DIR = Path(__file__).resolve().parent
 ALEMBIC_INI_PATH = BASE_DIR / "alembic.ini"
 ALEMBIC_SCRIPT_LOCATION = BASE_DIR / "alembic"
+BASELINE_REVISION = "20260328_01"
 
 
 def get_alembic_config() -> Config:
@@ -61,7 +62,8 @@ def ensure_database_schema() -> None:
 
         if "alembic_version" not in tables:
             bridge_legacy_schema(connection)
-            command.stamp(config, "head")
+            command.stamp(config, BASELINE_REVISION)
+            command.upgrade(config, "head")
             return
 
         command.upgrade(config, "head")
