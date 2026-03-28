@@ -125,6 +125,7 @@ const fieldAliases = {
   sobrenome: ["sobrenome", "sobrenomealuno", "sobrenomedoaluno", "ultimonome", "lastname", "surname"],
   curso: ["curso", "nomecurso", "treinamento", "evento"],
   data: ["data", "concluido", "conclusao", "dataconclusao", "datadeconclusao"],
+  carga_h: ["cargah", "cargahoraria", "cargahoras", "cargahora", "cargahorastotais"],
   linha1: ["linha1", "textolinha1", "texto1", "frase1"],
   linha2: ["linha2", "textolinha2", "texto2", "frase2"],
   arquivo: ["arquivo", "nomearquivo", "filename", "file"],
@@ -1166,7 +1167,7 @@ async function registerBatchCertificates(items) {
       codigo: item.codigo || null,
       nome: item.nome,
       curso: item.curso,
-      carga_h: 0,
+      carga_h: Number.isFinite(item.carga_h) ? item.carga_h : 0,
       concluido: item.data,
     })),
   };
@@ -1666,9 +1667,17 @@ function resolveCanonicalField(rawHeader) {
   return null;
 }
 
-function normalizeSpreadsheetDate(value) {
+function hasSpreadsheetDateValue(value) {
+  if (value instanceof Date) return true;
+  if (typeof value === "number") return Number.isFinite(value);
+  return sanitizeText(value) !== "";
+}
+
+function normalizeSpreadsheetDateResult(value) {
+  const hasValue = hasSpreadsheetDateValue(value);
+
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return toDateInputValue(value);
+    return { value: toDateInputValue(value), invalid: false };
   }
 
   if (
@@ -1679,28 +1688,78 @@ function normalizeSpreadsheetDate(value) {
   ) {
     const parsed = window.XLSX.SSF.parse_date_code(value);
     if (parsed && parsed.y && parsed.m && parsed.d) {
-      return `${parsed.y}-${pad2(parsed.m)}-${pad2(parsed.d)}`;
+      return {
+        value: `${parsed.y}-${pad2(parsed.m)}-${pad2(parsed.d)}`,
+        invalid: false,
+      };
     }
   }
 
   const text = sanitizeText(value);
-  if (!text) return "";
+  if (!text) return { value: "", invalid: false };
 
   const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  if (iso) return { value: `${iso[1]}-${iso[2]}-${iso[3]}`, invalid: false };
 
   const br = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-  if (br) return `${br[3]}-${pad2(br[2])}-${pad2(br[1])}`;
+  if (br) return { value: `${br[3]}-${pad2(br[2])}-${pad2(br[1])}`, invalid: false };
 
   const ymd = text.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
-  if (ymd) return `${ymd[1]}-${pad2(ymd[2])}-${pad2(ymd[3])}`;
+  if (ymd) return { value: `${ymd[1]}-${pad2(ymd[2])}-${pad2(ymd[3])}`, invalid: false };
 
   const parsed = new Date(text);
   if (!Number.isNaN(parsed.getTime())) {
-    return toDateInputValue(parsed);
+    return { value: toDateInputValue(parsed), invalid: false };
   }
 
-  return "";
+  return { value: "", invalid: hasValue };
+}
+
+function normalizeSpreadsheetDate(value) {
+  return normalizeSpreadsheetDateResult(value).value;
+}
+
+function formatInvalidSpreadsheetDate(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  const text = sanitizeText(value);
+  return text ? `"${text}"` : "valor nao reconhecido";
+}
+
+function normalizeCargaHorariaResult(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const rounded = Math.trunc(value);
+    return {
+      value: rounded >= 0 && rounded <= 2000 ? rounded : null,
+      invalid: rounded < 0 || rounded > 2000,
+    };
+  }
+
+  const text = sanitizeText(value);
+  if (!text) return { value: null, invalid: false };
+
+  const match = text.match(/^(\d{1,4})(?:\s*h(?:oras?)?)?$/i);
+  if (!match) {
+    return { value: null, invalid: true };
+  }
+
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 2000) {
+    return { value: null, invalid: true };
+  }
+
+  return { value: parsed, invalid: false };
+}
+
+function formatInvalidCargaHoraria(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  const text = sanitizeText(value);
+  return text ? `"${text}"` : "valor nao reconhecido";
 }
 
 function sanitizeFileName(text, fallback) {
@@ -1755,12 +1814,26 @@ function mapRowToCertificate(row, rowNumber, defaults = {}) {
 
   const defaultCurso = sanitizeText(defaults.curso);
   const defaultData = normalizeSpreadsheetDate(defaults.data);
+  const defaultCargaHoraria = normalizeCargaHorariaResult(defaults.carga_h).value;
   const defaultLinha1 = sanitizeText(defaults.linha1) || defaultTextoLinha1;
   const defaultLinha2 = sanitizeText(defaults.linha2) || defaultTextoLinha2;
 
   const nome = buildFullName(mapped.nome, mapped.sobrenome) || extractSingleCellValue(row);
   const curso = sanitizeText(mapped.curso) || defaultCurso;
-  const data = normalizeSpreadsheetDate(mapped.data) || defaultData;
+  const mappedDateResult = normalizeSpreadsheetDateResult(mapped.data);
+  if (mappedDateResult.invalid) {
+    return {
+      error: `linha ${rowNumber} (data invalida: ${formatInvalidSpreadsheetDate(mapped.data)})`,
+    };
+  }
+  const data = mappedDateResult.value || defaultData;
+  const mappedCargaHoraria = normalizeCargaHorariaResult(mapped.carga_h);
+  if (mappedCargaHoraria.invalid) {
+    return {
+      error: `linha ${rowNumber} (carga horaria invalida: ${formatInvalidCargaHoraria(mapped.carga_h)})`,
+    };
+  }
+  const carga_h = mappedCargaHoraria.value ?? defaultCargaHoraria ?? 0;
 
   const missingFields = [];
   if (!nome) missingFields.push("nome");
@@ -1778,7 +1851,7 @@ function mapRowToCertificate(row, rowNumber, defaults = {}) {
     `${String(rowNumber).padStart(4, "0")}_${sanitizeFileName(nome, "aluno")}`;
   const fileName = `${sanitizeFileName(arquivoBase, `certificado_${rowNumber}`)}.png`;
 
-  return { nome, curso, data, codigo: "", linha1, linha2, fileName };
+  return { nome, curso, data, codigo: "", carga_h, linha1, linha2, fileName };
 }
 
 function detectCsvDelimiter(headerLine) {
@@ -1938,6 +2011,10 @@ async function handleBatchGenerate() {
       const input = document.getElementById("data");
       return input ? input.value : "";
     })(),
+    carga_h: (() => {
+      const input = cargaHInput;
+      return input ? input.value : "";
+    })(),
     linha1: textoLinha1Input ? textoLinha1Input.value : defaultTextoLinha1,
     linha2: textoLinha2Input ? textoLinha2Input.value : defaultTextoLinha2,
   };
@@ -1967,7 +2044,7 @@ async function handleBatchGenerate() {
       const preview = invalidRows.slice(0, 5).join(", ");
       const suffix = invalidRows.length > 5 ? ", ..." : "";
       throw new Error(
-        `Existem linhas com campos obrigatórios faltando (${invalidRows.length}): ${preview}${suffix}.`
+        `Existem linhas com dados invalidos ou incompletos (${invalidRows.length}): ${preview}${suffix}.`
       );
     }
 
@@ -2004,7 +2081,8 @@ async function handleBatchGenerate() {
         cert.linha1,
         cert.linha2,
         cert.qrText,
-        cert.codigo
+        cert.codigo,
+        cert.carga_h || 0
       );
 
       const pngBlob = await canvasToPngBlob();
@@ -2028,6 +2106,7 @@ async function handleBatchGenerate() {
         nome: lastGenerated.nome,
         curso: lastGenerated.curso,
         data: lastGenerated.data,
+        cargaH: lastGenerated.carga_h || 0,
         codigo: lastGenerated.codigo,
         linha1: lastGenerated.linha1,
         linha2: lastGenerated.linha2,
