@@ -61,7 +61,7 @@
       </section>
 
       <section id="generator-section" class="stack-section">
-        <section class="panel">
+        <section id="audit-panel" class="panel" hidden>
           <form id="cert-form" class="form">
             <label for="nome">Nome do participante</label>
             <input id="nome" type="text" placeholder="Ex.: Maria da Silva" required />
@@ -251,6 +251,7 @@
                 <option value="certificado_lote_criado">Lote criado</option>
                 <option value="certificado_png_enviado">PNG enviado</option>
                 <option value="certificado_png_acessado">PNG acessado</option>
+                <option value="certificado_excluido">Certificado excluído</option>
                 <option value="usuario_criado">Usuário criado</option>
                 <option value="usuario_atualizado">Usuário atualizado</option>
                 <option value="secretaria_criada">Secretaria criada</option>
@@ -446,11 +447,57 @@
     </section>
   </main>
 
+  <dialog id="delete-cert-dialog" class="modal-dialog">
+    <form id="delete-cert-form" class="form modal-form" method="dialog">
+      <div class="panel-header">
+        <div>
+          <h2>Excluir Certificado</h2>
+          <p id="delete-cert-message" class="subtitle">
+            Confirme o código e informe a senha do administrador para excluir.
+          </p>
+        </div>
+      </div>
+
+      <div class="field-stack">
+        <label for="delete-cert-current-code">Código selecionado</label>
+        <input id="delete-cert-current-code" type="text" readonly />
+      </div>
+
+      <div class="field-stack">
+        <label for="delete-cert-confirm-code">Digite o código para confirmar</label>
+        <input
+          id="delete-cert-confirm-code"
+          type="text"
+          placeholder="Ex.: ABC-2026-00015"
+          autocomplete="off"
+          required
+        />
+      </div>
+
+      <div class="field-stack">
+        <label for="delete-cert-password">Senha do administrador</label>
+        <input
+          id="delete-cert-password"
+          type="password"
+          placeholder="Informe sua senha"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="danger-btn">Excluir Certificado</button>
+        <button id="delete-cert-cancel" type="button" class="secondary-btn">Cancelar</button>
+      </div>
+      <p id="delete-cert-status" class="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260328-3"></script>
+  <script src="app.js?v=20260328-4"></script>
 </body>
 </html>

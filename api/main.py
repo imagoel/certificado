@@ -23,7 +23,9 @@ from bootstrap import run_startup_bootstrap
 from database import Base, SessionLocal, engine, get_db
 from models import AuditEvent, Certificate, Secretaria, Usuario
 from schemas import (
+    ActionResponse,
     AuditEventResponse,
+    CertificateAdminDeleteRequest,
     CertificateBatchCreate,
     CertificateCreate,
     CertificateResponse,
@@ -942,6 +944,70 @@ def admin_list_audit_events(
         por_pagina=por_pagina,
         paginas=paginas,
         itens=[build_audit_response(event) for event in events],
+    )
+
+
+@app.delete("/api/admin/certificados/{codigo}", response_model=ActionResponse)
+def admin_delete_certificate(
+    codigo: str,
+    payload: CertificateAdminDeleteRequest,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> ActionResponse:
+    normalized_code = sanitize_code(codigo)
+    if payload.confirmacao_codigo != normalized_code:
+        raise HTTPException(
+            status_code=422,
+            detail="Codigo de confirmacao divergente. Digite o codigo exato do certificado.",
+        )
+
+    if not verify_password(payload.password, admin_user.senha_hash):
+        raise HTTPException(status_code=401, detail="Senha do administrador invalida.")
+
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
+
+    cert_id = cert.id
+    cert_code = cert.codigo
+    cert_name = cert.nome
+    cert_secretaria = cert.secretaria
+
+    file_path: Path | None = None
+    if cert.arquivo_relpath:
+        try:
+            file_path = resolve_media_path(cert.arquivo_relpath)
+        except HTTPException:
+            file_path = None
+
+    if file_path and file_path.exists():
+        try:
+            file_path.unlink()
+        except OSError as error:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Nao foi possivel remover o arquivo do certificado: {error}",
+            ) from error
+
+    db.query(AuditEvent).filter(AuditEvent.certificado_id == cert_id).delete(
+        synchronize_session=False
+    )
+    db.delete(cert)
+    db.flush()
+    record_audit_event(
+        db,
+        evento="certificado_excluido",
+        descricao=f"Certificado {cert_code} ({cert_name}) excluido por {admin_user.username}.",
+        usuario=admin_user,
+        secretaria=cert_secretaria,
+        entidade_tipo="certificado",
+        entidade_id=cert_id,
+    )
+    db.commit()
+
+    return ActionResponse(
+        message=f"Certificado {cert_code} excluido com sucesso.",
+        codigo=cert_code,
     )
 
 

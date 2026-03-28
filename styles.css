@@ -221,6 +221,10 @@ button {
   background: #526781;
 }
 
+.danger-btn {
+  background: #b32929;
+}
+
 button[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
@@ -348,6 +352,23 @@ select[multiple] {
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
+  background: #fff;
+}
+
+.modal-dialog {
+  width: min(520px, calc(100vw - 32px));
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 24px 60px rgba(17, 32, 49, 0.24);
+}
+
+.modal-dialog::backdrop {
+  background: rgba(17, 32, 49, 0.45);
+}
+
+.modal-form {
+  padding: 18px;
   background: #fff;
 }
 

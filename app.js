@@ -73,6 +73,16 @@ const auditListBody = document.getElementById("audit-list-body");
 const auditPrevPageBtn = document.getElementById("audit-prev-page");
 const auditNextPageBtn = document.getElementById("audit-next-page");
 const auditPageIndicator = document.getElementById("audit-page-indicator");
+const auditPanel = document.getElementById("audit-panel");
+
+const deleteCertDialog = document.getElementById("delete-cert-dialog");
+const deleteCertForm = document.getElementById("delete-cert-form");
+const deleteCertMessage = document.getElementById("delete-cert-message");
+const deleteCertCurrentCodeInput = document.getElementById("delete-cert-current-code");
+const deleteCertConfirmCodeInput = document.getElementById("delete-cert-confirm-code");
+const deleteCertPasswordInput = document.getElementById("delete-cert-password");
+const deleteCertStatus = document.getElementById("delete-cert-status");
+const deleteCertCancelBtn = document.getElementById("delete-cert-cancel");
 
 const batchStatus = document.getElementById("batch-status");
 const canvas = document.getElementById("canvas");
@@ -125,6 +135,7 @@ let renderTicket = 0;
 let isBatchRunning = false;
 let sessionState = null;
 let currentSection = "generator";
+let pendingDeleteCertificate = null;
 
 const certListState = {
   page: 1,
@@ -412,6 +423,9 @@ function renderSession(session) {
   if (adminTab) {
     adminTab.hidden = !isAdminSession(session);
   }
+  if (auditPanel) {
+    auditPanel.hidden = !isAdminSession(session);
+  }
   if (!isAdminSession(session) && currentSection === "admin") {
     switchSection("generator");
   }
@@ -419,6 +433,7 @@ function renderSession(session) {
 
 function clearSessionUi(message = "") {
   sessionState = null;
+  closeDeleteCertificateDialog();
   certListState.page = 1;
   certListState.total = 0;
   certListState.totalPages = 1;
@@ -467,6 +482,7 @@ function clearSessionUi(message = "") {
   if (certListSummary) certListSummary.textContent = "";
   if (certPageIndicator) certPageIndicator.textContent = "Página 1";
   if (adminTab) adminTab.hidden = true;
+  if (auditPanel) auditPanel.hidden = true;
   if (userListBody) {
     userListBody.innerHTML = `
       <tr>
@@ -559,6 +575,41 @@ function setSecretariaFormStatus(message, type = "info") {
 
 function setAuditStatus(message, type = "info") {
   setStatusMessage(auditStatus, message, type);
+}
+
+function setDeleteCertStatus(message, type = "info") {
+  setStatusMessage(deleteCertStatus, message, type);
+}
+
+function closeDeleteCertificateDialog() {
+  pendingDeleteCertificate = null;
+  if (deleteCertForm) deleteCertForm.reset();
+  setDeleteCertStatus("", "info");
+  if (deleteCertDialog && typeof deleteCertDialog.close === "function" && deleteCertDialog.open) {
+    deleteCertDialog.close();
+  }
+}
+
+function openDeleteCertificateDialog(item) {
+  if (!deleteCertDialog || !deleteCertForm || !isAdminSession()) return;
+
+  pendingDeleteCertificate = item;
+  if (deleteCertCurrentCodeInput) {
+    deleteCertCurrentCodeInput.value = item.codigo || "";
+  }
+  if (deleteCertConfirmCodeInput) {
+    deleteCertConfirmCodeInput.value = "";
+  }
+  if (deleteCertPasswordInput) {
+    deleteCertPasswordInput.value = "";
+  }
+  if (deleteCertMessage) {
+    deleteCertMessage.textContent = `Confirme o código ${item.codigo} e informe a senha do administrador para excluir ${item.nome}.`;
+  }
+  setDeleteCertStatus("", "info");
+  if (typeof deleteCertDialog.showModal === "function") {
+    deleteCertDialog.showModal();
+  }
 }
 
 function scrollAdminFormIntoView(form) {
@@ -740,6 +791,18 @@ function renderCertificateRows(items) {
       switchSection("generator");
     });
     actionsWrap.appendChild(preencherButton);
+
+    if (isAdminSession()) {
+      actionsWrap.appendChild(
+        createInlineButton(
+          "Excluir",
+          () => {
+            openDeleteCertificateDialog(item);
+          },
+          "danger-btn"
+        )
+      );
+    }
 
     actionsCell.appendChild(actionsWrap);
 
@@ -2445,6 +2508,89 @@ if (secretariaSelect) {
       }
       setBatchStatus(
         (error && error.message) || "Nao foi possivel trocar a secretaria.",
+        "error"
+      );
+    }
+  });
+}
+
+if (deleteCertCancelBtn) {
+  deleteCertCancelBtn.addEventListener("click", () => {
+    closeDeleteCertificateDialog();
+  });
+}
+
+if (deleteCertDialog) {
+  deleteCertDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeDeleteCertificateDialog();
+  });
+}
+
+if (deleteCertForm) {
+  deleteCertForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!pendingDeleteCertificate || !isAdminSession()) return;
+
+    const codigo = sanitizeText(pendingDeleteCertificate.codigo).toUpperCase();
+    const confirmacaoCodigo = sanitizeText(
+      deleteCertConfirmCodeInput ? deleteCertConfirmCodeInput.value : ""
+    ).toUpperCase();
+    const password = deleteCertPasswordInput ? deleteCertPasswordInput.value : "";
+
+    if (!codigo) {
+      setDeleteCertStatus("Nenhum certificado selecionado para exclusao.", "error");
+      return;
+    }
+    if (confirmacaoCodigo !== codigo) {
+      setDeleteCertStatus("Digite o codigo exato do certificado para confirmar.", "error");
+      return;
+    }
+    if (!password) {
+      setDeleteCertStatus("Informe a senha do administrador.", "error");
+      return;
+    }
+
+    try {
+      setDeleteCertStatus(`Excluindo ${codigo}...`, "info");
+      const payload = await apiJsonRequest(
+        `/api/admin/certificados/${encodeURIComponent(codigo)}`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({
+            password,
+            confirmacao_codigo: confirmacaoCodigo,
+          }),
+        }
+      );
+
+      if (lastData && sanitizeText(lastData.codigo).toUpperCase() === codigo) {
+        lastData = null;
+        downloadBtn.disabled = true;
+      }
+
+      closeDeleteCertificateDialog();
+      setCertListStatus(
+        (payload && payload.message) || `Certificado ${codigo} excluido com sucesso.`,
+        "success"
+      );
+      await loadCertificates(1);
+      if (isAdminSession()) {
+        await loadAuditEvents(1);
+      }
+    } catch (error) {
+      console.error(error);
+      if (error && error.status === 401) {
+        if (error.message === "Senha do administrador invalida.") {
+          setDeleteCertStatus(error.message, "error");
+          if (deleteCertPasswordInput) deleteCertPasswordInput.value = "";
+          return;
+        }
+        await handleUnauthorized();
+        return;
+      }
+      setDeleteCertStatus(
+        (error && error.message) || "Nao foi possivel excluir o certificado.",
         "error"
       );
     }

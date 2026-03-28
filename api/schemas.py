@@ -174,3 +174,18 @@ class PaginatedAuditEventResponse(BaseModel):
     por_pagina: int
     paginas: int
     itens: list[AuditEventResponse]
+
+
+class CertificateAdminDeleteRequest(BaseModel):
+    password: str = Field(min_length=4, max_length=200)
+    confirmacao_codigo: str = Field(min_length=3, max_length=20)
+
+    @field_validator("confirmacao_codigo")
+    @classmethod
+    def normalize_confirmation_code(cls, value: str) -> str:
+        return value.strip().upper()
+
+
+class ActionResponse(BaseModel):
+    message: str
+    codigo: Optional[str] = None
