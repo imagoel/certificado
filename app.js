@@ -562,10 +562,6 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
       layout.qr.maxW,
       layout.qr.maxH
     );
-
-    ctx.fillStyle = "#334";
-    ctx.font = "16px Arial";
-    ctx.fillText("Validação", layout.qr.x, layout.qr.y + layout.qr.maxH / 2 + 16);
   }
 
   ctx.font = "22px Arial";
