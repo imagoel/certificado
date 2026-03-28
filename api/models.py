@@ -1,9 +1,13 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 usuario_secretarias = Table(
@@ -23,7 +27,7 @@ class Secretaria(Base):
     ativa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     logo_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     assinatura_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
     usuarios: Mapped[list["Usuario"]] = relationship(
         secondary=usuario_secretarias,
@@ -43,7 +47,7 @@ class Usuario(Base):
     papel: Mapped[str] = mapped_column(String(40), nullable=False, default="operador")
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     ultimo_login_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
     secretarias: Mapped[list[Secretaria]] = relationship(
         secondary=usuario_secretarias,
@@ -66,7 +70,7 @@ class Certificate(Base):
     curso: Mapped[str] = mapped_column(String(200), nullable=False)
     carga_h: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     concluido: Mapped[date] = mapped_column(Date, nullable=False)
-    emitido_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    emitido_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     hash: Mapped[str] = mapped_column(String(64), nullable=False)
     secretaria_id: Mapped[int | None] = mapped_column(ForeignKey("secretarias.id"), nullable=True)
     emitido_por_usuario_id: Mapped[int | None] = mapped_column(
@@ -95,7 +99,7 @@ class AuditEvent(Base):
     certificado_id: Mapped[int | None] = mapped_column(ForeignKey("certificados.id"), nullable=True)
     entidade_tipo: Mapped[str | None] = mapped_column(String(50), nullable=True)
     entidade_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
     usuario: Mapped[Usuario | None] = relationship(back_populates="auditorias")
     secretaria: Mapped[Secretaria | None] = relationship(back_populates="auditorias")

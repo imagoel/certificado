@@ -1,8 +1,9 @@
+from contextlib import asynccontextmanager
 import math
 import os
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from threading import Lock
@@ -15,12 +16,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import inspect, or_, text
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from bootstrap import run_startup_bootstrap
-from database import Base, SessionLocal, engine, get_db
+from database import SessionLocal, get_db
+from migrations import ensure_database_schema
 from models import AuditEvent, Certificate, Secretaria, Usuario
 from schemas import (
     ActionResponse,
@@ -44,7 +46,9 @@ from schemas import (
     ValidationResponse,
 )
 from security import (
+    DEFAULT_DEV_CERTIFICATE_HASH_SECRET,
     calculate_certificate_hash,
+    get_certificate_hash_secret,
     hash_password,
     normalize_username,
     verify_certificate_hash,
@@ -59,6 +63,7 @@ MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "5242880"))
 APP_ENV = (os.getenv("APP_ENV", "development").strip().lower() or "development")
 IS_PRODUCTION = APP_ENV in {"prod", "production"}
 SESSION_SECRET = os.getenv("SESSION_SECRET", "troque-esta-chave-de-sessao")
+CERTIFICATE_HASH_SECRET = get_certificate_hash_secret()
 SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "certificado_session").strip() or "certificado_session"
 SESSION_SAME_SITE = (os.getenv("SESSION_SAME_SITE", "lax").strip().lower() or "lax")
 SESSION_HTTPS_ONLY = os.getenv("SESSION_HTTPS_ONLY", "false").strip().lower() in {
@@ -96,6 +101,10 @@ LOGIN_ATTEMPTS_LOCK = Lock()
 LOGIN_ATTEMPTS: dict[str, dict[str, float | int]] = {}
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def resolve_allowed_origins() -> list[str]:
     raw = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
     default_origins = [
@@ -120,6 +129,14 @@ def validate_security_config() -> None:
     if SESSION_SECRET == DEFAULT_DEV_SESSION_SECRET or len(SESSION_SECRET) < 24:
         raise RuntimeError(
             "SESSION_SECRET inseguro para producao. Configure uma chave longa e exclusiva."
+        )
+
+    if (
+        CERTIFICATE_HASH_SECRET == DEFAULT_DEV_CERTIFICATE_HASH_SECRET
+        or len(CERTIFICATE_HASH_SECRET) < 24
+    ):
+        raise RuntimeError(
+            "CERTIFICATE_HASH_SECRET inseguro para producao. Configure uma chave longa e exclusiva."
         )
 
     if not SESSION_HTTPS_ONLY:
@@ -197,10 +214,32 @@ def clear_login_attempts(username: str, request: Request) -> None:
         LOGIN_ATTEMPTS.pop(key, None)
 
 
+def run_startup_tasks() -> None:
+    validate_security_config()
+    ensure_database_schema()
+    CERTIFICADOS_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    db = SessionLocal()
+    try:
+        messages = run_startup_bootstrap(db)
+        if messages:
+            db.commit()
+            for message in messages:
+                print(message)
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    run_startup_tasks()
+    yield
+
+
 app = FastAPI(
     title="Sistema de Certificados - API",
     version="1.1.0",
     description="API para registro, autenticacao e validacao de certificados.",
+    lifespan=lifespan,
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -225,52 +264,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def startup_event() -> None:
-    validate_security_config()
-    Base.metadata.create_all(bind=engine)
-    ensure_certificate_schema()
-    CERTIFICADOS_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-    db = SessionLocal()
-    try:
-        messages = run_startup_bootstrap(db)
-        if messages:
-            db.commit()
-            for message in messages:
-                print(message)
-    finally:
-        db.close()
-
-
-def ensure_certificate_schema() -> None:
-    try:
-        inspector = inspect(engine)
-        columns = {column["name"] for column in inspector.get_columns("certificados")}
-    except Exception:
-        return
-
-    statements: list[str] = []
-    if "arquivo_relpath" not in columns:
-        statements.append("ALTER TABLE certificados ADD COLUMN arquivo_relpath VARCHAR(255)")
-    if "arquivo_mime" not in columns:
-        statements.append("ALTER TABLE certificados ADD COLUMN arquivo_mime VARCHAR(100)")
-    if "arquivo_bytes" not in columns:
-        statements.append("ALTER TABLE certificados ADD COLUMN arquivo_bytes INTEGER")
-    if "secretaria_id" not in columns:
-        statements.append("ALTER TABLE certificados ADD COLUMN secretaria_id INTEGER")
-    if "emitido_por_usuario_id" not in columns:
-        statements.append("ALTER TABLE certificados ADD COLUMN emitido_por_usuario_id INTEGER")
-
-    if not statements:
-        return
-
-    with engine.begin() as connection:
-        for statement in statements:
-            connection.execute(text(statement))
-
-
 def normalize_prefix(prefix: str | None) -> str:
     raw = (prefix or DEFAULT_PREFIX).strip().upper()
     clean = re.sub(r"[^A-Z0-9]", "", raw)
@@ -294,7 +287,7 @@ def sanitize_code(codigo: str) -> str:
 
 def build_file_relative_path(codigo: str) -> str:
     normalized = sanitize_code(codigo)
-    year = datetime.utcnow().year
+    year = utc_now().year
     parts = normalized.split("-")
     if len(parts) >= 2 and parts[1].isdigit():
         year = int(parts[1])
@@ -666,7 +659,7 @@ def auth_login(
     request.session.clear()
     request.session["user_id"] = usuario.id
     clear_login_attempts(username, request)
-    usuario.ultimo_login_em = datetime.utcnow()
+    usuario.ultimo_login_em = utc_now()
     secretaria_ativa, _secretarias = resolve_active_secretaria(request, db, usuario)
     record_audit_event(
         db,
@@ -1165,7 +1158,7 @@ def create_certificate(
         curso=payload.curso,
         carga_h=payload.carga_h,
         concluido=payload.concluido,
-        emitido_em=datetime.utcnow(),
+        emitido_em=utc_now(),
         hash=cert_hash,
         secretaria_id=secretaria.id,
         emitido_por_usuario_id=usuario.id,
@@ -1247,7 +1240,7 @@ def create_certificates_batch(
             curso=item.curso,
             carga_h=item.carga_h,
             concluido=item.concluido,
-            emitido_em=datetime.utcnow(),
+            emitido_em=utc_now(),
             hash=cert_hash,
             secretaria_id=secretaria.id,
             emitido_por_usuario_id=usuario.id,

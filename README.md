@@ -87,7 +87,7 @@ Regras:
 - autenticar usuarios
 - registrar certificados e gerar codigos oficiais
 - gerar o PNG do QR Code usado pelo frontend
-- validar integridade por hash SHA-256
+- validar integridade por HMAC-SHA256
 - armazenar e servir o PNG final do certificado
 
 ### Endpoints principais
@@ -172,6 +172,38 @@ Em seguida:
 5. se estiver com perfil `admin_global`, use a aba `Administracao` para criar usuarios e secretarias
 6. na mesma aba `Administracao`, acompanhe a trilha de auditoria do sistema
 
+## Testes Automatizados
+
+Suite inicial coberta:
+- autenticacao e autorizacao de `admin_global` e `operador`
+- criacao e validacao publica de certificados
+- exclusao administrativa de certificados
+- compatibilidade entre hashes legados em SHA-256 e hashes novos em HMAC-SHA256
+- versionamento do schema com Alembic
+
+Para executar em um ambiente Python com dependencias de desenvolvimento:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+PYTHONPATH=api pytest -q
+```
+
+## Migracoes
+
+O projeto agora usa Alembic para versionar o schema do banco.
+
+Comando manual:
+
+```bash
+cd api
+python3 manage.py migrate
+```
+
+Compatibilidade:
+- bancos vazios sobem pela migration baseline
+- bancos legados sem `alembic_version` sao adotados automaticamente no startup
+- a ponte legada existe apenas para absorver a base atual sem quebra; proximas mudancas de schema devem entrar por revisoes do Alembic
+
 ## Configuracao Local
 
 Variaveis principais em `.env`:
@@ -180,6 +212,7 @@ Variaveis principais em `.env`:
 - `PUBLIC_VALIDATION_BASE_URL=http://localhost:29180/validar`
 - `CERTIFICADOS_MAX_UPLOAD_BYTES=5242880`
 - `SESSION_SECRET=troque-esta-chave-local`
+- `CERTIFICATE_HASH_SECRET=troque-esta-chave-do-certificado`
 - `SESSION_COOKIE_NAME=certificado_session`
 - `SESSION_SAME_SITE=lax`
 - `SESSION_HTTPS_ONLY=false`
@@ -201,12 +234,14 @@ Observacoes:
 - em producao, se frontend e API estiverem no mesmo dominio com proxy/tunnel, o frontend usa a mesma origem automaticamente
 - em producao, troque `PUBLIC_VALIDATION_BASE_URL` pelo dominio publico oficial
 - em producao, troque `SESSION_SECRET` por uma chave longa e exclusiva
+- em producao, troque `CERTIFICATE_HASH_SECRET` por uma chave longa e exclusiva e mantenha esse valor estavel
 - em producao, use `APP_ENV=production`
 - em producao, prefira `SESSION_HTTPS_ONLY=true`
 - em producao, defina `TRUST_PROXY_HEADERS=true` somente se houver proxy confiavel na frente da API
 - em producao, revise `CORS_ALLOW_ORIGINS` para o dominio oficial do frontend
 - em producao, decida entre `ENABLE_ADMIN_DOCS=false` ou docs liberada apenas para administradores
 - o backend agora limita tentativas de login por `usuario + IP`; ajuste `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_SECONDS` e `LOGIN_BLOCK_SECONDS` conforme a operacao
+- hashes antigos em SHA-256 continuam validando; novos certificados passam a usar HMAC-SHA256
 - o comando `create-admin` pode ser usado novamente para trocar a senha temporaria do administrador
 
 ### Checklist de producao

@@ -3,7 +3,8 @@ import os
 import sys
 
 from bootstrap import create_or_update_admin, seed_secretarias
-from database import Base, SessionLocal, engine
+from database import SessionLocal
+from migrations import ensure_database_schema
 
 
 def run_seed_secretarias() -> int:
@@ -36,11 +37,12 @@ def create_admin(nome: str, username: str, password: str) -> int:
 
 
 def main() -> int:
-    Base.metadata.create_all(bind=engine)
+    ensure_database_schema()
 
     parser = argparse.ArgumentParser(description="Comandos administrativos do sistema.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    subparsers.add_parser("migrate", help="Aplica as migracoes pendentes do banco.")
     subparsers.add_parser("seed-secretarias", help="Cria as secretarias iniciais.")
 
     create_admin_parser = subparsers.add_parser(
@@ -61,6 +63,10 @@ def main() -> int:
     )
 
     args = parser.parse_args()
+
+    if args.command == "migrate":
+        print("Migracoes aplicadas com sucesso.")
+        return 0
 
     if args.command == "seed-secretarias":
         return run_seed_secretarias()

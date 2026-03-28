@@ -27,4 +27,5 @@ Desktop.ini
 ## Python
 __pycache__/
 *.pyc
+.pytest_cache/
 api/data/

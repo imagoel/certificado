@@ -4,6 +4,7 @@ import os
 import secrets
 
 PASSWORD_ITERATIONS = int(os.getenv("PASSWORD_HASH_ITERATIONS", "390000"))
+DEFAULT_DEV_CERTIFICATE_HASH_SECRET = "troque-esta-chave-do-certificado"
 
 
 def normalize_text(value: str | None) -> str:
@@ -35,7 +36,19 @@ def canonical_certificate_payload(
     return "|".join(parts)
 
 
-def calculate_certificate_hash(
+def get_certificate_hash_secret() -> str:
+    explicit_secret = (os.getenv("CERTIFICATE_HASH_SECRET") or "").strip()
+    if explicit_secret:
+        return explicit_secret
+
+    session_secret = (os.getenv("SESSION_SECRET") or "").strip()
+    if session_secret:
+        return session_secret
+
+    return DEFAULT_DEV_CERTIFICATE_HASH_SECRET
+
+
+def calculate_legacy_certificate_hash(
     *,
     codigo: str,
     nome: str,
@@ -53,6 +66,30 @@ def calculate_certificate_hash(
         concluido=concluido,
     )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def calculate_certificate_hash(
+    *,
+    codigo: str,
+    nome: str,
+    cpf: str | None,
+    curso: str,
+    carga_h: int,
+    concluido: str,
+) -> str:
+    canonical = canonical_certificate_payload(
+        codigo=codigo,
+        nome=nome,
+        cpf=cpf,
+        curso=curso,
+        carga_h=carga_h,
+        concluido=concluido,
+    )
+    return hmac.new(
+        get_certificate_hash_secret().encode("utf-8"),
+        canonical.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
 
 
 def verify_certificate_hash(
@@ -73,7 +110,18 @@ def verify_certificate_hash(
         carga_h=carga_h,
         concluido=concluido,
     )
-    return current_hash == expected_hash
+    if hmac.compare_digest(current_hash, expected_hash):
+        return True
+
+    legacy_hash = calculate_legacy_certificate_hash(
+        codigo=codigo,
+        nome=nome,
+        cpf=cpf,
+        curso=curso,
+        carga_h=carga_h,
+        concluido=concluido,
+    )
+    return hmac.compare_digest(legacy_hash, expected_hash)
 
 
 def normalize_username(value: str | None) -> str:
