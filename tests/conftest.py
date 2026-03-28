@@ -26,6 +26,7 @@ MODULES_TO_RELOAD = [
     "routes_auth",
     "routes_admin",
     "routes_certificates",
+    "routes_templates",
     "routes_public",
     "main",
 ]

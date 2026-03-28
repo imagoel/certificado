@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
+from uuid import uuid4
 
 from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
@@ -13,10 +14,11 @@ from sqlalchemy.orm import Session
 from bootstrap import run_startup_bootstrap
 from database import SessionLocal, get_db
 from migrations import ensure_database_schema
-from models import AuditEvent, Certificate, Secretaria, Usuario
+from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, Usuario
 from schemas import (
     AuditEventResponse,
     CertificateResponse,
+    CertificateTemplateResponse,
     SecretariaResponse,
     SessionResponse,
     UserAdminResponse,
@@ -33,6 +35,11 @@ DEFAULT_PREFIX = os.getenv("CODE_PREFIX", "ABC")
 DEFAULT_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "certificados"))
 CERTIFICADOS_MEDIA_DIR = Path(os.getenv("CERTIFICADOS_MEDIA_DIR", DEFAULT_MEDIA_DIR)).resolve()
 MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "5242880"))
+DEFAULT_TEMPLATES_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "templates"))
+TEMPLATES_MEDIA_DIR = Path(
+    os.getenv("TEMPLATES_MEDIA_DIR", DEFAULT_TEMPLATES_MEDIA_DIR)
+).resolve()
+MAX_TEMPLATE_UPLOAD_BYTES = int(os.getenv("TEMPLATES_MAX_UPLOAD_BYTES", "10485760"))
 APP_ENV = (os.getenv("APP_ENV", "development").strip().lower() or "development")
 IS_PRODUCTION = APP_ENV in {"prod", "production"}
 SESSION_SECRET = os.getenv("SESSION_SECRET", "troque-esta-chave-de-sessao")
@@ -193,6 +200,7 @@ def run_startup_tasks() -> None:
     validate_security_config()
     ensure_database_schema()
     CERTIFICADOS_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    TEMPLATES_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     db = SessionLocal()
     try:
         messages = run_startup_bootstrap(db)
@@ -234,10 +242,33 @@ def build_file_relative_path(codigo: str) -> str:
     return f"{year}/{normalized}.png"
 
 
+def sanitize_template_name(value: str, fallback: str = "molde") -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "-", (value or "").strip().lower())
+    normalized = normalized.strip("-")
+    return normalized or fallback
+
+
+def build_template_relative_path(secretaria_sigla: str, template_name: str, filename: str) -> str:
+    suffix = Path(filename or "").suffix.lower()
+    if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".svg"}:
+        suffix = ".png"
+    folder = normalize_secretaria_sigla(secretaria_sigla) or "SECRETARIA"
+    base_name = sanitize_template_name(template_name)
+    unique_suffix = uuid4().hex[:10]
+    return f"{folder}/{base_name}-{unique_suffix}{suffix}"
+
+
 def resolve_media_path(relative_path: str) -> Path:
     candidate = (CERTIFICADOS_MEDIA_DIR / relative_path).resolve()
     if not str(candidate).startswith(str(CERTIFICADOS_MEDIA_DIR)):
         raise HTTPException(status_code=400, detail="Caminho de arquivo invalido.")
+    return candidate
+
+
+def resolve_template_media_path(relative_path: str) -> Path:
+    candidate = (TEMPLATES_MEDIA_DIR / relative_path).resolve()
+    if not str(candidate).startswith(str(TEMPLATES_MEDIA_DIR)):
+        raise HTTPException(status_code=400, detail="Caminho de arquivo de molde invalido.")
     return candidate
 
 
@@ -255,12 +286,36 @@ def build_certificate_file_url(request: Request, codigo: str) -> str:
     return str(request.url_for("get_certificate_file", codigo=sanitize_code(codigo)))
 
 
+def build_template_file_url(request: Request, template_id: int) -> str:
+    return str(request.url_for("get_template_file", template_id=template_id))
+
+
 def build_secretaria_response(secretaria: Secretaria) -> SecretariaResponse:
     return SecretariaResponse(
         id=secretaria.id,
         sigla=secretaria.sigla,
         nome=secretaria.nome,
         ativa=secretaria.ativa,
+    )
+
+
+def build_template_response(
+    template: CertificateTemplate,
+    request: Request,
+) -> CertificateTemplateResponse:
+    return CertificateTemplateResponse(
+        id=template.id,
+        secretaria_id=template.secretaria_id,
+        secretaria_sigla=template.secretaria.sigla if template.secretaria else None,
+        secretaria_nome=template.secretaria.nome if template.secretaria else None,
+        nome=template.nome,
+        ativo=template.ativo,
+        padrao=template.padrao,
+        ordem=template.ordem,
+        arquivo_url=build_template_file_url(request, template.id),
+        criado_em=template.criado_em,
+        criado_por_usuario_id=template.criado_por_usuario_id,
+        criado_por_username=template.criado_por.username if template.criado_por else None,
     )
 
 
@@ -405,6 +460,15 @@ def ensure_certificate_access(db: Session, usuario: Usuario, cert: Certificate) 
         raise HTTPException(status_code=403, detail="Acesso negado a este certificado.")
 
 
+def ensure_template_access(db: Session, usuario: Usuario, template: CertificateTemplate) -> None:
+    if is_admin(usuario):
+        return
+
+    allowed_secretaria_ids = {secretaria.id for secretaria in get_accessible_secretarias(db, usuario)}
+    if template.secretaria_id not in allowed_secretaria_ids:
+        raise HTTPException(status_code=403, detail="Acesso negado a este molde.")
+
+
 def get_secretarias_by_ids(db: Session, secretaria_ids: list[int]) -> list[Secretaria]:
     unique_ids = sorted({int(secretaria_id) for secretaria_id in secretaria_ids if secretaria_id})
     if not unique_ids:
@@ -510,6 +574,37 @@ def validate_png_upload(uploaded: UploadFile, content: bytes) -> None:
         raise HTTPException(status_code=415, detail="Arquivo invalido. Envie um PNG valido.")
 
 
+def validate_template_upload(uploaded: UploadFile, content: bytes) -> None:
+    if not uploaded.filename:
+        raise HTTPException(status_code=400, detail="Arquivo de molde e obrigatorio.")
+
+    if not content:
+        raise HTTPException(status_code=400, detail="Arquivo de molde enviado esta vazio.")
+
+    if len(content) > MAX_TEMPLATE_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Arquivo de molde muito grande. Limite atual: {MAX_TEMPLATE_UPLOAD_BYTES} bytes."
+            ),
+        )
+
+    suffix = Path(uploaded.filename).suffix.lower()
+    allowed_suffixes = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
+    if suffix not in allowed_suffixes:
+        raise HTTPException(
+            status_code=415,
+            detail="Formato invalido para molde. Use PNG, JPG, JPEG, WEBP ou SVG.",
+        )
+
+    content_type = (uploaded.content_type or "").lower()
+    if content_type and not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=415,
+            detail="Somente imagens podem ser usadas como molde.",
+        )
+
+
 def build_certificate_file_response(cert: Certificate) -> FileResponse:
     if not cert.arquivo_relpath:
         raise HTTPException(status_code=404, detail="Arquivo de certificado nao encontrado.")
@@ -522,4 +617,18 @@ def build_certificate_file_response(cert: Certificate) -> FileResponse:
         path=file_path,
         media_type=cert.arquivo_mime or "image/png",
         filename=f"{cert.codigo}.png",
+    )
+
+
+def build_template_file_response(template: CertificateTemplate) -> FileResponse:
+    file_path = resolve_template_media_path(template.arquivo_relpath)
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Arquivo de molde nao encontrado.")
+
+    suffix = Path(template.arquivo_relpath).suffix or ".png"
+    filename = f"{sanitize_template_name(template.nome, 'molde')}{suffix}"
+    return FileResponse(
+        path=file_path,
+        media_type=template.arquivo_mime or "application/octet-stream",
+        filename=filename,
     )

@@ -25,6 +25,7 @@ from routes_admin import router as admin_router
 from routes_auth import router as auth_router
 from routes_certificates import router as certificates_router
 from routes_public import router as public_router
+from routes_templates import router as templates_router
 
 
 @asynccontextmanager
@@ -66,6 +67,7 @@ app.include_router(public_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(certificates_router)
+app.include_router(templates_router)
 
 
 @app.get("/openapi.json", include_in_schema=False)

@@ -90,6 +90,21 @@ class SecretariaResponse(BaseModel):
     ativa: bool
 
 
+class CertificateTemplateResponse(BaseModel):
+    id: int
+    secretaria_id: int
+    secretaria_sigla: Optional[str] = None
+    secretaria_nome: Optional[str] = None
+    nome: str
+    ativo: bool
+    padrao: bool
+    ordem: int = 0
+    arquivo_url: str
+    criado_em: datetime
+    criado_por_usuario_id: Optional[int] = None
+    criado_por_username: Optional[str] = None
+
+
 class UserSessionResponse(BaseModel):
     id: int
     nome: str

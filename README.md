@@ -212,6 +212,7 @@ Variaveis principais em `.env`:
 - `PUBLIC_VALIDATION_BASE_URL=http://localhost:29180/validar`
 - `CERTIFICADOS_MAX_UPLOAD_BYTES=5242880`
 - `CERTIFICADOS_MAX_BATCH_ITEMS=500`
+- `TEMPLATES_MAX_UPLOAD_BYTES=10485760`
 - `SESSION_SECRET=troque-esta-chave-local`
 - `CERTIFICATE_HASH_SECRET=troque-esta-chave-do-certificado`
 - `SESSION_COOKIE_NAME=certificado_session`
@@ -243,6 +244,7 @@ Observacoes:
 - em producao, decida entre `ENABLE_ADMIN_DOCS=false` ou docs liberada apenas para administradores
 - o backend agora limita tentativas de login por `usuario + IP`; ajuste `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_SECONDS` e `LOGIN_BLOCK_SECONDS` conforme a operacao
 - o backend limita o lote de certificados por `CERTIFICADOS_MAX_BATCH_ITEMS`; acima disso a API responde `422`
+- o upload de moldes por secretaria aceita `png`, `jpg`, `jpeg`, `webp` e `svg`; ajuste `TEMPLATES_MAX_UPLOAD_BYTES` se precisar aumentar o limite
 - hashes antigos em SHA-256 continuam validando; novos certificados passam a usar HMAC-SHA256
 - o comando `create-admin` pode ser usado novamente para trocar a senha temporaria do administrador
 - com `AUTO_SEED_SECRETARIAS=true` e `AUTO_BOOTSTRAP_ADMIN=true`, a stack sobe no Portainer sem precisar rodar comandos manuais no console

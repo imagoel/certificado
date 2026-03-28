@@ -4,6 +4,8 @@ const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
 const templateInput = document.getElementById("template");
 const templateRemoveBtn = document.getElementById("template-remove");
+const templateLibraryWrap = document.getElementById("template-library-wrap");
+const templateSelect = document.getElementById("template-select");
 const planilhaInput = document.getElementById("planilha");
 const batchPreviewBtn = document.getElementById("batch-preview");
 const batchGenerateBtn = document.getElementById("batch-generate");
@@ -63,6 +65,20 @@ const secretariaListBody = document.getElementById("secretaria-list-body");
 const secretariaSubmitBtn = secretariaForm
   ? secretariaForm.querySelector('button[type="submit"]')
   : null;
+const templateAdminForm = document.getElementById("template-admin-form");
+const templateAdminEditIdInput = document.getElementById("template-admin-edit-id");
+const templateAdminSecretariaSelect = document.getElementById("template-admin-secretaria");
+const templateAdminNameInput = document.getElementById("template-admin-name");
+const templateAdminActiveInput = document.getElementById("template-admin-active");
+const templateAdminDefaultInput = document.getElementById("template-admin-default");
+const templateAdminOrderInput = document.getElementById("template-admin-order");
+const templateAdminFileInput = document.getElementById("template-admin-file");
+const templateAdminResetBtn = document.getElementById("template-admin-reset");
+const templateAdminStatus = document.getElementById("template-admin-status");
+const templateAdminListBody = document.getElementById("template-admin-list-body");
+const templateAdminSubmitBtn = templateAdminForm
+  ? templateAdminForm.querySelector('button[type="submit"]')
+  : null;
 
 const auditForm = document.getElementById("audit-form");
 const auditSearchInput = document.getElementById("audit-search");
@@ -98,6 +114,7 @@ const cursoInput = document.getElementById("curso");
 const dataInput = document.getElementById("data");
 const cargaHInput = document.getElementById("carga_h");
 const templateStatus = document.getElementById("template-status");
+const templateSelectStatus = document.getElementById("template-select-status");
 
 const batchConfirmDialog = document.getElementById("batch-confirm-dialog");
 const batchConfirmForm = document.getElementById("batch-confirm-form");
@@ -156,6 +173,8 @@ let sessionState = null;
 let currentSection = "generator";
 let pendingDeleteCertificate = null;
 let pendingBatchGeneration = null;
+let savedTemplate = null;
+let savedTemplateImage = null;
 
 const certListState = {
   page: 1,
@@ -176,6 +195,12 @@ const certListState = {
 const adminState = {
   users: [],
   secretarias: [],
+  templates: [],
+};
+
+const templateCatalogState = {
+  items: [],
+  selectedId: "",
 };
 
 const auditState = {
@@ -275,6 +300,35 @@ async function apiJsonRequest(path, options = {}) {
   return payload;
 }
 
+async function apiFormRequest(path, formData, options = {}) {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    credentials: "include",
+    ...options,
+    body: formData,
+    headers: {
+      ...(options.headers || {}),
+    },
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_error) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const error = new Error(
+      (payload && (payload.detail || payload.message)) ||
+        `Falha na API de certificados (HTTP ${response.status}).`
+    );
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload;
+}
+
 function setLoginStatus(message, type = "info") {
   if (!loginStatus) return;
 
@@ -299,6 +353,18 @@ function setStatusMessage(element, message, type = "info") {
 
   element.textContent = message;
   element.className = `status ${type}`;
+}
+
+function setTemplateSelectStatus(message, type = "info") {
+  setStatusMessage(templateSelectStatus, message, type);
+}
+
+function setTemplateAdminStatus(message, type = "info") {
+  setStatusMessage(templateAdminStatus, message, type);
+}
+
+function getActiveTemplateImage() {
+  return assets.template || savedTemplateImage;
 }
 
 function formatDateTime(dateStr) {
@@ -361,6 +427,33 @@ function populateSecretariaOptions(select, secretarias, selectedValue = "", incl
     option.value = String(secretaria.id);
     option.textContent = `${secretaria.sigla} - ${secretaria.nome}`;
     option.selected = String(secretaria.id) === selectedText;
+    select.appendChild(option);
+  });
+}
+
+function populateTemplateOptions(select, templates, selectedValue = "", includeBlank = true) {
+  if (!select) return;
+
+  const selectedText = selectedValue === null || selectedValue === undefined
+    ? ""
+    : String(selectedValue);
+  select.innerHTML = "";
+
+  if (includeBlank) {
+    const blankOption = document.createElement("option");
+    blankOption.value = "";
+    blankOption.textContent = "Usar fundo padrão";
+    if (!selectedText) {
+      blankOption.selected = true;
+    }
+    select.appendChild(blankOption);
+  }
+
+  (Array.isArray(templates) ? templates : []).forEach((template) => {
+    const option = document.createElement("option");
+    option.value = String(template.id);
+    option.textContent = template.padrao ? `${template.nome} (padrão)` : template.nome;
+    option.selected = String(template.id) === selectedText;
     select.appendChild(option);
   });
 }
@@ -530,8 +623,23 @@ function clearSessionUi(message = "") {
   if (auditPageIndicator) auditPageIndicator.textContent = "Página 1";
   adminState.users = [];
   adminState.secretarias = [];
+  adminState.templates = [];
+  templateCatalogState.items = [];
+  templateCatalogState.selectedId = "";
+  assets.template = null;
+  savedTemplate = null;
+  savedTemplateImage = null;
+  if (templateInput) templateInput.value = "";
+  syncTemplateControls();
+  setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");
+  if (templateSelect) {
+    populateTemplateOptions(templateSelect, [], "", true);
+  }
+  if (templateLibraryWrap) templateLibraryWrap.hidden = true;
+  setTemplateSelectStatus("", "info");
   resetUserForm();
   resetSecretariaForm();
+  resetTemplateAdminForm();
   switchSection("generator");
   if (message) {
     setLoginStatus(message, "error");
@@ -714,6 +822,31 @@ function resetSecretariaForm() {
   setSecretariaFormStatus("", "info");
 }
 
+function syncTemplateAdminFormState() {
+  const editing = Boolean(
+    sanitizeText(templateAdminEditIdInput ? templateAdminEditIdInput.value : "")
+  );
+  if (templateAdminSubmitBtn) {
+    templateAdminSubmitBtn.textContent = editing ? "Atualizar Molde" : "Salvar Molde";
+  }
+  if (templateAdminSecretariaSelect) {
+    templateAdminSecretariaSelect.disabled = editing;
+  }
+  if (templateAdminFileInput) {
+    templateAdminFileInput.required = !editing;
+  }
+}
+
+function resetTemplateAdminForm() {
+  if (templateAdminForm) templateAdminForm.reset();
+  if (templateAdminEditIdInput) templateAdminEditIdInput.value = "";
+  if (templateAdminActiveInput) templateAdminActiveInput.checked = true;
+  if (templateAdminDefaultInput) templateAdminDefaultInput.checked = false;
+  if (templateAdminOrderInput) templateAdminOrderInput.value = "0";
+  syncTemplateAdminFormState();
+  setTemplateAdminStatus("", "info");
+}
+
 function buildStatusPill(active, activeLabel = "Ativo", inactiveLabel = "Inativo") {
   const span = document.createElement("span");
   span.className = `status-pill ${active ? "ok" : "warn"}`;
@@ -753,6 +886,25 @@ function fillSecretariaForm(secretaria) {
   syncSecretariaFormState();
   setSecretariaFormStatus(`Editando secretaria ${secretaria.sigla}.`, "info");
   scrollAdminFormIntoView(secretariaForm);
+}
+
+function fillTemplateAdminForm(template) {
+  if (!template) return;
+  if (templateAdminEditIdInput) templateAdminEditIdInput.value = String(template.id);
+  if (templateAdminSecretariaSelect) {
+    templateAdminSecretariaSelect.value = String(template.secretaria_id || "");
+  }
+  if (templateAdminNameInput) templateAdminNameInput.value = template.nome || "";
+  if (templateAdminActiveInput) templateAdminActiveInput.checked = Boolean(template.ativo);
+  if (templateAdminDefaultInput) templateAdminDefaultInput.checked = Boolean(template.padrao);
+  if (templateAdminOrderInput) templateAdminOrderInput.value = String(template.ordem || 0);
+  if (templateAdminFileInput) templateAdminFileInput.value = "";
+  syncTemplateAdminFormState();
+  setTemplateAdminStatus(
+    `Editando molde ${template.nome}. Envie um novo arquivo somente se quiser substituí-lo.`,
+    "info"
+  );
+  scrollAdminFormIntoView(templateAdminForm);
 }
 
 function renderCertificateRows(items) {
@@ -964,6 +1116,72 @@ function renderSecretariasTable() {
   });
 }
 
+function renderTemplatesTable() {
+  if (!templateAdminListBody) return;
+
+  if (!adminState.templates.length) {
+    templateAdminListBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">Nenhum molde cadastrado até o momento.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  templateAdminListBody.innerHTML = "";
+
+  adminState.templates.forEach((template) => {
+    const row = document.createElement("tr");
+
+    const secretariaCell = document.createElement("td");
+    secretariaCell.textContent = template.secretaria_sigla || "-";
+
+    const nomeCell = document.createElement("td");
+    nomeCell.textContent = template.nome || "-";
+
+    const statusCell = document.createElement("td");
+    statusCell.appendChild(buildStatusPill(template.ativo));
+
+    const defaultCell = document.createElement("td");
+    defaultCell.appendChild(buildStatusPill(template.padrao, "Padrão", "Opcional"));
+
+    const orderCell = document.createElement("td");
+    orderCell.textContent = String(template.ordem || 0);
+
+    const actionsCell = document.createElement("td");
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "inline-actions";
+    actionsWrap.appendChild(
+      createInlineButton("Abrir", () => {
+        window.open(template.arquivo_url, "_blank", "noopener,noreferrer");
+      })
+    );
+    actionsWrap.appendChild(
+      createInlineButton("Editar", () => {
+        fillTemplateAdminForm(template);
+        switchSection("admin");
+      })
+    );
+    actionsWrap.appendChild(
+      createInlineButton(
+        "Excluir",
+        () => {
+          const confirmado = window.confirm(
+            `Excluir o molde ${template.nome} da secretaria ${template.secretaria_sigla}?`
+          );
+          if (!confirmado) return;
+          void deleteTemplate(template);
+        },
+        "danger-btn"
+      )
+    );
+    actionsCell.appendChild(actionsWrap);
+
+    row.append(secretariaCell, nomeCell, statusCell, defaultCell, orderCell, actionsCell);
+    templateAdminListBody.appendChild(row);
+  });
+}
+
 function renderAuditRows(items) {
   if (!auditListBody) return;
 
@@ -1114,17 +1332,28 @@ async function loadAdminData() {
     const editingSecretariaId = sanitizeText(
       secretariaEditIdInput ? secretariaEditIdInput.value : ""
     );
-    const [secretarias, usuarios] = await Promise.all([
+    const editingTemplateId = sanitizeText(
+      templateAdminEditIdInput ? templateAdminEditIdInput.value : ""
+    );
+    const [secretarias, usuarios, templates] = await Promise.all([
       apiJsonRequest("/api/admin/secretarias"),
       apiJsonRequest("/api/admin/usuarios"),
+      apiJsonRequest("/api/admin/templates"),
     ]);
 
     adminState.secretarias = Array.isArray(secretarias) ? secretarias : [];
     adminState.users = Array.isArray(usuarios) ? usuarios : [];
+    adminState.templates = Array.isArray(templates) ? templates : [];
     populateSecretariaOptions(
       userSecretariasSelect,
       adminState.secretarias,
       "",
+      false
+    );
+    populateSecretariaOptions(
+      templateAdminSecretariaSelect,
+      adminState.secretarias,
+      templateAdminSecretariaSelect ? templateAdminSecretariaSelect.value : "",
       false
     );
     populateSecretariaOptions(
@@ -1135,6 +1364,7 @@ async function loadAdminData() {
     );
     renderSecretariasTable();
     renderUsersTable();
+    renderTemplatesTable();
 
     if (editingUserId) {
       const currentUser = adminState.users.find((usuario) => String(usuario.id) === editingUserId);
@@ -1149,6 +1379,15 @@ async function loadAdminData() {
       );
       if (currentSecretaria) {
         fillSecretariaForm(currentSecretaria);
+      }
+    }
+
+    if (editingTemplateId) {
+      const currentTemplate = adminState.templates.find(
+        (template) => String(template.id) === editingTemplateId
+      );
+      if (currentTemplate) {
+        fillTemplateAdminForm(currentTemplate);
       }
     }
 
@@ -1172,12 +1411,168 @@ async function loadAdminData() {
       (error && error.message) || "Nao foi possivel carregar as secretarias.",
       "error"
     );
+    setTemplateAdminStatus(
+      (error && error.message) || "Nao foi possivel carregar os moldes.",
+      "error"
+    );
+  }
+}
+
+async function applySavedTemplateSelection(templateId, options = {}) {
+  const { silentStatus = false } = options;
+  const normalizedId = templateId ? String(templateId) : "";
+  templateCatalogState.selectedId = normalizedId;
+  if (templateSelect) {
+    templateSelect.value = normalizedId;
+  }
+
+  if (!normalizedId) {
+    savedTemplate = null;
+    savedTemplateImage = null;
+    if (!silentStatus) {
+      const fallbackMessage = templateCatalogState.items.length
+        ? "Nenhum modelo cadastrado selecionado. O preview usará o fundo padrão ou o molde temporário."
+        : "A secretaria ativa ainda não tem moldes cadastrados.";
+      setTemplateSelectStatus(fallbackMessage, "info");
+    }
+    await renderLastCertificate();
+    return;
+  }
+
+  const template = templateCatalogState.items.find(
+    (item) => String(item.id) === normalizedId
+  );
+  if (!template) {
+    savedTemplate = null;
+    savedTemplateImage = null;
+    templateCatalogState.selectedId = "";
+    if (templateSelect) templateSelect.value = "";
+    if (!silentStatus) {
+      setTemplateSelectStatus("O modelo selecionado nao esta mais disponivel.", "error");
+    }
+    await renderLastCertificate();
+    return;
+  }
+
+  try {
+    if (!silentStatus) {
+      setTemplateSelectStatus(`Carregando modelo ${template.nome}...`, "info");
+    }
+    const response = await fetch(template.arquivo_url, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const error = new Error(`Falha ao carregar o molde (HTTP ${response.status}).`);
+      error.status = response.status;
+      throw error;
+    }
+    const blob = await response.blob();
+    savedTemplateImage = await loadImageFromBlob(blob);
+    savedTemplate = template;
+    if (!silentStatus) {
+      const suffix = assets.template
+        ? " O molde temporário local continua sobrescrevendo esta seleção na prévia."
+        : "";
+      setTemplateSelectStatus(`Modelo ${template.nome} pronto para uso.${suffix}`, "success");
+    }
+    await renderLastCertificate();
+  } catch (error) {
+    console.error(error);
+    savedTemplate = null;
+    savedTemplateImage = null;
+    if (!silentStatus) {
+      setTemplateSelectStatus(
+        (error && error.message) || "Nao foi possivel carregar o modelo selecionado.",
+        "error"
+      );
+    }
+  }
+}
+
+async function loadAvailableTemplates() {
+  if (!sessionState || !sessionState.secretaria_ativa_id) {
+    templateCatalogState.items = [];
+    templateCatalogState.selectedId = "";
+    savedTemplate = null;
+    savedTemplateImage = null;
+    if (templateLibraryWrap) templateLibraryWrap.hidden = true;
+    if (templateSelect) populateTemplateOptions(templateSelect, [], "", true);
+    setTemplateSelectStatus("", "info");
+    return;
+  }
+
+  try {
+    const payload = await apiJsonRequest(
+      `/api/templates${buildQueryString({ secretaria_id: sessionState.secretaria_ativa_id })}`
+    );
+    const items = Array.isArray(payload) ? payload : [];
+    templateCatalogState.items = items;
+    if (templateLibraryWrap) templateLibraryWrap.hidden = items.length === 0;
+    if (templateSelect) {
+      populateTemplateOptions(templateSelect, items, templateCatalogState.selectedId, true);
+    }
+
+    const currentSelected = items.find(
+      (item) => String(item.id) === String(templateCatalogState.selectedId || "")
+    );
+    const defaultTemplate = items.find((item) => item.padrao) || items[0] || null;
+    const nextTemplateId = currentSelected
+      ? String(currentSelected.id)
+      : defaultTemplate
+        ? String(defaultTemplate.id)
+        : "";
+
+    await applySavedTemplateSelection(nextTemplateId, { silentStatus: false });
+  } catch (error) {
+    console.error(error);
+    templateCatalogState.items = [];
+    templateCatalogState.selectedId = "";
+    savedTemplate = null;
+    savedTemplateImage = null;
+    if (templateLibraryWrap) templateLibraryWrap.hidden = true;
+    if (templateSelect) populateTemplateOptions(templateSelect, [], "", true);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setTemplateSelectStatus(
+      (error && error.message) || "Nao foi possivel carregar os modelos da secretaria.",
+      "error"
+    );
+  }
+}
+
+async function deleteTemplate(template) {
+  if (!template) return;
+
+  try {
+    const payload = await apiJsonRequest(`/api/admin/templates/${template.id}`, {
+      method: "DELETE",
+      body: "{}",
+    });
+    setTemplateAdminStatus(
+      (payload && payload.message) || `Molde ${template.nome} excluido com sucesso.`,
+      "success"
+    );
+    await loadAdminData();
+    await loadAvailableTemplates();
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setTemplateAdminStatus(
+      (error && error.message) || "Nao foi possivel excluir o molde.",
+      "error"
+    );
   }
 }
 
 async function refreshProtectedData(options = {}) {
   if (!sessionState) return;
 
+  await loadAvailableTemplates();
   await loadCertificates(options.page || certListState.page || 1);
   if (isAdminSession()) {
     await loadAdminData();
@@ -1578,11 +1973,12 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   }
 
   const myTicket = ++renderTicket;
+  const activeTemplateImage = getActiveTemplateImage();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (assets.template) {
-    drawTemplateBackground(assets.template);
+  if (activeTemplateImage) {
+    drawTemplateBackground(activeTemplateImage);
   } else {
     drawDefaultCertificateFrame();
   }
@@ -1735,7 +2131,10 @@ async function handleAssetChange(input, key, options = {}) {
     assets[key] = null;
     if (key === "template") {
       syncTemplateControls();
-      setTemplateStatus("Nenhum molde carregado. O certificado seguirá usando o fundo padrão.", "info");
+      const message = savedTemplate
+        ? `Molde temporário removido. A prévia voltou a usar o modelo ${savedTemplate.nome}.`
+        : "Nenhum molde carregado. O certificado seguirá usando o fundo padrão.";
+      setTemplateStatus(message, "info");
     }
     void renderLastCertificate();
     return;
@@ -1748,7 +2147,7 @@ async function handleAssetChange(input, key, options = {}) {
       const warning = getTemplateWarning(assets.template);
       setTemplateStatus(
         warning ||
-          `Molde ${file.name} carregado. Ele será aplicado no preview, na geração individual e nos lotes.`,
+          `Molde temporário ${file.name} carregado. Ele sobrescreve o modelo cadastrado selecionado nesta tela.`,
         warning ? "info" : "success"
       );
     }
@@ -2234,8 +2633,10 @@ async function prepareBatchCertificates(file) {
 function openBatchConfirmDialog(prepared) {
   const total = prepared.certificates.length;
   const moldeInfo = assets.template
-    ? " O molde carregado no formulário também será aplicado em todos os certificados deste lote."
-    : "";
+    ? " O molde temporário carregado no formulário também será aplicado em todos os certificados deste lote."
+    : savedTemplate
+      ? ` O modelo ${savedTemplate.nome} da secretaria ativa também será aplicado neste lote.`
+      : "";
   const summary = `${total} certificado(s) serão gerado(s), terão os PNGs salvos no servidor e um arquivo ZIP será baixado neste navegador.${moldeInfo}`;
 
   if (
@@ -2527,15 +2928,21 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     });
   }
 
+  if (templateSelect) {
+    templateSelect.addEventListener("change", () => {
+      void applySavedTemplateSelection(templateSelect.value);
+    });
+  }
+
   if (templateRemoveBtn) {
     templateRemoveBtn.addEventListener("click", () => {
       assets.template = null;
       if (templateInput) templateInput.value = "";
       syncTemplateControls();
-      setTemplateStatus(
-        "Molde removido. O preview voltou a usar o fundo padrão do certificado.",
-        "info"
-      );
+      const message = savedTemplate
+        ? `Molde temporário removido. O preview voltou a usar o modelo ${savedTemplate.nome}.`
+        : "Molde temporário removido. O preview voltou a usar o fundo padrão do certificado.";
+      setTemplateStatus(message, "info");
       void renderLastCertificate();
     });
   }
@@ -2899,6 +3306,78 @@ if (secretariaForm) {
   });
 }
 
+if (templateAdminResetBtn) {
+  templateAdminResetBtn.addEventListener("click", () => {
+    resetTemplateAdminForm();
+  });
+}
+
+if (templateAdminForm) {
+  templateAdminForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!isAdminSession()) return;
+
+    const editingId = sanitizeText(templateAdminEditIdInput ? templateAdminEditIdInput.value : "");
+    const file = templateAdminFileInput && templateAdminFileInput.files
+      ? templateAdminFileInput.files[0]
+      : null;
+    const payload = {
+      secretariaId: templateAdminSecretariaSelect ? templateAdminSecretariaSelect.value : "",
+      nome: templateAdminNameInput ? templateAdminNameInput.value.trim() : "",
+      ativo: templateAdminActiveInput ? templateAdminActiveInput.checked : true,
+      padrao: templateAdminDefaultInput ? templateAdminDefaultInput.checked : false,
+      ordem: templateAdminOrderInput ? templateAdminOrderInput.value : "0",
+    };
+
+    if (!payload.secretariaId || !payload.nome) {
+      setTemplateAdminStatus("Selecione a secretaria e informe o nome do molde.", "error");
+      return;
+    }
+    if (!editingId && !file) {
+      setTemplateAdminStatus("Envie o arquivo do molde para o cadastro inicial.", "error");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("nome", payload.nome);
+    formData.set("ativo", String(payload.ativo));
+    formData.set("padrao", String(payload.padrao));
+    formData.set("ordem", String(payload.ordem || 0));
+    if (file) {
+      formData.set("arquivo", file, file.name);
+    }
+
+    try {
+      setTemplateAdminStatus("Salvando molde...", "info");
+      if (editingId) {
+        await apiFormRequest(`/api/admin/templates/${editingId}`, formData, {
+          method: "PATCH",
+        });
+      } else {
+        formData.set("secretaria_id", payload.secretariaId);
+        await apiFormRequest("/api/admin/templates", formData, {
+          method: "POST",
+        });
+      }
+
+      resetTemplateAdminForm();
+      setTemplateAdminStatus("Molde salvo com sucesso.", "success");
+      await loadAdminData();
+      await loadAvailableTemplates();
+    } catch (error) {
+      console.error(error);
+      if (error && error.status === 401) {
+        await handleUnauthorized();
+        return;
+      }
+      setTemplateAdminStatus(
+        (error && error.message) || "Nao foi possivel salvar o molde.",
+        "error"
+      );
+    }
+  });
+}
+
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -3062,6 +3541,7 @@ if (deleteCertForm) {
 setTodayDate();
 syncUserFormState();
 syncSecretariaFormState();
+syncTemplateAdminFormState();
 updateControlLabels();
 syncTemplateControls();
 setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");
