@@ -49,6 +49,7 @@ const userPasswordInput = document.getElementById("user-password");
 const userRoleSelect = document.getElementById("user-role");
 const userActiveInput = document.getElementById("user-active");
 const userSecretariasSelect = document.getElementById("user-secretarias");
+const userSecretariasChecklist = document.getElementById("user-secretarias-checklist");
 const userFormResetBtn = document.getElementById("user-form-reset");
 const userFormStatus = document.getElementById("user-form-status");
 const userListBody = document.getElementById("user-list-body");
@@ -429,6 +430,10 @@ function populateSecretariaOptions(select, secretarias, selectedValue = "", incl
     option.selected = String(secretaria.id) === selectedText;
     select.appendChild(option);
   });
+
+  if (select && select.id === "user-secretarias") {
+    renderUserSecretariasChecklist();
+  }
 }
 
 function populateTemplateOptions(select, templates, selectedValue = "", includeBlank = true) {
@@ -468,6 +473,50 @@ function setMultiSelectValues(select, values = []) {
   const selected = new Set((values || []).map((value) => Number(value)));
   Array.from(select.options).forEach((option) => {
     option.selected = selected.has(Number(option.value));
+  });
+
+  if (select && select.id === "user-secretarias") {
+    renderUserSecretariasChecklist();
+  }
+}
+
+function renderUserSecretariasChecklist() {
+  if (!userSecretariasChecklist || !userSecretariasSelect) return;
+
+  const options = Array.from(userSecretariasSelect.options);
+  const disabled = Boolean(userSecretariasSelect.disabled);
+  userSecretariasChecklist.innerHTML = "";
+  userSecretariasSelect.hidden = true;
+
+  if (!options.length) {
+    const empty = document.createElement("p");
+    empty.className = "checkbox-list-empty";
+    empty.textContent = "Cadastre secretarias para vinculá-las aos operadores.";
+    userSecretariasChecklist.appendChild(empty);
+    return;
+  }
+
+  options.forEach((option) => {
+    const label = document.createElement("label");
+    label.className = "checkbox-list-item";
+    if (disabled) {
+      label.classList.add("is-disabled");
+    }
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = option.value;
+    input.checked = option.selected;
+    input.disabled = disabled;
+    input.addEventListener("change", () => {
+      option.selected = input.checked;
+    });
+
+    const text = document.createElement("span");
+    text.textContent = option.textContent || "";
+
+    label.append(input, text);
+    userSecretariasChecklist.append(label);
   });
 }
 
@@ -772,6 +821,7 @@ function syncUserRoleUi() {
   if (isAdmin && !sanitizeText(userEditIdInput ? userEditIdInput.value : "")) {
     setMultiSelectValues(userSecretariasSelect, []);
   }
+  renderUserSecretariasChecklist();
 }
 
 function syncUserFormState() {
@@ -1362,6 +1412,7 @@ async function loadAdminData() {
       auditState.filters.secretariaId,
       true
     );
+    renderUserSecretariasChecklist();
     renderSecretariasTable();
     renderUsersTable();
     renderTemplatesTable();

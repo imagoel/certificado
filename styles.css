@@ -157,6 +157,13 @@ label {
   font-weight: 600;
 }
 
+.field-help {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
 input {
   width: 100%;
   padding: 10px 12px;
@@ -372,8 +379,38 @@ button[disabled] {
   margin: 0;
 }
 
-select[multiple] {
-  min-height: 150px;
+.checkbox-list {
+  display: grid;
+  gap: 8px;
+  max-height: 190px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  overflow-y: auto;
+}
+
+.checkbox-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #22344b;
+  font-weight: 500;
+}
+
+.checkbox-list-item.is-disabled {
+  color: var(--muted);
+}
+
+.checkbox-list-item input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.checkbox-list-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .table-wrap {

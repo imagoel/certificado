@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
-  <link rel="stylesheet" href="styles.css?v=20260328-1" />
+  <link rel="stylesheet" href="styles.css?v=20260328-2" />
 </head>
 <body>
   <main class="container">
@@ -399,6 +399,16 @@
 
               <div class="field-stack">
                 <label for="user-secretarias">Secretarias vinculadas</label>
+                <p id="user-secretarias-help" class="field-help">
+                  Marque uma ou mais secretarias para o operador. Admin global acessa todas sem
+                  precisar de vínculo.
+                </p>
+                <div
+                  id="user-secretarias-checklist"
+                  class="checkbox-list"
+                  role="group"
+                  aria-describedby="user-secretarias-help"
+                ></div>
                 <select id="user-secretarias" multiple size="6"></select>
               </div>
             </div>
@@ -648,6 +658,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260328-6"></script>
+  <script src="app.js?v=20260328-7"></script>
 </body>
 </html>
