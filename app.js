@@ -47,6 +47,7 @@ const userSecretariasSelect = document.getElementById("user-secretarias");
 const userFormResetBtn = document.getElementById("user-form-reset");
 const userFormStatus = document.getElementById("user-form-status");
 const userListBody = document.getElementById("user-list-body");
+const userSubmitBtn = userForm ? userForm.querySelector('button[type="submit"]') : null;
 
 const secretariaForm = document.getElementById("secretaria-form");
 const secretariaEditIdInput = document.getElementById("secretaria-edit-id");
@@ -56,6 +57,9 @@ const secretariaActiveInput = document.getElementById("secretaria-active");
 const secretariaFormResetBtn = document.getElementById("secretaria-form-reset");
 const secretariaFormStatus = document.getElementById("secretaria-form-status");
 const secretariaListBody = document.getElementById("secretaria-list-body");
+const secretariaSubmitBtn = secretariaForm
+  ? secretariaForm.querySelector('button[type="submit"]')
+  : null;
 
 const auditForm = document.getElementById("audit-form");
 const auditSearchInput = document.getElementById("audit-search");
@@ -163,6 +167,15 @@ const viewSections = {
   certificates: certificatesSection,
   admin: adminSection,
 };
+const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
 
 function pad2(value) {
   return String(value).padStart(2, "0");
@@ -257,7 +270,7 @@ function formatDateTime(dateStr) {
   if (!dateStr) return "-";
   const parsed = new Date(dateStr);
   if (Number.isNaN(parsed.getTime())) return dateStr;
-  return parsed.toLocaleString("pt-BR");
+  return dateTimeFormatter.format(parsed);
 }
 
 function buildQueryString(params = {}) {
@@ -545,6 +558,46 @@ function setAuditStatus(message, type = "info") {
   setStatusMessage(auditStatus, message, type);
 }
 
+function scrollAdminFormIntoView(form) {
+  if (!form || typeof form.scrollIntoView !== "function") return;
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function syncUserRoleUi() {
+  if (!userRoleSelect || !userSecretariasSelect) return;
+
+  const isAdmin = userRoleSelect.value === "admin_global";
+  userSecretariasSelect.disabled = isAdmin;
+  if (isAdmin && !sanitizeText(userEditIdInput ? userEditIdInput.value : "")) {
+    setMultiSelectValues(userSecretariasSelect, []);
+  }
+}
+
+function syncUserFormState() {
+  const isEditing = Boolean(sanitizeText(userEditIdInput ? userEditIdInput.value : ""));
+  if (userForm) {
+    userForm.classList.toggle("is-editing", isEditing);
+  }
+  if (userSubmitBtn) {
+    userSubmitBtn.textContent = isEditing ? "Atualizar Usuário" : "Salvar Usuário";
+  }
+  syncUserRoleUi();
+}
+
+function syncSecretariaFormState() {
+  const isEditing = Boolean(
+    sanitizeText(secretariaEditIdInput ? secretariaEditIdInput.value : "")
+  );
+  if (secretariaForm) {
+    secretariaForm.classList.toggle("is-editing", isEditing);
+  }
+  if (secretariaSubmitBtn) {
+    secretariaSubmitBtn.textContent = isEditing
+      ? "Atualizar Secretaria"
+      : "Salvar Secretaria";
+  }
+}
+
 function resetUserForm() {
   if (userForm) userForm.reset();
   if (userEditIdInput) userEditIdInput.value = "";
@@ -556,6 +609,7 @@ function resetUserForm() {
     userPasswordInput.placeholder = "Obrigatória no cadastro";
   }
   setMultiSelectValues(userSecretariasSelect, []);
+  syncUserFormState();
   setUserFormStatus("", "info");
 }
 
@@ -563,6 +617,7 @@ function resetSecretariaForm() {
   if (secretariaForm) secretariaForm.reset();
   if (secretariaEditIdInput) secretariaEditIdInput.value = "";
   if (secretariaActiveInput) secretariaActiveInput.checked = true;
+  syncSecretariaFormState();
   setSecretariaFormStatus("", "info");
 }
 
@@ -591,7 +646,9 @@ function fillUserForm(usuario) {
     userSecretariasSelect,
     (usuario.secretarias || []).map((secretaria) => secretaria.id)
   );
+  syncUserFormState();
   setUserFormStatus(`Editando usuário ${usuario.username}.`, "info");
+  scrollAdminFormIntoView(userForm);
 }
 
 function fillSecretariaForm(secretaria) {
@@ -600,7 +657,9 @@ function fillSecretariaForm(secretaria) {
   if (secretariaSiglaInput) secretariaSiglaInput.value = secretaria.sigla || "";
   if (secretariaNameInput) secretariaNameInput.value = secretaria.nome || "";
   if (secretariaActiveInput) secretariaActiveInput.checked = Boolean(secretaria.ativa);
+  syncSecretariaFormState();
   setSecretariaFormStatus(`Editando secretaria ${secretaria.sigla}.`, "info");
+  scrollAdminFormIntoView(secretariaForm);
 }
 
 function renderCertificateRows(items) {
@@ -2179,13 +2238,7 @@ if (auditNextPageBtn) {
 
 if (userRoleSelect) {
   userRoleSelect.addEventListener("change", () => {
-    const isAdmin = userRoleSelect.value === "admin_global";
-    if (userSecretariasSelect) {
-      userSecretariasSelect.disabled = false;
-      if (isAdmin && !userEditIdInput?.value) {
-        setMultiSelectValues(userSecretariasSelect, []);
-      }
-    }
+    syncUserRoleUi();
   });
 }
 
@@ -2396,5 +2449,7 @@ if (secretariaSelect) {
 }
 
 setTodayDate();
+syncUserFormState();
+syncSecretariaFormState();
 updateControlLabels();
 void refreshSession();

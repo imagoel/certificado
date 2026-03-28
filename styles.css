@@ -146,6 +146,13 @@ h1 {
   gap: 10px;
 }
 
+.form.is-editing {
+  padding: 14px;
+  border: 1px solid #bfd6f3;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
 label {
   font-weight: 600;
 }

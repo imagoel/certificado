@@ -244,6 +244,8 @@
               <select id="audit-event">
                 <option value="">Todos</option>
                 <option value="auth_login">Login</option>
+                <option value="auth_login_falhou">Login falhou</option>
+                <option value="auth_login_bloqueado">Login bloqueado</option>
                 <option value="troca_secretaria">Troca de secretaria</option>
                 <option value="certificado_criado">Certificado criado</option>
                 <option value="certificado_lote_criado">Lote criado</option>
@@ -449,6 +451,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "http://localhost:29180";
   </script>
-  <script src="app.js?v=20260327-8"></script>
+  <script src="app.js?v=20260328-2"></script>
 </body>
 </html>
