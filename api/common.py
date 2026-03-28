@@ -457,24 +457,6 @@ def record_audit_event(
     return audit
 
 
-def get_last_sequence(db: Session, prefix: str, year: int) -> int:
-    pattern = f"{prefix}-{year}-%"
-    last = (
-        db.query(Certificate.codigo)
-        .filter(Certificate.codigo.like(pattern))
-        .order_by(Certificate.codigo.desc())
-        .first()
-    )
-
-    if not last:
-        return 0
-
-    try:
-        return int(last[0].split("-")[-1])
-    except (ValueError, IndexError):
-        return 0
-
-
 def code_exists(db: Session, codigo: str) -> bool:
     return db.query(Certificate.id).filter(Certificate.codigo == codigo).first() is not None
 

@@ -1,6 +1,17 @@
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
@@ -86,6 +97,20 @@ class Certificate(Base):
         foreign_keys=[emitido_por_usuario_id],
     )
     auditorias: Mapped[list["AuditEvent"]] = relationship(back_populates="certificado")
+
+
+class CertificateSequence(Base):
+    __tablename__ = "certificado_sequencias"
+    __table_args__ = (
+        UniqueConstraint("prefixo", "ano", name="uq_certificado_sequencias_prefixo_ano"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    prefixo: Mapped[str] = mapped_column(String(20), nullable=False)
+    ano: Mapped[int] = mapped_column(Integer, nullable=False)
+    ultimo_numero: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class AuditEvent(Base):

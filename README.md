@@ -277,6 +277,7 @@ Com esse modelo:
 - `api/routes_admin.py`: usuarios, secretarias, auditoria e exclusao administrativa
 - `api/routes_certificates.py`: listagem, emissao e arquivos dos certificados
 - `api/routes_public.py`: health, QR Code e validacao publica
+- `api/certificate_sequences.py`: reserva atomica de codigos por prefixo e ano
 - `api/models.py`: modelos de usuarios, secretarias e certificados
 - `api/security.py`: hash de certificado e senha
 - `api/schemas.py`: contratos da API
