@@ -204,11 +204,14 @@ function setTodayDate() {
 function getApiBaseUrl() {
   const fromWindow = sanitizeText(window.CERT_API_BASE_URL || "");
   if (fromWindow) return fromWindow.replace(/\/+$/, "");
-  if (window.location.port === "29180") {
-    return window.location.origin.replace(/\/+$/, "");
+  const { hostname, port, protocol, origin } = window.location;
+  if (port === "29180") {
+    return origin.replace(/\/+$/, "");
   }
-  const host = window.location.hostname || "localhost";
-  return `${window.location.protocol}//${host}:29180`;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return `${protocol}//${hostname}:29180`;
+  }
+  return origin.replace(/\/+$/, "");
 }
 
 async function apiJsonRequest(path, options = {}) {

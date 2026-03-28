@@ -2,32 +2,14 @@ import argparse
 import os
 import sys
 
+from bootstrap import create_or_update_admin, seed_secretarias
 from database import Base, SessionLocal, engine
-from models import Secretaria, Usuario
-from security import hash_password, normalize_username
-
-SECRETARIAS_INICIAIS = [
-    ("SESAU", "Secretaria de Saude"),
-    ("SEMED", "Secretaria de Educacao"),
-    ("SEAFI", "Secretaria de Administracao e Financas"),
-    ("SEAMA", "Secretaria de Agricultura e Meio Ambiente"),
-    ("SEMOP", "Secretaria de Obras e Servicos Publicos"),
-    ("SUGEP", "Superintendencia de Gestao de Pessoas"),
-]
 
 
-def seed_secretarias() -> int:
+def run_seed_secretarias() -> int:
     db = SessionLocal()
-    created = 0
     try:
-        for sigla, nome in SECRETARIAS_INICIAIS:
-            existing = db.query(Secretaria).filter(Secretaria.sigla == sigla).first()
-            if existing:
-                continue
-
-            db.add(Secretaria(sigla=sigla, nome=nome, ativa=True))
-            created += 1
-
+        created = seed_secretarias(db)
         db.commit()
         print(f"Secretarias criadas: {created}")
         return 0
@@ -38,35 +20,17 @@ def seed_secretarias() -> int:
 def create_admin(nome: str, username: str, password: str) -> int:
     db = SessionLocal()
     try:
-        normalized_username = normalize_username(username)
-        if not normalized_username:
-            print("Username invalido.", file=sys.stderr)
-            return 1
-
-        existing = db.query(Usuario).filter(Usuario.username == normalized_username).first()
-        password_hash = hash_password(password)
-
-        if existing:
-            existing.nome = nome
-            existing.senha_hash = password_hash
-            existing.papel = "admin_global"
-            existing.ativo = True
-            db.commit()
-            print(f"Admin atualizado: {normalized_username}")
-            return 0
-
-        db.add(
-            Usuario(
-                nome=nome,
-                username=normalized_username,
-                senha_hash=password_hash,
-                papel="admin_global",
-                ativo=True,
-            )
-        )
+        _usuario, action = create_or_update_admin(db, nome, username, password)
         db.commit()
-        print(f"Admin criado: {normalized_username}")
+        normalized_username = username.strip().lower()
+        if action == "updated":
+            print(f"Admin atualizado: {normalized_username}")
+        else:
+            print(f"Admin criado: {normalized_username}")
         return 0
+    except ValueError as error:
+        print(str(error), file=sys.stderr)
+        return 1
     finally:
         db.close()
 
@@ -99,7 +63,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "seed-secretarias":
-        return seed_secretarias()
+        return run_seed_secretarias()
 
     if args.command == "create-admin":
         if not args.username or not args.password:

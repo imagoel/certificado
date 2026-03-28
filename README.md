@@ -137,6 +137,13 @@ Volumes:
 - `postgres_data`: dados do banco
 - `certificados_media`: arquivos PNG salvos no servidor (`/app/data/certificados` no container da API)
 
+Em deploy por Portainer + repositorio Git privado:
+- mantenha o `docker-compose.yml` no repositorio
+- configure as variaveis de ambiente da stack diretamente no Portainer
+- use os volumes nomeados do Compose ou bind mounts definidos no servidor
+- nao publique o `.env` real no Git
+- para a stack de producao, prefira `docker-compose.portainer.yml`
+
 ## Provisionamento Inicial
 
 Depois de subir os containers, rode os seeds iniciais dentro do container da API:
@@ -145,6 +152,17 @@ Depois de subir os containers, rode os seeds iniciais dentro do container da API
 docker exec certificado-api python manage.py seed-secretarias
 docker exec certificado-api python manage.py create-admin --nome "Administrador Local" --username admin --password "troque-esta-senha"
 ```
+
+Opcionalmente, o bootstrap inicial pode ser automatico no startup da API:
+- `AUTO_SEED_SECRETARIAS=true`
+- `AUTO_BOOTSTRAP_ADMIN=true`
+- `BOOTSTRAP_ADMIN_NAME=Administrador`
+- `BOOTSTRAP_ADMIN_USERNAME=admin`
+- `BOOTSTRAP_ADMIN_PASSWORD=uma-senha-forte`
+
+Com essa opcao ligada:
+- as secretarias iniciais sao criadas automaticamente se estiverem ausentes
+- o admin inicial so e criado/atualizado se ainda nao existir nenhum `admin_global`
 
 Em seguida:
 1. abra `http://localhost:28754`
@@ -172,9 +190,15 @@ Variaveis principais em `.env`:
 - `LOGIN_WINDOW_SECONDS=900`
 - `LOGIN_BLOCK_SECONDS=900`
 - `CORS_ALLOW_ORIGINS=http://localhost:28754,http://127.0.0.1:28754`
+- `AUTO_SEED_SECRETARIAS=false`
+- `AUTO_BOOTSTRAP_ADMIN=false`
+- `BOOTSTRAP_ADMIN_NAME=Administrador`
+- `BOOTSTRAP_ADMIN_USERNAME=admin`
+- `BOOTSTRAP_ADMIN_PASSWORD=troque-esta-senha`
 
 Observacoes:
-- o frontend usa `window.CERT_API_BASE_URL = "http://localhost:29180"` em `index.html`
+- em ambiente local, o frontend usa `localhost:29180` automaticamente
+- em producao, se frontend e API estiverem no mesmo dominio com proxy/tunnel, o frontend usa a mesma origem automaticamente
 - em producao, troque `PUBLIC_VALIDATION_BASE_URL` pelo dominio publico oficial
 - em producao, troque `SESSION_SECRET` por uma chave longa e exclusiva
 - em producao, use `APP_ENV=production`
@@ -194,6 +218,20 @@ Antes de publicar:
 4. configure `SESSION_HTTPS_ONLY=true`
 5. revise `CORS_ALLOW_ORIGINS` para o dominio real do frontend
 6. decida se `ENABLE_ADMIN_DOCS` fica `false`
+
+## Portainer e Tunnel
+
+Fluxo recomendado para a prefeitura:
+- Portainer lendo o repositorio Git privado
+- stack de producao usando `docker-compose.portainer.yml`
+- tunnel/dominio publico encaminhando:
+  - `/` para `http://10.75.2.16:28754`
+  - `/api/*`, `/health` e `/validar/*` para `http://10.75.2.16:29180`
+
+Com esse modelo:
+- o frontend e a API ficam no mesmo dominio publico
+- o frontend passa a usar a mesma origem automaticamente em producao
+- o QR Code deve apontar para o dominio publico configurado em `PUBLIC_VALIDATION_BASE_URL`
 
 ## Estrutura
 

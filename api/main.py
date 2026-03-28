@@ -19,7 +19,8 @@ from sqlalchemy import inspect, or_, text
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from database import Base, engine, get_db
+from bootstrap import run_startup_bootstrap
+from database import Base, SessionLocal, engine, get_db
 from models import AuditEvent, Certificate, Secretaria, Usuario
 from schemas import (
     AuditEventResponse,
@@ -230,6 +231,15 @@ def startup_event() -> None:
     Base.metadata.create_all(bind=engine)
     ensure_certificate_schema()
     CERTIFICADOS_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    db = SessionLocal()
+    try:
+        messages = run_startup_bootstrap(db)
+        if messages:
+            db.commit()
+            for message in messages:
+                print(message)
+    finally:
+        db.close()
 
 
 def ensure_certificate_schema() -> None:
