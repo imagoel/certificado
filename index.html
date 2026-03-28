@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
-  <link rel="stylesheet" href="styles.css?v=20260327-3" />
+  <link rel="stylesheet" href="styles.css?v=20260327-4" />
 </head>
 <body>
   <main class="container">
@@ -86,6 +86,14 @@
     <section class="preview-wrap">
       <canvas id="canvas" width="1200" height="850" aria-label="Pré-visualização do certificado"></canvas>
     </section>
+
+    <footer class="site-footer" aria-label="Marca do painel">
+      <img
+        class="site-footer-logo"
+        src="assets/minha-logo.png"
+        alt="Immanuel Vicente"
+      />
+    </footer>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -93,6 +101,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "http://localhost:29180";
   </script>
-  <script src="app.js?v=20260327-6"></script>
+  <script src="app.js?v=20260327-7"></script>
 </body>
 </html>

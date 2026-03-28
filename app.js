@@ -38,7 +38,7 @@ const assets = {
 const layout = {
   logo: { x: 600, y: 95, maxW: 150, maxH: 95 },
   assinatura: { x: 330, y: 662, maxW: 230, maxH: 80 },
-  qr: { x: 1020, y: 615, maxW: 130, maxH: 130 },
+  qr: { x: 160, y: 175, maxW: 120, maxH: 120 },
 };
 
 const fieldAliases = {
@@ -56,6 +56,8 @@ let renderTicket = 0;
 let isBatchRunning = false;
 
 const qrImageCache = new Map();
+const logoAspectRatio = 95 / 150;
+const assinaturaAspectRatio = 80 / 230;
 
 function pad2(value) {
   return String(value).padStart(2, "0");
@@ -262,6 +264,10 @@ function drawCenteredImage(image, x, y, maxW, maxH) {
   ctx.drawImage(image, drawX, drawY, size.width, size.height);
 }
 
+function scaleHeightByWidth(width, ratio) {
+  return Math.max(1, Math.round(width * ratio));
+}
+
 function updateControlLabels() {
   if (logoXVal) logoXVal.textContent = layout.logo.x;
   if (logoYVal) logoYVal.textContent = layout.logo.y;
@@ -275,13 +281,85 @@ function applyLayoutFromControls() {
   if (isBatchRunning) return;
   if (logoXInput) layout.logo.x = Number(logoXInput.value);
   if (logoYInput) layout.logo.y = Number(logoYInput.value);
-  if (logoSizeInput) layout.logo.maxW = Number(logoSizeInput.value);
+  if (logoSizeInput) {
+    layout.logo.maxW = Number(logoSizeInput.value);
+    layout.logo.maxH = scaleHeightByWidth(layout.logo.maxW, logoAspectRatio);
+  }
   if (assinaturaXInput) layout.assinatura.x = Number(assinaturaXInput.value);
   if (assinaturaYInput) layout.assinatura.y = Number(assinaturaYInput.value);
-  if (assinaturaSizeInput) layout.assinatura.maxW = Number(assinaturaSizeInput.value);
+  if (assinaturaSizeInput) {
+    layout.assinatura.maxW = Number(assinaturaSizeInput.value);
+    layout.assinatura.maxH = scaleHeightByWidth(
+      layout.assinatura.maxW,
+      assinaturaAspectRatio
+    );
+  }
 
   updateControlLabels();
   void renderLastCertificate();
+}
+
+function trimAssetImage(image) {
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = image.width;
+  sourceCanvas.height = image.height;
+  const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+  if (!sourceCtx) return image;
+
+  sourceCtx.drawImage(image, 0, 0);
+  const { data, width, height } = sourceCtx.getImageData(0, 0, image.width, image.height);
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const red = data[index];
+      const green = data[index + 1];
+      const blue = data[index + 2];
+      const alpha = data[index + 3];
+      const isTransparent = alpha <= 12;
+      const isNearWhite =
+        alpha >= 220 && red >= 245 && green >= 245 && blue >= 245;
+
+      if (isTransparent || isNearWhite) continue;
+
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+
+  if (maxX === -1 || maxY === -1) return image;
+
+  const trimmedWidth = maxX - minX + 1;
+  const trimmedHeight = maxY - minY + 1;
+  if (trimmedWidth === width && trimmedHeight === height) {
+    return image;
+  }
+
+  const trimmedCanvas = document.createElement("canvas");
+  trimmedCanvas.width = trimmedWidth;
+  trimmedCanvas.height = trimmedHeight;
+  const trimmedCtx = trimmedCanvas.getContext("2d");
+  if (!trimmedCtx) return image;
+
+  trimmedCtx.drawImage(
+    sourceCanvas,
+    minX,
+    minY,
+    trimmedWidth,
+    trimmedHeight,
+    0,
+    0,
+    trimmedWidth,
+    trimmedHeight
+  );
+  return trimmedCanvas;
 }
 
 function loadImage(file) {
@@ -290,7 +368,7 @@ function loadImage(file) {
 
     reader.onload = () => {
       const image = new Image();
-      image.onload = () => resolve(image);
+      image.onload = () => resolve(trimAssetImage(image));
       image.onerror = () => reject(new Error("Não foi possível carregar a imagem."));
       image.src = reader.result;
     };
