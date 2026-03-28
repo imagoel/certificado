@@ -111,7 +111,7 @@
 
             <section class="batch-controls">
               <h2>Geração em lote por planilha</h2>
-              <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código e o QR Code são gerados automaticamente pela API; o certificado final é montado no navegador e salvo no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
+              <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>carga_h</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código e o QR Code são gerados automaticamente pela API; o certificado final é montado no navegador e salvo no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
 
               <label for="planilha">Planilha de alunos</label>
               <input
@@ -121,9 +121,41 @@
               />
 
               <div class="actions">
+                <button id="batch-preview" type="button" class="secondary-btn">Pré-visualizar</button>
                 <button id="batch-generate" type="button">Gerar Lote (ZIP)</button>
               </div>
               <p id="batch-status" class="status" aria-live="polite"></p>
+
+              <section id="batch-preview-panel" class="batch-preview" hidden>
+                <div class="panel-header">
+                  <div>
+                    <h3>Prévia da planilha</h3>
+                    <p id="batch-preview-summary" class="subtitle">
+                      Selecione uma planilha e clique em Pré-visualizar.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="table-wrap">
+                  <table class="data-table compact-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>Curso</th>
+                        <th>Conclusão</th>
+                        <th>Carga horária</th>
+                        <th>Arquivo</th>
+                      </tr>
+                    </thead>
+                    <tbody id="batch-preview-body">
+                      <tr>
+                        <td colspan="6" class="empty-state">Nenhuma prévia carregada.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </section>
 
             <div class="actions">
@@ -493,11 +525,34 @@
     </form>
   </dialog>
 
+  <dialog id="batch-confirm-dialog" class="modal-dialog">
+    <form id="batch-confirm-form" class="form modal-form" method="dialog">
+      <div class="panel-header">
+        <div>
+          <h2>Confirmar geração em lote</h2>
+          <p id="batch-confirm-message" class="subtitle">
+            Revise a quantidade de certificados antes de continuar.
+          </p>
+        </div>
+      </div>
+
+      <div id="batch-confirm-summary" class="confirm-summary">
+        Nenhum lote carregado para confirmação.
+      </div>
+
+      <div class="actions">
+        <button type="submit">Gerar e salvar PNGs</button>
+        <button id="batch-confirm-cancel" type="button" class="secondary-btn">Cancelar</button>
+      </div>
+      <p id="batch-confirm-status" class="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260328-4"></script>
+  <script src="app.js?v=20260328-5"></script>
 </body>
 </html>

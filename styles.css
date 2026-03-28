@@ -244,6 +244,31 @@ button[disabled] {
   color: #1a4f8b;
 }
 
+.batch-preview {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.batch-preview h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  color: #1a4f8b;
+}
+
+.compact-table {
+  min-width: 720px;
+}
+
+.confirm-summary {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fbff;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .panel-header {
   display: flex;
   align-items: flex-start;

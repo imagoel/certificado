@@ -80,10 +80,12 @@ class Certificate(Base):
     cpf: Mapped[str | None] = mapped_column(String(14), nullable=True)
     curso: Mapped[str] = mapped_column(String(200), nullable=False)
     carga_h: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    concluido: Mapped[date] = mapped_column(Date, nullable=False)
-    emitido_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    concluido: Mapped[date] = mapped_column(Date, index=True, nullable=False)
+    emitido_em: Mapped[datetime] = mapped_column(DateTime, index=True, default=utc_now, nullable=False)
     hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    secretaria_id: Mapped[int | None] = mapped_column(ForeignKey("secretarias.id"), nullable=True)
+    secretaria_id: Mapped[int | None] = mapped_column(
+        ForeignKey("secretarias.id"), index=True, nullable=True
+    )
     emitido_por_usuario_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuarios.id"), nullable=True
     )
@@ -120,11 +122,13 @@ class AuditEvent(Base):
     evento: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
     descricao: Mapped[str | None] = mapped_column(Text, nullable=True)
     usuario_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
-    secretaria_id: Mapped[int | None] = mapped_column(ForeignKey("secretarias.id"), nullable=True)
+    secretaria_id: Mapped[int | None] = mapped_column(
+        ForeignKey("secretarias.id"), index=True, nullable=True
+    )
     certificado_id: Mapped[int | None] = mapped_column(ForeignKey("certificados.id"), nullable=True)
     entidade_tipo: Mapped[str | None] = mapped_column(String(50), nullable=True)
     entidade_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, index=True, default=utc_now, nullable=False)
 
     usuario: Mapped[Usuario | None] = relationship(back_populates="auditorias")
     secretaria: Mapped[Secretaria | None] = relationship(back_populates="auditorias")
