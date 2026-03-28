@@ -35,6 +35,7 @@
 
         <div class="session-meta">
           <p id="session-user" class="session-user"></p>
+          <p id="session-secretaria" class="session-secretaria"></p>
 
           <div id="secretaria-wrap" class="secretaria-wrap" hidden>
             <label for="secretaria-select">Secretaria ativa</label>
@@ -145,7 +146,7 @@
               <input id="cert-filter-busca" type="text" placeholder="Nome, curso ou código" />
             </div>
 
-            <div class="field-stack">
+            <div id="cert-filter-secretaria-wrap" class="field-stack">
               <label for="cert-filter-secretaria">Secretaria</label>
               <select id="cert-filter-secretaria">
                 <option value="">Todas</option>
@@ -247,7 +248,7 @@
               </select>
             </div>
 
-            <div class="field-stack">
+            <div id="audit-secretaria-wrap" class="field-stack">
               <label for="audit-secretaria">Secretaria</label>
               <select id="audit-secretaria">
                 <option value="">Todas</option>

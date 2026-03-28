@@ -35,6 +35,7 @@ Regras desta etapa:
 - geracao individual, lote e upload do PNG exigem autenticacao
 - `GET /validar/{codigo}` e `GET /api/validar/{codigo}` continuam publicos
 - `GET /health` continua publico
+- a documentacao em `/docs` pode ficar liberada apenas para admin ou ser desativada por ambiente
 
 ## Multi-secretaria
 
@@ -121,6 +122,8 @@ Administrativos (`admin_global`):
 
 ## Subindo com Docker Compose
 
+Se estiver configurando um ambiente novo, use `.env.example` como base para gerar seu `.env`.
+
 ```bash
 docker compose up -d --build
 ```
@@ -154,16 +157,43 @@ Em seguida:
 ## Configuracao Local
 
 Variaveis principais em `.env`:
+- `APP_ENV=development`
 - `CODE_PREFIX=ABC`
 - `PUBLIC_VALIDATION_BASE_URL=http://localhost:29180/validar`
 - `CERTIFICADOS_MAX_UPLOAD_BYTES=5242880`
 - `SESSION_SECRET=troque-esta-chave-local`
-- `CORS_ALLOW_ORIGINS=*`
+- `SESSION_COOKIE_NAME=certificado_session`
+- `SESSION_SAME_SITE=lax`
+- `SESSION_HTTPS_ONLY=false`
+- `SESSION_MAX_AGE_SECONDS=43200`
+- `ENABLE_ADMIN_DOCS=true`
+- `TRUST_PROXY_HEADERS=false`
+- `LOGIN_MAX_ATTEMPTS=5`
+- `LOGIN_WINDOW_SECONDS=900`
+- `LOGIN_BLOCK_SECONDS=900`
+- `CORS_ALLOW_ORIGINS=http://localhost:28754,http://127.0.0.1:28754`
 
 Observacoes:
 - o frontend usa `window.CERT_API_BASE_URL = "http://localhost:29180"` em `index.html`
 - em producao, troque `PUBLIC_VALIDATION_BASE_URL` pelo dominio publico oficial
 - em producao, troque `SESSION_SECRET` por uma chave longa e exclusiva
+- em producao, use `APP_ENV=production`
+- em producao, prefira `SESSION_HTTPS_ONLY=true`
+- em producao, defina `TRUST_PROXY_HEADERS=true` somente se houver proxy confiavel na frente da API
+- em producao, revise `CORS_ALLOW_ORIGINS` para o dominio oficial do frontend
+- em producao, decida entre `ENABLE_ADMIN_DOCS=false` ou docs liberada apenas para administradores
+- o backend agora limita tentativas de login por `usuario + IP`; ajuste `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_SECONDS` e `LOGIN_BLOCK_SECONDS` conforme a operacao
+- o comando `create-admin` pode ser usado novamente para trocar a senha temporaria do administrador
+
+### Checklist de producao
+
+Antes de publicar:
+1. troque a senha do admin inicial com `docker exec certificado-api python manage.py create-admin --nome "Administrador" --username admin --password "uma-senha-forte"`
+2. configure `APP_ENV=production`
+3. configure `SESSION_SECRET` com uma chave longa e exclusiva
+4. configure `SESSION_HTTPS_ONLY=true`
+5. revise `CORS_ALLOW_ORIGINS` para o dominio real do frontend
+6. decida se `ENABLE_ADMIN_DOCS` fica `false`
 
 ## Estrutura
 

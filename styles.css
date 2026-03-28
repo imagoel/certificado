@@ -80,6 +80,16 @@ h1 {
   color: var(--muted);
 }
 
+.session-secretaria {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #7a5a11;
+  font-weight: 600;
+}
+
 .secretaria-wrap {
   display: grid;
   gap: 6px;

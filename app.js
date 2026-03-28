@@ -10,6 +10,7 @@ const appShell = document.getElementById("app-shell");
 const loginStatus = document.getElementById("login-status");
 const logoutBtn = document.getElementById("logout-btn");
 const sessionUser = document.getElementById("session-user");
+const sessionSecretaria = document.getElementById("session-secretaria");
 const secretariaWrap = document.getElementById("secretaria-wrap");
 const secretariaSelect = document.getElementById("secretaria-select");
 const generatorSection = document.getElementById("generator-section");
@@ -20,6 +21,7 @@ const adminTab = document.getElementById("tab-admin");
 
 const certListForm = document.getElementById("cert-list-filters");
 const certFilterBuscaInput = document.getElementById("cert-filter-busca");
+const certFilterSecretariaWrap = document.getElementById("cert-filter-secretaria-wrap");
 const certFilterSecretariaSelect = document.getElementById("cert-filter-secretaria");
 const certFilterConcluidoDeInput = document.getElementById("cert-filter-concluido-de");
 const certFilterConcluidoAteInput = document.getElementById("cert-filter-concluido-ate");
@@ -58,6 +60,7 @@ const secretariaListBody = document.getElementById("secretaria-list-body");
 const auditForm = document.getElementById("audit-form");
 const auditSearchInput = document.getElementById("audit-search");
 const auditEventSelect = document.getElementById("audit-event");
+const auditSecretariaWrap = document.getElementById("audit-secretaria-wrap");
 const auditSecretariaSelect = document.getElementById("audit-secretaria");
 const auditResetBtn = document.getElementById("audit-reset");
 const auditStatus = document.getElementById("audit-status");
@@ -351,6 +354,14 @@ function renderSession(session) {
   }
 
   const secretarias = Array.isArray(session.secretarias) ? session.secretarias : [];
+  const secretariaAtiva = secretarias.find(
+    (secretaria) => secretaria.id === session.secretaria_ativa_id
+  );
+  if (sessionSecretaria) {
+    sessionSecretaria.textContent = secretariaAtiva
+      ? `Secretaria ativa: ${secretariaAtiva.sigla} - ${secretariaAtiva.nome}`
+      : "Nenhuma secretaria ativa selecionada.";
+  }
   populateSecretariaOptions(secretariaSelect, secretarias, session.secretaria_ativa_id, false);
   if (secretariaWrap) secretariaWrap.hidden = secretarias.length <= 1;
   populateSecretariaOptions(
@@ -359,12 +370,18 @@ function renderSession(session) {
     certListState.filters.secretariaId,
     true
   );
+  if (certFilterSecretariaWrap) {
+    certFilterSecretariaWrap.hidden = secretarias.length <= 1;
+  }
   populateSecretariaOptions(
     auditSecretariaSelect,
     secretarias,
     auditState.filters.secretariaId,
     true
   );
+  if (auditSecretariaWrap) {
+    auditSecretariaWrap.hidden = secretarias.length <= 1;
+  }
   if (
     certFilterSecretariaSelect &&
     certListState.filters.secretariaId &&
@@ -405,6 +422,7 @@ function clearSessionUi(message = "") {
   setAuthenticatedView(false);
   downloadBtn.disabled = true;
   if (sessionUser) sessionUser.textContent = "";
+  if (sessionSecretaria) sessionSecretaria.textContent = "";
   if (secretariaSelect) secretariaSelect.innerHTML = "";
   if (secretariaWrap) secretariaWrap.hidden = true;
   if (certFilterBuscaInput) certFilterBuscaInput.value = "";
@@ -416,11 +434,13 @@ function clearSessionUi(message = "") {
   if (certFilterSecretariaSelect) {
     certFilterSecretariaSelect.innerHTML = '<option value="">Todas</option>';
   }
+  if (certFilterSecretariaWrap) certFilterSecretariaWrap.hidden = false;
   if (auditSearchInput) auditSearchInput.value = "";
   if (auditEventSelect) auditEventSelect.value = "";
   if (auditSecretariaSelect) {
     auditSecretariaSelect.innerHTML = '<option value="">Todas</option>';
   }
+  if (auditSecretariaWrap) auditSecretariaWrap.hidden = false;
   if (certListBody) {
     certListBody.innerHTML = `
       <tr>
@@ -2359,6 +2379,8 @@ if (secretariaSelect) {
       certListState.page = 1;
       await refreshProtectedData({ page: 1 });
       await renderLastCertificate();
+      setBatchStatus("Secretaria ativa atualizada.", "success");
+      setCertListStatus("Lista atualizada para a nova secretaria ativa.", "success");
     } catch (error) {
       console.error(error);
       if (error && error.status === 401) {

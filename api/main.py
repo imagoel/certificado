@@ -1,9 +1,11 @@
 import math
 import os
 import re
+import time
 from datetime import date, datetime
 from io import BytesIO
 from pathlib import Path
+from threading import Lock
 
 import qrcode
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
@@ -51,10 +53,44 @@ DEFAULT_PREFIX = os.getenv("CODE_PREFIX", "ABC")
 DEFAULT_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "certificados"))
 CERTIFICADOS_MEDIA_DIR = Path(os.getenv("CERTIFICADOS_MEDIA_DIR", DEFAULT_MEDIA_DIR)).resolve()
 MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "5242880"))
+APP_ENV = (os.getenv("APP_ENV", "development").strip().lower() or "development")
+IS_PRODUCTION = APP_ENV in {"prod", "production"}
 SESSION_SECRET = os.getenv("SESSION_SECRET", "troque-esta-chave-de-sessao")
+SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "certificado_session").strip() or "certificado_session"
+SESSION_SAME_SITE = (os.getenv("SESSION_SAME_SITE", "lax").strip().lower() or "lax")
+SESSION_HTTPS_ONLY = os.getenv("SESSION_HTTPS_ONLY", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+SESSION_MAX_AGE_SECONDS = int(os.getenv("SESSION_MAX_AGE_SECONDS", "43200"))
+ENABLE_ADMIN_DOCS = os.getenv("ENABLE_ADMIN_DOCS", "true").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+LOGIN_MAX_ATTEMPTS = max(1, int(os.getenv("LOGIN_MAX_ATTEMPTS", "5")))
+LOGIN_WINDOW_SECONDS = max(60, int(os.getenv("LOGIN_WINDOW_SECONDS", "900")))
+LOGIN_BLOCK_SECONDS = max(60, int(os.getenv("LOGIN_BLOCK_SECONDS", "900")))
 ROLE_ADMIN_GLOBAL = "admin_global"
+DEFAULT_DEV_SESSION_SECRET = "troque-esta-chave-de-sessao"
 
 BASE_DIR = Path(__file__).resolve().parent
+
+if SESSION_SAME_SITE not in {"lax", "strict", "none"}:
+    SESSION_SAME_SITE = "lax"
+
+
+LOGIN_ATTEMPTS_LOCK = Lock()
+LOGIN_ATTEMPTS: dict[str, dict[str, float | int]] = {}
 
 
 def resolve_allowed_origins() -> list[str]:
@@ -74,6 +110,90 @@ def resolve_allowed_origins() -> list[str]:
     return origins
 
 
+def validate_security_config() -> None:
+    if not IS_PRODUCTION:
+        return
+
+    if SESSION_SECRET == DEFAULT_DEV_SESSION_SECRET or len(SESSION_SECRET) < 24:
+        raise RuntimeError(
+            "SESSION_SECRET inseguro para producao. Configure uma chave longa e exclusiva."
+        )
+
+    if not SESSION_HTTPS_ONLY:
+        raise RuntimeError("SESSION_HTTPS_ONLY deve estar como true em producao.")
+
+    cors_raw = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
+    if not cors_raw:
+        raise RuntimeError(
+            "CORS_ALLOW_ORIGINS deve ser configurado explicitamente em producao."
+        )
+    if "*" in cors_raw:
+        raise RuntimeError("CORS_ALLOW_ORIGINS nao pode usar curinga em producao.")
+
+
+def get_request_ip(request: Request) -> str:
+    if TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("x-forwarded-for", "").strip()
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+
+    client = request.client
+    return client.host if client else "desconhecido"
+
+
+def build_login_attempt_key(username: str, request: Request) -> str:
+    return f"{normalize_username(username)}|{get_request_ip(request)}"
+
+
+def get_login_block_remaining_seconds(username: str, request: Request) -> int:
+    key = build_login_attempt_key(username, request)
+    now = time.time()
+
+    with LOGIN_ATTEMPTS_LOCK:
+        data = LOGIN_ATTEMPTS.get(key)
+        if not data:
+            return 0
+
+        blocked_until = float(data.get("blocked_until", 0.0))
+        if blocked_until <= now:
+            return 0
+
+        return max(1, int(blocked_until - now))
+
+
+def register_failed_login_attempt(username: str, request: Request) -> int:
+    key = build_login_attempt_key(username, request)
+    now = time.time()
+
+    with LOGIN_ATTEMPTS_LOCK:
+        data = LOGIN_ATTEMPTS.get(key)
+        if not data or float(data.get("window_started_at", 0.0)) + LOGIN_WINDOW_SECONDS < now:
+            data = {
+                "count": 0,
+                "window_started_at": now,
+                "blocked_until": 0.0,
+            }
+
+        data["count"] = int(data.get("count", 0)) + 1
+
+        if int(data["count"]) >= LOGIN_MAX_ATTEMPTS:
+            data["blocked_until"] = now + LOGIN_BLOCK_SECONDS
+            data["count"] = 0
+            data["window_started_at"] = now
+
+        LOGIN_ATTEMPTS[key] = data
+        blocked_until = float(data.get("blocked_until", 0.0))
+        if blocked_until > now:
+            return max(1, int(blocked_until - now))
+        return 0
+
+
+def clear_login_attempts(username: str, request: Request) -> None:
+    key = build_login_attempt_key(username, request)
+    with LOGIN_ATTEMPTS_LOCK:
+        LOGIN_ATTEMPTS.pop(key, None)
+
+
 app = FastAPI(
     title="Sistema de Certificados - API",
     version="1.1.0",
@@ -89,9 +209,10 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
-    session_cookie="certificado_session",
-    same_site="lax",
-    https_only=False,
+    session_cookie=SESSION_COOKIE_NAME,
+    same_site=SESSION_SAME_SITE,
+    https_only=SESSION_HTTPS_ONLY,
+    max_age=SESSION_MAX_AGE_SECONDS,
 )
 
 app.add_middleware(
@@ -105,6 +226,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event() -> None:
+    validate_security_config()
     Base.metadata.create_all(bind=engine)
     ensure_certificate_schema()
     CERTIFICADOS_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
@@ -447,6 +569,8 @@ def health() -> dict[str, str]:
 
 @app.get("/openapi.json", include_in_schema=False)
 def openapi_json(_usuario: Usuario = Depends(require_admin_user)) -> JSONResponse:
+    if not ENABLE_ADMIN_DOCS:
+        raise HTTPException(status_code=404, detail="Documentacao desativada neste ambiente.")
     return JSONResponse(
         get_openapi(
             title=app.title,
@@ -459,6 +583,8 @@ def openapi_json(_usuario: Usuario = Depends(require_admin_user)) -> JSONRespons
 
 @app.get("/docs", include_in_schema=False)
 def swagger_ui(_usuario: Usuario = Depends(require_admin_user)) -> HTMLResponse:
+    if not ENABLE_ADMIN_DOCS:
+        raise HTTPException(status_code=404, detail="Documentacao desativada neste ambiente.")
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
         title=f"{app.title} - Docs",
@@ -478,13 +604,56 @@ def auth_login(
     db: Session = Depends(get_db),
 ) -> SessionResponse:
     username = normalize_username(payload.username)
+    blocked_seconds = get_login_block_remaining_seconds(username, request)
+    if blocked_seconds > 0:
+        record_audit_event(
+            db,
+            evento="auth_login_bloqueado",
+            descricao=(
+                f"Tentativa bloqueada para username '{username or 'desconhecido'}'. "
+                f"Tente novamente em {blocked_seconds}s."
+            ),
+            entidade_tipo="usuario",
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=429,
+            detail=f"Muitas tentativas de login. Tente novamente em {blocked_seconds} segundos.",
+        )
+
     usuario = db.query(Usuario).filter(Usuario.username == username).first()
 
     if not usuario or not usuario.ativo or not verify_password(payload.password, usuario.senha_hash):
+        blocked_seconds = register_failed_login_attempt(username, request)
+        record_audit_event(
+            db,
+            evento="auth_login_falhou",
+            descricao=(
+                f"Tentativa de login sem sucesso para username '{username or 'desconhecido'}'."
+                + (
+                    f" Bloqueado por {blocked_seconds}s apos excesso de tentativas."
+                    if blocked_seconds > 0
+                    else ""
+                )
+            ),
+            usuario=usuario if usuario and usuario.ativo else None,
+            entidade_tipo="usuario",
+            entidade_id=usuario.id if usuario else None,
+        )
+        db.commit()
+        if blocked_seconds > 0:
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "Muitas tentativas de login. "
+                    f"Tente novamente em {blocked_seconds} segundos."
+                ),
+            )
         raise HTTPException(status_code=401, detail="Usuario ou senha invalidos.")
 
     request.session.clear()
     request.session["user_id"] = usuario.id
+    clear_login_attempts(username, request)
     usuario.ultimo_login_em = datetime.utcnow()
     secretaria_ativa, _secretarias = resolve_active_secretaria(request, db, usuario)
     record_audit_event(
