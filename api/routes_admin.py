@@ -308,8 +308,12 @@ def admin_delete_certificate(
                 detail=f"Nao foi possivel remover o arquivo do certificado: {error}",
             ) from error
 
-    db.query(AuditEvent).filter(AuditEvent.certificado_id == cert_id).delete(
-        synchronize_session=False
+    db.query(AuditEvent).filter(AuditEvent.certificado_id == cert_id).update(
+        {
+            AuditEvent.certificado_codigo_snapshot: cert_code,
+            AuditEvent.certificado_id: None,
+        },
+        synchronize_session=False,
     )
     db.delete(cert)
     db.flush()
@@ -319,6 +323,7 @@ def admin_delete_certificate(
         descricao=f"Certificado {cert_code} ({cert_name}) excluido por {admin_user.username}.",
         usuario=admin_user,
         secretaria=cert_secretaria,
+        certificado_codigo=cert_code,
         entidade_tipo="certificado",
         entidade_id=cert_id,
     )

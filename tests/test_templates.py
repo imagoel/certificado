@@ -8,6 +8,8 @@ PNG_BYTES = (
     b"\x00\x00\x00\x00IEND\xaeB`\x82"
 )
 
+SVG_BYTES = b'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>'
+
 
 def test_admin_cadastra_molde_e_operador_pode_selecionar_na_secretaria_ativa(
     client, seed_data, login
@@ -68,3 +70,22 @@ def test_operador_nao_acessa_moldes_de_outra_secretaria(client, seed_data, login
 
     assert denied_response.status_code == 403
     assert file_denied_response.status_code == 403
+
+
+def test_admin_nao_pode_cadastrar_molde_svg(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+
+    response = client.post(
+        "/api/admin/templates",
+        data={
+            "secretaria_id": str(seed_data["seafi_id"]),
+            "nome": "Molde SVG",
+            "ativo": "true",
+            "padrao": "false",
+            "ordem": "0",
+        },
+        files={"arquivo": ("molde.svg", SVG_BYTES, "image/svg+xml")},
+    )
+
+    assert response.status_code == 415
+    assert "PNG" in response.text

@@ -250,7 +250,7 @@ def sanitize_template_name(value: str, fallback: str = "molde") -> str:
 
 def build_template_relative_path(secretaria_sigla: str, template_name: str, filename: str) -> str:
     suffix = Path(filename or "").suffix.lower()
-    if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".svg"}:
+    if suffix not in {".png", ".jpg", ".jpeg", ".webp"}:
         suffix = ".png"
     folder = normalize_secretaria_sigla(secretaria_sigla) or "SECRETARIA"
     base_name = sanitize_template_name(template_name)
@@ -356,7 +356,11 @@ def build_audit_response(event: AuditEvent) -> AuditEventResponse:
         secretaria_id=event.secretaria_id,
         secretaria_sigla=event.secretaria.sigla if event.secretaria else None,
         certificado_id=event.certificado_id,
-        certificado_codigo=event.certificado.codigo if event.certificado else None,
+        certificado_codigo=(
+            event.certificado.codigo
+            if event.certificado
+            else event.certificado_codigo_snapshot
+        ),
     )
 
 
@@ -505,6 +509,7 @@ def record_audit_event(
     usuario: Usuario | None = None,
     secretaria: Secretaria | None = None,
     certificado: Certificate | None = None,
+    certificado_codigo: str | None = None,
     entidade_tipo: str | None = None,
     entidade_id: int | None = None,
 ) -> AuditEvent:
@@ -514,6 +519,10 @@ def record_audit_event(
         usuario_id=usuario.id if usuario else None,
         secretaria_id=secretaria.id if secretaria else None,
         certificado_id=certificado.id if certificado else None,
+        certificado_codigo_snapshot=(
+            certificado.codigo if certificado else sanitize_code(certificado_codigo or "")
+        )
+        or None,
         entidade_tipo=entidade_tipo,
         entidade_id=entidade_id,
     )
@@ -590,11 +599,11 @@ def validate_template_upload(uploaded: UploadFile, content: bytes) -> None:
         )
 
     suffix = Path(uploaded.filename).suffix.lower()
-    allowed_suffixes = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
+    allowed_suffixes = {".png", ".jpg", ".jpeg", ".webp"}
     if suffix not in allowed_suffixes:
         raise HTTPException(
             status_code=415,
-            detail="Formato invalido para molde. Use PNG, JPG, JPEG, WEBP ou SVG.",
+            detail="Formato invalido para molde. Use PNG, JPG, JPEG ou WEBP.",
         )
 
     content_type = (uploaded.content_type or "").lower()

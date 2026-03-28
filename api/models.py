@@ -157,6 +157,7 @@ class AuditEvent(Base):
         ForeignKey("secretarias.id"), index=True, nullable=True
     )
     certificado_id: Mapped[int | None] = mapped_column(ForeignKey("certificados.id"), nullable=True)
+    certificado_codigo_snapshot: Mapped[str | None] = mapped_column(String(20), nullable=True)
     entidade_tipo: Mapped[str | None] = mapped_column(String(50), nullable=True)
     entidade_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, index=True, default=utc_now, nullable=False)

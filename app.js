@@ -1860,6 +1860,17 @@ function loadImage(file, { trim = true } = {}) {
   });
 }
 
+function validateTemplateFile(file) {
+  if (!file) return;
+  const suffix = ((file.name || "").split(".").pop() || "").toLowerCase();
+  const allowedSuffixes = new Set(["png", "jpg", "jpeg", "webp"]);
+  const normalizedType = sanitizeText(file.type).toLowerCase();
+  const allowedMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+  if (!allowedSuffixes.has(suffix) || (normalizedType && !allowedMimeTypes.has(normalizedType))) {
+    throw new Error("Formato invalido para molde. Use PNG, JPG, JPEG ou WEBP.");
+  }
+}
+
 function loadImageFromBlob(blob) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -2141,6 +2152,9 @@ async function handleAssetChange(input, key, options = {}) {
   }
 
   try {
+    if (key === "template") {
+      validateTemplateFile(file);
+    }
     assets[key] = await loadImage(file, options);
     if (key === "template") {
       syncTemplateControls();

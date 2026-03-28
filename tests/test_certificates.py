@@ -77,6 +77,16 @@ def test_admin_exclui_certificado_com_confirmacao_e_senha(client, seed_data, log
     assert validation_response.status_code == 200
     assert validation_response.json()["status"] == "nao_encontrado"
 
+    audit_response = client.get("/api/admin/auditoria")
+    assert audit_response.status_code == 200
+    matching_events = [
+        item
+        for item in audit_response.json()["itens"]
+        if item.get("certificado_codigo") == codigo
+    ]
+    assert any(item["evento"] == "certificado_criado" for item in matching_events)
+    assert any(item["evento"] == "certificado_excluido" for item in matching_events)
+
 
 def test_codigo_manual_alto_avanca_proxima_emissao_automatica(client, seed_data, login):
     login("operador", seed_data["operador_password"])
