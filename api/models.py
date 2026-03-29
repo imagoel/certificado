@@ -36,8 +36,6 @@ class Secretaria(Base):
     sigla: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     nome: Mapped[str] = mapped_column(String(150), nullable=False)
     ativa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    logo_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    assinatura_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
     usuarios: Mapped[list["Usuario"]] = relationship(
