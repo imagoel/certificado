@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
-  <link rel="stylesheet" href="styles.css?v=20260329-6" />
+  <link rel="stylesheet" href="styles.css?v=20260329-7" />
 </head>
 <body>
   <main class="container">
@@ -82,59 +82,59 @@
             <label for="textoLinha2">Texto (linha 2, opcional)</label>
             <input id="textoLinha2" type="text" value="concluiu com êxito o curso" />
 
-            <section id="template-library-wrap" class="batch-controls" hidden>
-              <h2>Modelo cadastrado da secretaria</h2>
-              <label for="template-select">Molde aprovado</label>
+            <section id="template-library-wrap" class="batch-controls generator-asset-block">
+              <h2>Molde</h2>
+              <p class="hint">O molde padrão da secretaria é carregado automaticamente. Você pode trocar a seleção ou enviar um arquivo temporário apenas para esta emissão.</p>
+              <label for="template-select">Molde cadastrado</label>
               <select id="template-select">
                 <option value="">Usar fundo padrão</option>
               </select>
-              <p class="hint">Escolha um modelo salvo para a secretaria ativa. O molde temporário abaixo pode sobrescrever essa seleção apenas nesta tela.</p>
               <p id="template-select-status" class="status" aria-live="polite"></p>
+
+              <div class="asset-upload-group">
+                <input id="template" type="file" accept="image/png,image/jpeg,image/webp" />
+                <div class="actions asset-inline-actions">
+                  <button id="template-remove" type="button" class="secondary-btn" disabled hidden>Remover molde temporário</button>
+                </div>
+                <p id="template-status" class="status" aria-live="polite"></p>
+              </div>
             </section>
 
-            <section id="logo-library-wrap" class="batch-controls" hidden>
-              <h2>Logo cadastrada da secretaria</h2>
-              <label for="logo-select">Logo aprovada</label>
+            <section id="logo-library-wrap" class="batch-controls generator-asset-block">
+              <h2>Logo</h2>
+              <p class="hint">A logo padrão da secretaria é carregada automaticamente. Você pode trocar a seleção ou enviar um arquivo temporário apenas para esta emissão.</p>
+              <label for="logo-select">Logo cadastrada</label>
               <select id="logo-select">
                 <option value="">Não usar logo cadastrada</option>
               </select>
-              <p class="hint">Ao entrar na secretaria, a logo padrão é carregada automaticamente. O upload manual abaixo sobrescreve esta seleção apenas nesta tela.</p>
               <p id="logo-select-status" class="status" aria-live="polite"></p>
+
+              <div class="asset-upload-group">
+                <input id="logo" type="file" accept="image/png,image/jpeg,image/webp" />
+                <div class="actions asset-inline-actions">
+                  <button id="logo-remove" type="button" class="secondary-btn" disabled hidden>Remover logo temporária</button>
+                </div>
+                <p id="logo-status" class="status" aria-live="polite"></p>
+              </div>
             </section>
 
-            <section id="assinatura-library-wrap" class="batch-controls" hidden>
-              <h2>Assinatura cadastrada da secretaria</h2>
-              <label for="assinatura-select">Assinatura aprovada</label>
+            <section id="assinatura-library-wrap" class="batch-controls generator-asset-block">
+              <h2>Assinatura</h2>
+              <p class="hint">A assinatura padrão da secretaria é carregada automaticamente. Você pode trocar a seleção ou enviar um arquivo temporário apenas para esta emissão.</p>
+              <label for="assinatura-select">Assinatura cadastrada</label>
               <select id="assinatura-select">
                 <option value="">Não usar assinatura cadastrada</option>
               </select>
-              <p class="hint">Ao entrar na secretaria, a assinatura padrão é carregada automaticamente. O upload manual abaixo sobrescreve esta seleção apenas nesta tela.</p>
               <p id="assinatura-select-status" class="status" aria-live="polite"></p>
+
+              <div class="asset-upload-group">
+                <input id="assinatura" type="file" accept="image/png,image/jpeg,image/webp" />
+                <div class="actions asset-inline-actions">
+                  <button id="assinatura-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura temporária</button>
+                </div>
+                <p id="assinatura-status" class="status" aria-live="polite"></p>
+              </div>
             </section>
-
-            <label for="logo">Logo temporária (opcional)</label>
-            <input id="logo" type="file" accept="image/png,image/jpeg,image/webp" />
-            <p class="hint">A logo temporária sobrescreve a logo cadastrada selecionada apenas nesta tela.</p>
-            <div class="actions asset-inline-actions">
-              <button id="logo-remove" type="button" class="secondary-btn" disabled>Remover logo</button>
-            </div>
-            <p id="logo-status" class="status" aria-live="polite"></p>
-
-            <label for="assinatura">Assinatura temporária (opcional)</label>
-            <input id="assinatura" type="file" accept="image/png,image/jpeg,image/webp" />
-            <p class="hint">A assinatura temporária sobrescreve a assinatura cadastrada selecionada apenas nesta tela.</p>
-            <div class="actions asset-inline-actions">
-              <button id="assinatura-remove" type="button" class="secondary-btn" disabled>Remover assinatura</button>
-            </div>
-            <p id="assinatura-status" class="status" aria-live="polite"></p>
-
-            <label for="template">Molde temporário (opcional)</label>
-            <input id="template" type="file" accept="image/png,image/jpeg,image/webp" />
-            <p class="hint">O molde temporário funciona como fundo do certificado e sobrescreve apenas o modelo selecionado nesta tela. Nome, curso, data, QR Code, assinatura e logo continuam nas posições atuais.</p>
-            <div class="actions asset-inline-actions">
-              <button id="template-remove" type="button" class="secondary-btn" disabled>Remover molde</button>
-            </div>
-            <p id="template-status" class="status" aria-live="polite"></p>
 
             <section class="asset-controls">
               <h2>Ajuste da Logo</h2>
@@ -812,6 +812,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260329-16"></script>
+  <script src="app.js?v=20260329-17"></script>
 </body>
 </html>

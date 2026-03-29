@@ -265,6 +265,27 @@ button[disabled] {
   color: #1a4f8b;
 }
 
+.generator-asset-block {
+  display: grid;
+  gap: 6px;
+}
+
+.generator-asset-block h2 {
+  margin-bottom: 2px;
+}
+
+.asset-upload-group {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed #cbd9ec;
+}
+
+.asset-upload-group input[type="file"] {
+  margin-top: 2px;
+}
+
 .batch-preview {
   margin-top: 12px;
   padding-top: 12px;

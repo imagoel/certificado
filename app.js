@@ -940,12 +940,12 @@ function clearSessionUi(message = "") {
   if (templateSelect) {
     populateTemplateOptions(templateSelect, [], "", true);
   }
-  if (templateLibraryWrap) templateLibraryWrap.hidden = true;
+  if (templateLibraryWrap) templateLibraryWrap.hidden = false;
   setTemplateSelectStatus("", "info");
   populateSecretariaAssetOptions("logo", [], "", true);
   populateSecretariaAssetOptions("assinatura", [], "", true);
-  if (logoLibraryWrap) logoLibraryWrap.hidden = true;
-  if (assinaturaLibraryWrap) assinaturaLibraryWrap.hidden = true;
+  if (logoLibraryWrap) logoLibraryWrap.hidden = false;
+  if (assinaturaLibraryWrap) assinaturaLibraryWrap.hidden = false;
   setLogoSelectStatus("", "info");
   setAssinaturaSelectStatus("", "info");
   setLogoStatus("", "info");
@@ -2022,8 +2022,8 @@ async function applySavedTemplateSelection(templateId, options = {}) {
     savedTemplateImage = null;
     if (!silentStatus) {
       const fallbackMessage = templateCatalogState.items.length
-        ? "Nenhum modelo cadastrado selecionado. O preview usará o fundo padrão ou o molde temporário."
-        : "A secretaria ativa ainda não tem moldes cadastrados.";
+        ? "Usando o fundo padrão. Se desejar, escolha um arquivo abaixo para sobrescrever somente esta emissão."
+        : "A secretaria ativa ainda não tem moldes cadastrados. Se desejar, escolha um arquivo abaixo para usar um molde temporário nesta emissão.";
       setTemplateSelectStatus(fallbackMessage, "info");
     }
     await renderLastCertificate();
@@ -2092,9 +2092,12 @@ async function loadAvailableTemplates() {
     templateCatalogState.selectedId = "";
     savedTemplate = null;
     savedTemplateImage = null;
-    if (templateLibraryWrap) templateLibraryWrap.hidden = true;
+    if (templateLibraryWrap) templateLibraryWrap.hidden = false;
     if (templateSelect) populateTemplateOptions(templateSelect, [], "", true);
-    setTemplateSelectStatus("", "info");
+    setTemplateSelectStatus(
+      "Selecione uma secretaria para usar um molde cadastrado ou enviar um arquivo temporário.",
+      "info"
+    );
     return;
   }
 
@@ -2104,7 +2107,7 @@ async function loadAvailableTemplates() {
     );
     const items = Array.isArray(payload) ? payload : [];
     templateCatalogState.items = items;
-    if (templateLibraryWrap) templateLibraryWrap.hidden = items.length === 0;
+    if (templateLibraryWrap) templateLibraryWrap.hidden = false;
     if (templateSelect) {
       populateTemplateOptions(templateSelect, items, templateCatalogState.selectedId, true);
     }
@@ -2126,7 +2129,7 @@ async function loadAvailableTemplates() {
     templateCatalogState.selectedId = "";
     savedTemplate = null;
     savedTemplateImage = null;
-    if (templateLibraryWrap) templateLibraryWrap.hidden = true;
+    if (templateLibraryWrap) templateLibraryWrap.hidden = false;
     if (templateSelect) populateTemplateOptions(templateSelect, [], "", true);
     if (error && error.status === 401) {
       await handleUnauthorized();
@@ -2153,8 +2156,8 @@ async function applySavedSecretariaAssetSelection(type, assetId, options = {}) {
     setSavedSecretariaAsset(type, null, null);
     if (!silentStatus) {
       const fallbackMessage = catalog.items.length
-        ? `Nenhuma ${ui.label} cadastrada selecionada.`
-        : `A secretaria ativa ainda não tem ${ui.pluralLabel} cadastradas.`;
+        ? `Nenhuma ${ui.label} cadastrada selecionada. Se desejar, escolha um arquivo abaixo para sobrescrever somente esta emissão.`
+        : `A secretaria ativa ainda não tem ${ui.pluralLabel} cadastradas. Se desejar, escolha um arquivo abaixo para usar uma ${ui.label} temporária nesta emissão.`;
       ui.setSelectStatus(fallbackMessage, "info");
     }
     await renderLastCertificate();
@@ -2219,9 +2222,12 @@ async function loadAvailableSecretariaAssetType(type) {
     catalog.items = [];
     catalog.selectedId = "";
     setSavedSecretariaAsset(type, null, null);
-    if (ui.wrap) ui.wrap.hidden = true;
+    if (ui.wrap) ui.wrap.hidden = false;
     populateSecretariaAssetOptions(type, [], "", true);
-    ui.setSelectStatus("", "info");
+    ui.setSelectStatus(
+      `Selecione uma secretaria para usar ${ui.pluralLabel} cadastradas ou enviar um arquivo temporário.`,
+      "info"
+    );
     return;
   }
 
@@ -2234,7 +2240,7 @@ async function loadAvailableSecretariaAssetType(type) {
     );
     const items = Array.isArray(payload) ? payload : [];
     catalog.items = items;
-    if (ui.wrap) ui.wrap.hidden = items.length === 0;
+    if (ui.wrap) ui.wrap.hidden = false;
     populateSecretariaAssetOptions(type, items, catalog.selectedId, true);
 
     const currentSelected = items.find(
@@ -2252,7 +2258,7 @@ async function loadAvailableSecretariaAssetType(type) {
     catalog.items = [];
     catalog.selectedId = "";
     setSavedSecretariaAsset(type, null, null);
-    if (ui.wrap) ui.wrap.hidden = true;
+    if (ui.wrap) ui.wrap.hidden = false;
     populateSecretariaAssetOptions(type, [], "", true);
     if (error && error.status === 401) {
       await handleUnauthorized();
@@ -2735,12 +2741,15 @@ function setTemplateStatus(message, type = "info") {
 function syncTemplateControls() {
   if (templateRemoveBtn) {
     templateRemoveBtn.disabled = !assets.template;
+    templateRemoveBtn.hidden = !assets.template;
   }
   if (logoRemoveBtn) {
     logoRemoveBtn.disabled = !assets.logo;
+    logoRemoveBtn.hidden = !assets.logo;
   }
   if (assinaturaRemoveBtn) {
     assinaturaRemoveBtn.disabled = !assets.assinatura;
+    assinaturaRemoveBtn.hidden = !assets.assinatura;
   }
 }
 
@@ -3141,20 +3150,21 @@ async function handleAssetChange(input, key, options = {}) {
     if (key === "template") {
       const warning = getTemplateWarning(assets.template);
       setTemplateStatus(
-        warning ||
-          `Molde temporário ${file.name} carregado. Ele sobrescreve o modelo cadastrado selecionado nesta tela.`,
+        warning
+          ? `${warning} Molde temporário pronto para uso. Ele sobrescreve o modelo selecionado somente nesta emissão.`
+          : "Molde temporário pronto para uso. Ele sobrescreve o modelo selecionado somente nesta emissão.",
         warning ? "info" : "success"
       );
     } else if (key === "logo") {
-      const suffix = savedLogo
-        ? ` Ela sobrescreve a logo cadastrada ${savedLogo.nome} nesta tela.`
-        : "";
-      setLogoStatus(`Logo temporária ${file.name} carregada.${suffix}`, "success");
+      setLogoStatus(
+        "Logo temporária pronta para uso. Ela sobrescreve a logo cadastrada selecionada somente nesta emissão.",
+        "success"
+      );
     } else if (key === "assinatura") {
-      const suffix = savedAssinatura
-        ? ` Ela sobrescreve a assinatura cadastrada ${savedAssinatura.nome} nesta tela.`
-        : "";
-      setAssinaturaStatus(`Assinatura temporária ${file.name} carregada.${suffix}`, "success");
+      setAssinaturaStatus(
+        "Assinatura temporária pronta para uso. Ela sobrescreve a assinatura cadastrada selecionada somente nesta emissão.",
+        "success"
+      );
     }
     void renderLastCertificate();
   } catch (error) {
