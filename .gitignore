@@ -29,3 +29,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 api/data/
+
+## Local documentation
+CONTEXTO_PROJETO.md

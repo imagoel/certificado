@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500")))
 UserRole = Literal["admin_global", "operador"]
+SecretariaAssetType = Literal["logo", "assinatura"]
 
 
 class CertificateCreate(BaseModel):
@@ -87,6 +88,22 @@ class CertificateTemplateResponse(BaseModel):
     secretaria_id: int
     secretaria_sigla: Optional[str] = None
     secretaria_nome: Optional[str] = None
+    nome: str
+    ativo: bool
+    padrao: bool
+    ordem: int = 0
+    arquivo_url: str
+    criado_em: datetime
+    criado_por_usuario_id: Optional[int] = None
+    criado_por_username: Optional[str] = None
+
+
+class SecretariaAssetResponse(BaseModel):
+    id: int
+    secretaria_id: int
+    secretaria_sigla: Optional[str] = None
+    secretaria_nome: Optional[str] = None
+    tipo: SecretariaAssetType
     nome: str
     ativo: bool
     padrao: bool

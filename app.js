@@ -3,10 +3,18 @@ const generateSubmitBtn = form ? form.querySelector('button[type="submit"]') : n
 const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
+const logoRemoveBtn = document.getElementById("logo-remove");
+const assinaturaRemoveBtn = document.getElementById("assinatura-remove");
 const templateInput = document.getElementById("template");
 const templateRemoveBtn = document.getElementById("template-remove");
 const templateLibraryWrap = document.getElementById("template-library-wrap");
 const templateSelect = document.getElementById("template-select");
+const logoLibraryWrap = document.getElementById("logo-library-wrap");
+const logoSelect = document.getElementById("logo-select");
+const logoSelectStatus = document.getElementById("logo-select-status");
+const assinaturaLibraryWrap = document.getElementById("assinatura-library-wrap");
+const assinaturaSelect = document.getElementById("assinatura-select");
+const assinaturaSelectStatus = document.getElementById("assinatura-select-status");
 const planilhaInput = document.getElementById("planilha");
 const batchPreviewBtn = document.getElementById("batch-preview");
 const batchGenerateBtn = document.getElementById("batch-generate");
@@ -81,6 +89,21 @@ const templateAdminListBody = document.getElementById("template-admin-list-body"
 const templateAdminSubmitBtn = templateAdminForm
   ? templateAdminForm.querySelector('button[type="submit"]')
   : null;
+const secretariaAssetForm = document.getElementById("secretaria-asset-form");
+const secretariaAssetEditIdInput = document.getElementById("secretaria-asset-edit-id");
+const secretariaAssetSecretariaSelect = document.getElementById("secretaria-asset-secretaria");
+const secretariaAssetTypeSelect = document.getElementById("secretaria-asset-type");
+const secretariaAssetNameInput = document.getElementById("secretaria-asset-name");
+const secretariaAssetActiveInput = document.getElementById("secretaria-asset-active");
+const secretariaAssetDefaultInput = document.getElementById("secretaria-asset-default");
+const secretariaAssetOrderInput = document.getElementById("secretaria-asset-order");
+const secretariaAssetFileInput = document.getElementById("secretaria-asset-file");
+const secretariaAssetResetBtn = document.getElementById("secretaria-asset-reset");
+const secretariaAssetStatus = document.getElementById("secretaria-asset-status");
+const secretariaAssetListBody = document.getElementById("secretaria-asset-list-body");
+const secretariaAssetSubmitBtn = secretariaAssetForm
+  ? secretariaAssetForm.querySelector('button[type="submit"]')
+  : null;
 
 const auditForm = document.getElementById("audit-form");
 const auditSearchInput = document.getElementById("audit-search");
@@ -124,6 +147,8 @@ const nomeInput = document.getElementById("nome");
 const cursoInput = document.getElementById("curso");
 const dataInput = document.getElementById("data");
 const cargaHInput = document.getElementById("carga_h");
+const logoStatus = document.getElementById("logo-status");
+const assinaturaStatus = document.getElementById("assinatura-status");
 const templateStatus = document.getElementById("template-status");
 const templateSelectStatus = document.getElementById("template-select-status");
 
@@ -188,6 +213,10 @@ let pendingDeleteCertificate = null;
 let pendingBatchGeneration = null;
 let savedTemplate = null;
 let savedTemplateImage = null;
+let savedLogo = null;
+let savedLogoImage = null;
+let savedAssinatura = null;
+let savedAssinaturaImage = null;
 
 const certListState = {
   page: 1,
@@ -209,11 +238,16 @@ const adminState = {
   users: [],
   secretarias: [],
   templates: [],
+  secretariaAssets: [],
 };
 
 const templateCatalogState = {
   items: [],
   selectedId: "",
+};
+const secretariaAssetCatalogState = {
+  logo: { items: [], selectedId: "" },
+  assinatura: { items: [], selectedId: "" },
 };
 
 const auditState = {
@@ -377,8 +411,87 @@ function setTemplateAdminStatus(message, type = "info") {
   setStatusMessage(templateAdminStatus, message, type);
 }
 
+function setLogoSelectStatus(message, type = "info") {
+  setStatusMessage(logoSelectStatus, message, type);
+}
+
+function setAssinaturaSelectStatus(message, type = "info") {
+  setStatusMessage(assinaturaSelectStatus, message, type);
+}
+
+function setLogoStatus(message, type = "info") {
+  setStatusMessage(logoStatus, message, type);
+}
+
+function setAssinaturaStatus(message, type = "info") {
+  setStatusMessage(assinaturaStatus, message, type);
+}
+
+function setSecretariaAssetAdminStatus(message, type = "info") {
+  setStatusMessage(secretariaAssetStatus, message, type);
+}
+
+function getSecretariaAssetCatalog(type) {
+  return secretariaAssetCatalogState[type] || { items: [], selectedId: "" };
+}
+
+function getSavedSecretariaAsset(type) {
+  return type === "logo" ? savedLogo : savedAssinatura;
+}
+
+function getSavedSecretariaAssetImage(type) {
+  return type === "logo" ? savedLogoImage : savedAssinaturaImage;
+}
+
+function setSavedSecretariaAsset(type, asset, image) {
+  if (type === "logo") {
+    savedLogo = asset;
+    savedLogoImage = image;
+    return;
+  }
+  savedAssinatura = asset;
+  savedAssinaturaImage = image;
+}
+
+function getSecretariaAssetUi(type) {
+  if (type === "logo") {
+    return {
+      label: "logo",
+      pluralLabel: "logos",
+      wrap: logoLibraryWrap,
+      select: logoSelect,
+      removeBtn: logoRemoveBtn,
+      setSelectStatus: setLogoSelectStatus,
+      setManualStatus: setLogoStatus,
+      blankLabel: "Não usar logo cadastrada",
+      missingFileMessage:
+        "O arquivo da logo cadastrada não foi encontrado no servidor. Reenvie a logo na administração.",
+    };
+  }
+  return {
+    label: "assinatura",
+    pluralLabel: "assinaturas",
+    wrap: assinaturaLibraryWrap,
+    select: assinaturaSelect,
+    removeBtn: assinaturaRemoveBtn,
+    setSelectStatus: setAssinaturaSelectStatus,
+    setManualStatus: setAssinaturaStatus,
+    blankLabel: "Não usar assinatura cadastrada",
+    missingFileMessage:
+      "O arquivo da assinatura cadastrada não foi encontrado no servidor. Reenvie a assinatura na administração.",
+  };
+}
+
 function getActiveTemplateImage() {
   return assets.template || savedTemplateImage;
+}
+
+function getActiveLogoImage() {
+  return assets.logo || savedLogoImage;
+}
+
+function getActiveAssinaturaImage() {
+  return assets.assinatura || savedAssinaturaImage;
 }
 
 function formatDateTime(dateStr) {
@@ -481,6 +594,34 @@ function populateTemplateOptions(select, templates, selectedValue = "", includeB
   });
 }
 
+function populateSecretariaAssetOptions(type, items, selectedValue = "", includeBlank = true) {
+  const ui = getSecretariaAssetUi(type);
+  const select = ui.select;
+  if (!select) return;
+
+  const selectedText =
+    selectedValue === null || selectedValue === undefined ? "" : String(selectedValue);
+  select.innerHTML = "";
+
+  if (includeBlank) {
+    const blankOption = document.createElement("option");
+    blankOption.value = "";
+    blankOption.textContent = ui.blankLabel;
+    if (!selectedText) {
+      blankOption.selected = true;
+    }
+    select.appendChild(blankOption);
+  }
+
+  (Array.isArray(items) ? items : []).forEach((item) => {
+    const option = document.createElement("option");
+    option.value = String(item.id);
+    option.textContent = item.padrao ? `${item.nome} (padrão)` : item.nome;
+    option.selected = String(item.id) === selectedText;
+    select.appendChild(option);
+  });
+}
+
 function getMultiSelectValues(select) {
   if (!select) return [];
   return Array.from(select.selectedOptions).map((option) => Number(option.value));
@@ -505,6 +646,15 @@ function renderUserSecretariasChecklist() {
   const disabled = Boolean(userSecretariasSelect.disabled);
   userSecretariasChecklist.innerHTML = "";
   userSecretariasSelect.hidden = true;
+
+  if (disabled) {
+    const info = document.createElement("p");
+    info.className = "checkbox-list-empty";
+    info.textContent =
+      "Admin global acessa todas as secretarias. Os vinculos sao limpos automaticamente ao salvar.";
+    userSecretariasChecklist.appendChild(info);
+    return;
+  }
 
   if (!options.length) {
     const empty = document.createElement("p");
@@ -691,12 +841,25 @@ function clearSessionUi(message = "") {
   adminState.users = [];
   adminState.secretarias = [];
   adminState.templates = [];
+  adminState.secretariaAssets = [];
   templateCatalogState.items = [];
   templateCatalogState.selectedId = "";
+  secretariaAssetCatalogState.logo.items = [];
+  secretariaAssetCatalogState.logo.selectedId = "";
+  secretariaAssetCatalogState.assinatura.items = [];
+  secretariaAssetCatalogState.assinatura.selectedId = "";
   assets.template = null;
+  assets.logo = null;
+  assets.assinatura = null;
   savedTemplate = null;
   savedTemplateImage = null;
+  savedLogo = null;
+  savedLogoImage = null;
+  savedAssinatura = null;
+  savedAssinaturaImage = null;
   if (templateInput) templateInput.value = "";
+  if (logoInput) logoInput.value = "";
+  if (assinaturaInput) assinaturaInput.value = "";
   syncTemplateControls();
   setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");
   if (templateSelect) {
@@ -704,9 +867,18 @@ function clearSessionUi(message = "") {
   }
   if (templateLibraryWrap) templateLibraryWrap.hidden = true;
   setTemplateSelectStatus("", "info");
+  populateSecretariaAssetOptions("logo", [], "", true);
+  populateSecretariaAssetOptions("assinatura", [], "", true);
+  if (logoLibraryWrap) logoLibraryWrap.hidden = true;
+  if (assinaturaLibraryWrap) assinaturaLibraryWrap.hidden = true;
+  setLogoSelectStatus("", "info");
+  setAssinaturaSelectStatus("", "info");
+  setLogoStatus("", "info");
+  setAssinaturaStatus("", "info");
   resetUserForm();
   resetSecretariaForm();
   resetTemplateAdminForm();
+  resetSecretariaAssetForm();
   switchSection("generator");
   if (message) {
     setLoginStatus(message, "error");
@@ -922,7 +1094,7 @@ function syncUserRoleUi() {
 
   const isAdmin = userRoleSelect.value === "admin_global";
   userSecretariasSelect.disabled = isAdmin;
-  if (isAdmin && !sanitizeText(userEditIdInput ? userEditIdInput.value : "")) {
+  if (isAdmin) {
     setMultiSelectValues(userSecretariasSelect, []);
   }
   renderUserSecretariasChecklist();
@@ -1001,6 +1173,37 @@ function resetTemplateAdminForm() {
   setTemplateAdminStatus("", "info");
 }
 
+function syncSecretariaAssetFormState() {
+  const editing = Boolean(
+    sanitizeText(secretariaAssetEditIdInput ? secretariaAssetEditIdInput.value : "")
+  );
+  if (secretariaAssetForm) {
+    secretariaAssetForm.classList.toggle("is-editing", editing);
+  }
+  if (secretariaAssetSubmitBtn) {
+    secretariaAssetSubmitBtn.textContent = editing ? "Atualizar Item" : "Salvar Item";
+  }
+  if (secretariaAssetSecretariaSelect) {
+    secretariaAssetSecretariaSelect.disabled = editing;
+  }
+  if (secretariaAssetTypeSelect) {
+    secretariaAssetTypeSelect.disabled = editing;
+  }
+  if (secretariaAssetFileInput) {
+    secretariaAssetFileInput.required = !editing;
+  }
+}
+
+function resetSecretariaAssetForm() {
+  if (secretariaAssetForm) secretariaAssetForm.reset();
+  if (secretariaAssetEditIdInput) secretariaAssetEditIdInput.value = "";
+  if (secretariaAssetActiveInput) secretariaAssetActiveInput.checked = true;
+  if (secretariaAssetDefaultInput) secretariaAssetDefaultInput.checked = false;
+  if (secretariaAssetOrderInput) secretariaAssetOrderInput.value = "0";
+  syncSecretariaAssetFormState();
+  setSecretariaAssetAdminStatus("", "info");
+}
+
 function buildStatusPill(active, activeLabel = "Ativo", inactiveLabel = "Inativo") {
   const span = document.createElement("span");
   span.className = `status-pill ${active ? "ok" : "warn"}`;
@@ -1059,6 +1262,28 @@ function fillTemplateAdminForm(template) {
     "info"
   );
   scrollAdminFormIntoView(templateAdminForm);
+}
+
+function fillSecretariaAssetForm(asset) {
+  if (!asset) return;
+  if (secretariaAssetEditIdInput) secretariaAssetEditIdInput.value = String(asset.id);
+  if (secretariaAssetSecretariaSelect) {
+    secretariaAssetSecretariaSelect.value = String(asset.secretaria_id || "");
+  }
+  if (secretariaAssetTypeSelect) {
+    secretariaAssetTypeSelect.value = asset.tipo || "logo";
+  }
+  if (secretariaAssetNameInput) secretariaAssetNameInput.value = asset.nome || "";
+  if (secretariaAssetActiveInput) secretariaAssetActiveInput.checked = Boolean(asset.ativo);
+  if (secretariaAssetDefaultInput) secretariaAssetDefaultInput.checked = Boolean(asset.padrao);
+  if (secretariaAssetOrderInput) secretariaAssetOrderInput.value = String(asset.ordem || 0);
+  if (secretariaAssetFileInput) secretariaAssetFileInput.value = "";
+  syncSecretariaAssetFormState();
+  setSecretariaAssetAdminStatus(
+    `Editando ${asset.tipo} ${asset.nome}. Envie um novo arquivo somente se quiser substituí-lo.`,
+    "info"
+  );
+  scrollAdminFormIntoView(secretariaAssetForm);
 }
 
 function renderCertificateRows(items) {
@@ -1354,6 +1579,78 @@ function renderTemplatesTable() {
   });
 }
 
+function renderSecretariaAssetsTable() {
+  if (!secretariaAssetListBody) return;
+
+  if (!adminState.secretariaAssets.length) {
+    secretariaAssetListBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-state">Nenhuma logo ou assinatura cadastrada até o momento.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  secretariaAssetListBody.innerHTML = "";
+
+  adminState.secretariaAssets.forEach((asset) => {
+    const row = document.createElement("tr");
+
+    const secretariaCell = document.createElement("td");
+    secretariaCell.textContent = asset.secretaria_sigla || "-";
+
+    const tipoCell = document.createElement("td");
+    const tipoPill = document.createElement("span");
+    tipoPill.className = "asset-type-pill";
+    tipoPill.textContent = asset.tipo || "-";
+    tipoCell.appendChild(tipoPill);
+
+    const nomeCell = document.createElement("td");
+    nomeCell.textContent = asset.nome || "-";
+
+    const statusCell = document.createElement("td");
+    statusCell.appendChild(buildStatusPill(asset.ativo));
+
+    const defaultCell = document.createElement("td");
+    defaultCell.appendChild(buildStatusPill(asset.padrao, "Padrão", "Opcional"));
+
+    const orderCell = document.createElement("td");
+    orderCell.textContent = String(asset.ordem || 0);
+
+    const actionsCell = document.createElement("td");
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "inline-actions";
+    actionsWrap.appendChild(
+      createInlineButton("Abrir", () => {
+        window.open(asset.arquivo_url, "_blank", "noopener,noreferrer");
+      })
+    );
+    actionsWrap.appendChild(
+      createInlineButton("Editar", () => {
+        fillSecretariaAssetForm(asset);
+        switchSection("admin");
+      })
+    );
+    actionsWrap.appendChild(
+      createInlineButton(
+        "Excluir",
+        async () => {
+          const confirmado = window.confirm(
+            `Excluir ${asset.tipo} ${asset.nome} da secretaria ${asset.secretaria_sigla}?`
+          );
+          if (!confirmado) return;
+          await deleteSecretariaAsset(asset);
+        },
+        "danger-btn"
+      )
+    );
+    actionsCell.appendChild(actionsWrap);
+
+    row.append(secretariaCell, tipoCell, nomeCell, statusCell, defaultCell, orderCell, actionsCell);
+    secretariaAssetListBody.appendChild(row);
+  });
+}
+
 function renderAuditRows(items) {
   if (!auditListBody) return;
 
@@ -1507,15 +1804,20 @@ async function loadAdminData() {
     const editingTemplateId = sanitizeText(
       templateAdminEditIdInput ? templateAdminEditIdInput.value : ""
     );
-    const [secretarias, usuarios, templates] = await Promise.all([
+    const editingSecretariaAssetId = sanitizeText(
+      secretariaAssetEditIdInput ? secretariaAssetEditIdInput.value : ""
+    );
+    const [secretarias, usuarios, templates, secretariaAssets] = await Promise.all([
       apiJsonRequest("/api/admin/secretarias"),
       apiJsonRequest("/api/admin/usuarios"),
       apiJsonRequest("/api/admin/templates"),
+      apiJsonRequest("/api/admin/secretaria-assets"),
     ]);
 
     adminState.secretarias = Array.isArray(secretarias) ? secretarias : [];
     adminState.users = Array.isArray(usuarios) ? usuarios : [];
     adminState.templates = Array.isArray(templates) ? templates : [];
+    adminState.secretariaAssets = Array.isArray(secretariaAssets) ? secretariaAssets : [];
     populateSecretariaOptions(
       userSecretariasSelect,
       adminState.secretarias.filter((secretaria) => secretaria.ativa),
@@ -1529,6 +1831,12 @@ async function loadAdminData() {
       false
     );
     populateSecretariaOptions(
+      secretariaAssetSecretariaSelect,
+      adminState.secretarias,
+      secretariaAssetSecretariaSelect ? secretariaAssetSecretariaSelect.value : "",
+      false
+    );
+    populateSecretariaOptions(
       auditSecretariaSelect,
       adminState.secretarias,
       auditState.filters.secretariaId,
@@ -1538,6 +1846,7 @@ async function loadAdminData() {
     renderSecretariasTable();
     renderUsersTable();
     renderTemplatesTable();
+    renderSecretariaAssetsTable();
 
     if (editingUserId) {
       const currentUser = adminState.users.find((usuario) => String(usuario.id) === editingUserId);
@@ -1564,6 +1873,15 @@ async function loadAdminData() {
       }
     }
 
+    if (editingSecretariaAssetId) {
+      const currentAsset = adminState.secretariaAssets.find(
+        (asset) => String(asset.id) === editingSecretariaAssetId
+      );
+      if (currentAsset) {
+        fillSecretariaAssetForm(currentAsset);
+      }
+    }
+
     await loadAuditEvents(auditState.page || 1);
   } catch (error) {
     console.error(error);
@@ -1586,6 +1904,10 @@ async function loadAdminData() {
     );
     setTemplateAdminStatus(
       (error && error.message) || "Nao foi possivel carregar os moldes.",
+      "error"
+    );
+    setSecretariaAssetAdminStatus(
+      (error && error.message) || "Nao foi possivel carregar logos e assinaturas.",
       "error"
     );
   }
@@ -1721,6 +2043,137 @@ async function loadAvailableTemplates() {
   }
 }
 
+async function applySavedSecretariaAssetSelection(type, assetId, options = {}) {
+  const { silentStatus = false } = options;
+  const ui = getSecretariaAssetUi(type);
+  const catalog = getSecretariaAssetCatalog(type);
+  const normalizedId = assetId ? String(assetId) : "";
+  catalog.selectedId = normalizedId;
+  if (ui.select) {
+    ui.select.value = normalizedId;
+  }
+
+  if (!normalizedId) {
+    setSavedSecretariaAsset(type, null, null);
+    if (!silentStatus) {
+      const fallbackMessage = catalog.items.length
+        ? `Nenhuma ${ui.label} cadastrada selecionada.`
+        : `A secretaria ativa ainda não tem ${ui.pluralLabel} cadastradas.`;
+      ui.setSelectStatus(fallbackMessage, "info");
+    }
+    await renderLastCertificate();
+    return;
+  }
+
+  const asset = catalog.items.find((item) => String(item.id) === normalizedId);
+  if (!asset) {
+    setSavedSecretariaAsset(type, null, null);
+    catalog.selectedId = "";
+    if (ui.select) ui.select.value = "";
+    if (!silentStatus) {
+      ui.setSelectStatus(`A ${ui.label} selecionada não está mais disponível.`, "error");
+    }
+    await renderLastCertificate();
+    return;
+  }
+
+  try {
+    if (!silentStatus) {
+      ui.setSelectStatus(`Carregando ${ui.label} ${asset.nome}...`, "info");
+    }
+    const response = await fetch(asset.arquivo_url, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const error = new Error(`Falha ao carregar a ${ui.label} (HTTP ${response.status}).`);
+      error.status = response.status;
+      throw error;
+    }
+    const blob = await response.blob();
+    const image = await loadImageFromBlob(blob);
+    setSavedSecretariaAsset(type, asset, image);
+    if (!silentStatus) {
+      const manualOverride = assets[type]
+        ? ` A ${ui.label} temporária local continua sobrescrevendo esta seleção na prévia.`
+        : "";
+      ui.setSelectStatus(
+        `${ui.label.charAt(0).toUpperCase() + ui.label.slice(1)} ${asset.nome} pronta para uso.${manualOverride}`,
+        "success"
+      );
+    }
+    await renderLastCertificate();
+  } catch (error) {
+    console.error(error);
+    setSavedSecretariaAsset(type, null, null);
+    if (!silentStatus) {
+      let message = (error && error.message) || `Não foi possível carregar a ${ui.label} selecionada.`;
+      if (error && error.status === 404) {
+        message = ui.missingFileMessage;
+      }
+      ui.setSelectStatus(message, "error");
+    }
+    await renderLastCertificate();
+  }
+}
+
+async function loadAvailableSecretariaAssetType(type) {
+  const ui = getSecretariaAssetUi(type);
+  const catalog = getSecretariaAssetCatalog(type);
+  if (!sessionState || !sessionState.secretaria_ativa_id) {
+    catalog.items = [];
+    catalog.selectedId = "";
+    setSavedSecretariaAsset(type, null, null);
+    if (ui.wrap) ui.wrap.hidden = true;
+    populateSecretariaAssetOptions(type, [], "", true);
+    ui.setSelectStatus("", "info");
+    return;
+  }
+
+  try {
+    const payload = await apiJsonRequest(
+      `/api/secretaria-assets${buildQueryString({
+        tipo: type,
+        secretaria_id: sessionState.secretaria_ativa_id,
+      })}`
+    );
+    const items = Array.isArray(payload) ? payload : [];
+    catalog.items = items;
+    if (ui.wrap) ui.wrap.hidden = items.length === 0;
+    populateSecretariaAssetOptions(type, items, catalog.selectedId, true);
+
+    const currentSelected = items.find(
+      (item) => String(item.id) === String(catalog.selectedId || "")
+    );
+    const defaultItem = items.find((item) => item.padrao) || items[0] || null;
+    const nextAssetId = currentSelected
+      ? String(currentSelected.id)
+      : defaultItem
+        ? String(defaultItem.id)
+        : "";
+    await applySavedSecretariaAssetSelection(type, nextAssetId, { silentStatus: false });
+  } catch (error) {
+    console.error(error);
+    catalog.items = [];
+    catalog.selectedId = "";
+    setSavedSecretariaAsset(type, null, null);
+    if (ui.wrap) ui.wrap.hidden = true;
+    populateSecretariaAssetOptions(type, [], "", true);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    ui.setSelectStatus(
+      (error && error.message) || `Não foi possível carregar as ${ui.pluralLabel} da secretaria.`,
+      "error"
+    );
+  }
+}
+
+async function loadAvailableSecretariaAssets() {
+  await loadAvailableSecretariaAssetType("logo");
+  await loadAvailableSecretariaAssetType("assinatura");
+}
+
 async function deleteTemplate(template) {
   if (!template) return;
 
@@ -1741,8 +2194,35 @@ async function deleteTemplate(template) {
       await handleUnauthorized();
       return;
     }
-    setTemplateAdminStatus(
-      (error && error.message) || "Nao foi possivel excluir o molde.",
+      setTemplateAdminStatus(
+        (error && error.message) || "Nao foi possivel excluir o molde.",
+        "error"
+      );
+    }
+  }
+
+async function deleteSecretariaAsset(asset) {
+  if (!asset) return;
+
+  try {
+    const payload = await apiJsonRequest(`/api/admin/secretaria-assets/${asset.id}`, {
+      method: "DELETE",
+      body: "{}",
+    });
+    setSecretariaAssetAdminStatus(
+      (payload && payload.message) || `${asset.tipo} ${asset.nome} excluída com sucesso.`,
+      "success"
+    );
+    await loadAdminData();
+    await loadAvailableSecretariaAssets();
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setSecretariaAssetAdminStatus(
+      (error && error.message) || "Nao foi possivel excluir o item.",
       "error"
     );
   }
@@ -1829,6 +2309,7 @@ async function refreshProtectedData(options = {}) {
   if (!sessionState) return;
 
   await loadAvailableTemplates();
+  await loadAvailableSecretariaAssets();
   await loadCertificates(options.page || certListState.page || 1);
   if (isAdminSession()) {
     await loadAdminData();
@@ -2150,6 +2631,12 @@ function syncTemplateControls() {
   if (templateRemoveBtn) {
     templateRemoveBtn.disabled = !assets.template;
   }
+  if (logoRemoveBtn) {
+    logoRemoveBtn.disabled = !assets.logo;
+  }
+  if (assinaturaRemoveBtn) {
+    assinaturaRemoveBtn.disabled = !assets.assinatura;
+  }
 }
 
 function trimAssetImage(image) {
@@ -2231,15 +2718,19 @@ function loadImage(file, { trim = true } = {}) {
   });
 }
 
-function validateTemplateFile(file) {
+function validateVisualAssetFile(file, assetLabel = "imagem") {
   if (!file) return;
   const suffix = ((file.name || "").split(".").pop() || "").toLowerCase();
   const allowedSuffixes = new Set(["png", "jpg", "jpeg", "webp"]);
   const normalizedType = sanitizeText(file.type).toLowerCase();
   const allowedMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
   if (!allowedSuffixes.has(suffix) || (normalizedType && !allowedMimeTypes.has(normalizedType))) {
-    throw new Error("Formato invalido para molde. Use PNG, JPG, JPEG ou WEBP.");
+    throw new Error(`Formato inválido para ${assetLabel}. Use PNG, JPG, JPEG ou WEBP.`);
   }
+}
+
+function validateTemplateFile(file) {
+  validateVisualAssetFile(file, "molde");
 }
 
 function loadImageFromBlob(blob) {
@@ -2356,6 +2847,8 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
 
   const myTicket = ++renderTicket;
   const activeTemplateImage = getActiveTemplateImage();
+  const activeLogoImage = getActiveLogoImage();
+  const activeAssinaturaImage = getActiveAssinaturaImage();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -2365,9 +2858,9 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
     drawDefaultCertificateFrame();
   }
 
-  if (assets.logo) {
+  if (activeLogoImage) {
     drawCenteredImage(
-      assets.logo,
+      activeLogoImage,
       layout.logo.x,
       layout.logo.y,
       layout.logo.maxW,
@@ -2457,9 +2950,9 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  if (assets.assinatura) {
+  if (activeAssinaturaImage) {
     drawCenteredImage(
-      assets.assinatura,
+      activeAssinaturaImage,
       layout.assinatura.x,
       layout.assinatura.y,
       layout.assinatura.maxW,
@@ -2511,12 +3004,22 @@ async function handleAssetChange(input, key, options = {}) {
 
   if (!file) {
     assets[key] = null;
+    syncTemplateControls();
     if (key === "template") {
-      syncTemplateControls();
       const message = savedTemplate
         ? `Molde temporário removido. A prévia voltou a usar o modelo ${savedTemplate.nome}.`
         : "Nenhum molde carregado. O certificado seguirá usando o fundo padrão.";
       setTemplateStatus(message, "info");
+    } else if (key === "logo") {
+      const message = savedLogo
+        ? `Logo temporária removida. A prévia voltou a usar a logo ${savedLogo.nome}.`
+        : "Nenhuma logo temporária carregada. A prévia seguirá sem logo ou com a logo cadastrada selecionada.";
+      setLogoStatus(message, "info");
+    } else if (key === "assinatura") {
+      const message = savedAssinatura
+        ? `Assinatura temporária removida. A prévia voltou a usar a assinatura ${savedAssinatura.nome}.`
+        : "Nenhuma assinatura temporária carregada. A prévia seguirá sem assinatura ou com a assinatura cadastrada selecionada.";
+      setAssinaturaStatus(message, "info");
     }
     void renderLastCertificate();
     return;
@@ -2525,25 +3028,41 @@ async function handleAssetChange(input, key, options = {}) {
   try {
     if (key === "template") {
       validateTemplateFile(file);
+    } else {
+      validateVisualAssetFile(file, key);
     }
     assets[key] = await loadImage(file, options);
+    syncTemplateControls();
     if (key === "template") {
-      syncTemplateControls();
       const warning = getTemplateWarning(assets.template);
       setTemplateStatus(
         warning ||
           `Molde temporário ${file.name} carregado. Ele sobrescreve o modelo cadastrado selecionado nesta tela.`,
         warning ? "info" : "success"
       );
+    } else if (key === "logo") {
+      const suffix = savedLogo
+        ? ` Ela sobrescreve a logo cadastrada ${savedLogo.nome} nesta tela.`
+        : "";
+      setLogoStatus(`Logo temporária ${file.name} carregada.${suffix}`, "success");
+    } else if (key === "assinatura") {
+      const suffix = savedAssinatura
+        ? ` Ela sobrescreve a assinatura cadastrada ${savedAssinatura.nome} nesta tela.`
+        : "";
+      setAssinaturaStatus(`Assinatura temporária ${file.name} carregada.${suffix}`, "success");
     }
     void renderLastCertificate();
   } catch (error) {
     alert(error.message);
     input.value = "";
     assets[key] = null;
+    syncTemplateControls();
     if (key === "template") {
-      syncTemplateControls();
       setTemplateStatus("Não foi possível carregar o molde informado.", "error");
+    } else if (key === "logo") {
+      setLogoStatus("Não foi possível carregar a logo informada.", "error");
+    } else if (key === "assinatura") {
+      setAssinaturaStatus("Não foi possível carregar a assinatura informada.", "error");
     }
   }
 }
@@ -2683,20 +3202,29 @@ function sanitizeFileName(text, fallback) {
 }
 
 function isRowEmpty(row) {
-  return Object.values(row).every((value) => sanitizeText(value) === "");
+  const values = Array.isArray(row) ? row : Object.values(row || {});
+  return values.every((value) => sanitizeText(value) === "");
 }
 
 function extractSingleCellValue(row) {
-  const values = Object.values(row)
-    .map((value) => sanitizeText(value))
+  const values = (Array.isArray(row) ? row : Object.values(row || {}))
+    .map((value) => normalizeParticipantName(value))
     .filter((value) => value.length > 0);
 
   return values.length === 1 ? values[0] : "";
 }
 
+function normalizeParticipantName(value) {
+  const text = sanitizeText(value);
+  if (!text) return "";
+
+  const withoutLeadingNoise = text.replace(/^[^\p{L}\p{N}]+/u, "");
+  return withoutLeadingNoise.replace(/\s+/g, " ").trim();
+}
+
 function buildFullName(firstName, lastName) {
-  const first = sanitizeText(firstName);
-  const last = sanitizeText(lastName);
+  const first = normalizeParticipantName(firstName);
+  const last = normalizeParticipantName(lastName);
 
   if (!first && !last) return "";
   if (!first) return last;
@@ -2711,7 +3239,8 @@ function buildFullName(firstName, lastName) {
   return `${first} ${last}`;
 }
 
-function mapRowToCertificate(row, rowNumber, defaults = {}) {
+function mapRowToCertificate(row, rowNumber, defaults = {}, options = {}) {
+  const allowSingleCellFallback = options.allowSingleCellFallback !== false;
   const mapped = {};
 
   Object.entries(row).forEach(([header, value]) => {
@@ -2728,7 +3257,9 @@ function mapRowToCertificate(row, rowNumber, defaults = {}) {
   const defaultLinha1 = sanitizeText(defaults.linha1) || defaultTextoLinha1;
   const defaultLinha2 = sanitizeText(defaults.linha2) || defaultTextoLinha2;
 
-  const nome = buildFullName(mapped.nome, mapped.sobrenome) || extractSingleCellValue(row);
+  const nome =
+    buildFullName(mapped.nome, mapped.sobrenome) ||
+    (allowSingleCellFallback ? extractSingleCellValue(row) : "");
   const curso = sanitizeText(mapped.curso) || defaultCurso;
   const mappedDateResult = normalizeSpreadsheetDateResult(mapped.data);
   if (mappedDateResult.invalid) {
@@ -2762,6 +3293,100 @@ function mapRowToCertificate(row, rowNumber, defaults = {}) {
   const fileName = `${sanitizeFileName(arquivoBase, `certificado_${rowNumber}`)}.png`;
 
   return { rowNumber, nome, curso, data, codigo: "", carga_h, linha1, linha2, fileName };
+}
+
+function buildSyntheticHeaders(columnCount) {
+  const total = Math.max(1, Number(columnCount) || 1);
+  return Array.from({ length: total }, (_value, index) => `coluna_${index + 1}`);
+}
+
+function buildRowObject(headers, rowValues) {
+  const values = Array.isArray(rowValues) ? rowValues : Object.values(rowValues || {});
+  const row = {};
+
+  headers.forEach((header, index) => {
+    row[header] = values[index] ?? "";
+  });
+
+  return row;
+}
+
+function collectRecognizedHeaderFields(rowValues) {
+  const values = Array.isArray(rowValues) ? rowValues : Object.values(rowValues || {});
+  const fields = [];
+
+  values.forEach((value) => {
+    const field = resolveCanonicalField(value);
+    if (field && !fields.includes(field)) {
+      fields.push(field);
+    }
+  });
+
+  return fields;
+}
+
+function getSpreadsheetRowValues(rowEntry) {
+  if (Array.isArray(rowEntry)) return rowEntry;
+  if (rowEntry && Array.isArray(rowEntry.values)) return rowEntry.values;
+  return Object.values(rowEntry || {});
+}
+
+function getSpreadsheetRowNumber(rowEntry, fallbackIndex) {
+  if (rowEntry && Number.isInteger(rowEntry.rowNumber)) {
+    return rowEntry.rowNumber;
+  }
+  return fallbackIndex + 1;
+}
+
+function detectSpreadsheetHeaderRow(rawRows) {
+  const scanLimit = Math.min(rawRows.length, 10);
+  let bestMatch = null;
+
+  for (let index = 0; index < scanLimit; index += 1) {
+    const rowValues = getSpreadsheetRowValues(rawRows[index]);
+    if (isRowEmpty(rowValues)) continue;
+
+    const fields = collectRecognizedHeaderFields(rowValues);
+    if (!fields.length) continue;
+
+    const hasNome = fields.includes("nome");
+    const score = fields.length + (hasNome ? 3 : 0);
+
+    if (
+      !bestMatch ||
+      score > bestMatch.score ||
+      (score === bestMatch.score && hasNome && !bestMatch.hasNome)
+    ) {
+      bestMatch = {
+        index,
+        score,
+        hasNome,
+        headers: rowValues.map((value, headerIndex) => {
+          const text = sanitizeText(value);
+          return text || `coluna_${headerIndex + 1}`;
+        }),
+      };
+    }
+  }
+
+  if (!bestMatch) {
+    const maxColumns = rawRows.reduce((max, row) => {
+      const values = getSpreadsheetRowValues(row);
+      return Math.max(max, values.length);
+    }, 0);
+
+    return {
+      index: -1,
+      rowNumber: null,
+      headers: buildSyntheticHeaders(maxColumns),
+    };
+  }
+
+  return {
+    index: bestMatch.index,
+    rowNumber: bestMatch.index + 1,
+    headers: bestMatch.headers,
+  };
 }
 
 function detectCsvDelimiter(headerLine) {
@@ -2806,27 +3431,16 @@ function parseCsvRows(text) {
   const normalizedText = text.replace(/^\uFEFF/, "");
   const lines = normalizedText
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    .map((line) => line.replace(/\r/g, ""))
+    .filter((line) => line.trim().length > 0);
 
   if (!lines.length) return [];
 
   const delimiter = detectCsvDelimiter(lines[0]);
-  const headers = parseCsvLine(lines[0], delimiter).map((item) => item.trim());
-  const rows = [];
-
-  for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
-    const values = parseCsvLine(lines[lineIndex], delimiter);
-    const row = {};
-
-    headers.forEach((header, headerIndex) => {
-      row[header] = values[headerIndex] || "";
-    });
-
-    rows.push(row);
-  }
-
-  return rows;
+  return lines.map((line, index) => ({
+    rowNumber: index + 1,
+    values: parseCsvLine(line, delimiter).map((item) => item.trim()),
+  }));
 }
 
 async function readSpreadsheetRows(file) {
@@ -2846,7 +3460,46 @@ async function readSpreadsheetRows(file) {
 
   const firstSheetName = workbook.SheetNames[0];
   const firstSheet = workbook.Sheets[firstSheetName];
-  return window.XLSX.utils.sheet_to_json(firstSheet, { defval: "", raw: true });
+  const rangeRef = firstSheet["!ref"];
+  if (!rangeRef) return [];
+
+  const range = window.XLSX.utils.decode_range(rangeRef);
+  const rows = [];
+
+  for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+    const values = [];
+    let hasContent = false;
+
+    for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+      const cellAddress = window.XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex });
+      const cell = firstSheet[cellAddress];
+      let value = "";
+
+      if (cell) {
+        if (cell.t === "d" && cell.v instanceof Date) {
+          value = cell.v;
+        } else if (cell.w !== undefined && cell.w !== null && cell.w !== "") {
+          value = cell.w;
+        } else if (cell.v !== undefined && cell.v !== null) {
+          value = cell.v;
+        }
+      }
+
+      values.push(value);
+      if (sanitizeText(value) !== "") {
+        hasContent = true;
+      }
+    }
+
+    if (hasContent) {
+      rows.push({
+        rowNumber: rowIndex + 1,
+        values,
+      });
+    }
+  }
+
+  return rows;
 }
 
 function canvasToPngBlob() {
@@ -2878,6 +3531,14 @@ function downloadBlob(blob, fileName) {
 function buildTimestamp() {
   const now = new Date();
   return `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+}
+
+function buildIgnoredRowsSummary(invalidRows, limit = 5) {
+  if (!Array.isArray(invalidRows) || !invalidRows.length) return "";
+
+  const preview = invalidRows.slice(0, limit).join(", ");
+  const suffix = invalidRows.length > limit ? ", ..." : "";
+  return `${invalidRows.length} linha(s) serao ignorada(s): ${preview}${suffix}.`;
 }
 
 function setBatchButtonsDisabled(disabled) {
@@ -2936,8 +3597,11 @@ function renderBatchPreview(prepared) {
     `${prepared.fileName}: ${prepared.nonEmptyRows} linha(s) preenchida(s)`,
     `${prepared.certificates.length} válida(s)`,
   ];
+  if (prepared.headerRowNumber) {
+    summaryParts.push(`cabecalho detectado na linha ${prepared.headerRowNumber}`);
+  }
   if (prepared.invalidRows.length) {
-    summaryParts.push(`${prepared.invalidRows.length} com erro`);
+    summaryParts.push(`${prepared.invalidRows.length} ignorada(s)`);
   }
   if (prepared.skippedEmptyRows) {
     summaryParts.push(`${prepared.skippedEmptyRows} vazia(s) ignorada(s)`);
@@ -2987,51 +3651,65 @@ async function prepareBatchCertificates(file) {
     throw new Error("Falha: biblioteca de planilha não carregou.");
   }
 
-  const rows = await readSpreadsheetRows(file);
-  if (!rows.length) {
+  const rawRows = await readSpreadsheetRows(file);
+  if (!rawRows.length) {
     throw new Error("A planilha está vazia.");
   }
 
   const batchDefaults = getBatchDefaults();
   const certificates = [];
   const invalidRows = [];
+  const headerInfo = detectSpreadsheetHeaderRow(rawRows);
+  const dataStartIndex = headerInfo.index >= 0 ? headerInfo.index + 1 : 0;
+  const headers = headerInfo.headers;
   let nonEmptyRows = 0;
   let skippedEmptyRows = 0;
 
-  rows.forEach((row, index) => {
-    const rowNumber = index + 2;
-    if (isRowEmpty(row)) {
+  for (let index = dataStartIndex; index < rawRows.length; index += 1) {
+    const rowEntry = rawRows[index];
+    const rowValues = getSpreadsheetRowValues(rowEntry);
+    const rowNumber = getSpreadsheetRowNumber(rowEntry, index);
+    if (isRowEmpty(rowValues)) {
       skippedEmptyRows += 1;
-      return;
+      continue;
     }
 
     nonEmptyRows += 1;
-    const item = mapRowToCertificate(row, rowNumber, batchDefaults);
+    const row = buildRowObject(headers, rowValues);
+    const item = mapRowToCertificate(row, rowNumber, batchDefaults, {
+      allowSingleCellFallback: headerInfo.index < 0,
+    });
     if (item.error) {
       invalidRows.push(item.error);
-      return;
+      continue;
     }
     certificates.push(item);
-  });
+  }
 
   return {
     fileName: file.name || "planilha",
     certificates,
     invalidRows,
+    ignoredRows: invalidRows,
     nonEmptyRows,
     skippedEmptyRows,
+    headerRowNumber: headerInfo.rowNumber,
     previewItems: certificates.slice(0, 5),
   };
 }
 
 function openBatchConfirmDialog(prepared) {
   const total = prepared.certificates.length;
+  const ignoredCount = prepared.invalidRows.length;
   const moldeInfo = assets.template
-    ? " O molde temporário carregado no formulário também será aplicado em todos os certificados deste lote."
+    ? " O molde temporario carregado no formulario tambem sera aplicado em todos os certificados deste lote."
     : savedTemplate
-      ? ` O modelo ${savedTemplate.nome} da secretaria ativa também será aplicado neste lote.`
+      ? ` O modelo ${savedTemplate.nome} da secretaria ativa tambem sera aplicado neste lote.`
       : "";
-  const summary = `${total} certificado(s) serão gerado(s), terão os PNGs salvos no servidor e um arquivo ZIP será baixado neste navegador.${moldeInfo}`;
+  const ignoredInfo = ignoredCount
+    ? ` ${ignoredCount} linha(s) com problema serao ignorada(s).`
+    : "";
+  const summary = `${total} certificado(s) serao gerado(s), terao os PNGs salvos no servidor e um arquivo ZIP sera baixado neste navegador.${ignoredInfo}${moldeInfo}`;
 
   if (
     !batchConfirmDialog ||
@@ -3150,19 +3828,23 @@ async function executeBatchGeneration(prepared) {
       downloadBtn.disabled = false;
     }
 
+    const ignoredCount = prepared.invalidRows.length;
+    const ignoredSummary = buildIgnoredRowsSummary(prepared.invalidRows);
     if (failedUploads.length) {
       const preview = failedUploads
         .slice(0, 3)
         .map((item) => `${item.codigo} (${item.nome})`)
         .join(", ");
       const suffix = failedUploads.length > 3 ? ", ..." : "";
+      const ignoredPreview = ignoredCount ? ` ${ignoredSummary}` : "";
       setBatchStatus(
-        `Lote concluído com ressalvas: ${certificates.length} certificado(s) gerado(s), ZIP baixado, mas ${failedUploads.length} PNG(s) não foram salvos no servidor. Verifique: ${preview}${suffix}.`,
+        `Lote concluido com ressalvas: ${certificates.length} certificado(s) gerado(s), ZIP baixado, mas ${failedUploads.length} PNG(s) nao foram salvos no servidor. Verifique: ${preview}${suffix}.${ignoredPreview}`,
         "error"
       );
     } else {
+      const ignoredPreview = ignoredCount ? ` ${ignoredSummary}` : "";
       setBatchStatus(
-        `Lote concluído: ${certificates.length} certificado(s) gerado(s), com PNGs salvos no servidor e ZIP baixado com sucesso.`,
+        `Lote concluido: ${certificates.length} certificado(s) gerado(s), com PNGs salvos no servidor e ZIP baixado com sucesso.${ignoredPreview}`,
         "success"
       );
     }
@@ -3205,11 +3887,10 @@ async function handleBatchPreview() {
     const prepared = await prepareBatchCertificates(file);
     renderBatchPreview(prepared);
     if (prepared.invalidRows.length) {
-      const preview = prepared.invalidRows.slice(0, 5).join(", ");
-      const suffix = prepared.invalidRows.length > 5 ? ", ..." : "";
+      const ignoredSummary = buildIgnoredRowsSummary(prepared.invalidRows);
       setBatchStatus(
-        `Prévia carregada com pendências (${prepared.invalidRows.length}): ${preview}${suffix}.`,
-        "error"
+        `Previa pronta: ${prepared.certificates.length} linha(s) valida(s). ${ignoredSummary}`,
+        prepared.certificates.length ? "info" : "error"
       );
       return;
     }
@@ -3247,22 +3928,22 @@ async function handleBatchGenerate() {
     const prepared = await prepareBatchCertificates(file);
     renderBatchPreview(prepared);
 
+    if (!prepared.certificates.length) {
+      throw new Error("Nenhuma linha valida encontrada para gerar certificados.");
+    }
+
     if (prepared.invalidRows.length) {
-      const preview = prepared.invalidRows.slice(0, 5).join(", ");
-      const suffix = prepared.invalidRows.length > 5 ? ", ..." : "";
-      throw new Error(
-        `Existem linhas com dados invalidos ou incompletos (${prepared.invalidRows.length}): ${preview}${suffix}.`
+      const ignoredSummary = buildIgnoredRowsSummary(prepared.invalidRows);
+      setBatchStatus(
+        `Lote validado: ${prepared.certificates.length} certificado(s) pronto(s) para geracao. ${ignoredSummary}`,
+        "info"
+      );
+    } else {
+      setBatchStatus(
+        `Lote validado: ${prepared.certificates.length} certificado(s) pronto(s) para confirmacao.`,
+        "info"
       );
     }
-
-    if (!prepared.certificates.length) {
-      throw new Error("Nenhuma linha válida encontrada para gerar certificados.");
-    }
-
-    setBatchStatus(
-      `Lote validado: ${prepared.certificates.length} certificado(s) pronto(s) para confirmação.`,
-      "info"
-    );
     openBatchConfirmDialog(prepared);
   } catch (error) {
     console.error(error);
@@ -3339,6 +4020,25 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     });
   }
 
+  if (logoSelect) {
+    logoSelect.addEventListener("change", () => {
+      void applySavedSecretariaAssetSelection("logo", logoSelect.value);
+    });
+  }
+
+  if (logoRemoveBtn) {
+    logoRemoveBtn.addEventListener("click", () => {
+      assets.logo = null;
+      if (logoInput) logoInput.value = "";
+      syncTemplateControls();
+      const message = savedLogo
+        ? `Logo temporária removida. O preview voltou a usar a logo ${savedLogo.nome}.`
+        : "Logo temporária removida. O preview voltou a usar a configuração padrão da tela.";
+      setLogoStatus(message, "info");
+      void renderLastCertificate();
+    });
+  }
+
   if (templateInput) {
     templateInput.addEventListener("change", () => {
       void handleAssetChange(templateInput, "template", { trim: false });
@@ -3367,6 +4067,25 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   if (assinaturaInput) {
     assinaturaInput.addEventListener("change", () => {
       void handleAssetChange(assinaturaInput, "assinatura");
+    });
+  }
+
+  if (assinaturaSelect) {
+    assinaturaSelect.addEventListener("change", () => {
+      void applySavedSecretariaAssetSelection("assinatura", assinaturaSelect.value);
+    });
+  }
+
+  if (assinaturaRemoveBtn) {
+    assinaturaRemoveBtn.addEventListener("click", () => {
+      assets.assinatura = null;
+      if (assinaturaInput) assinaturaInput.value = "";
+      syncTemplateControls();
+      const message = savedAssinatura
+        ? `Assinatura temporária removida. O preview voltou a usar a assinatura ${savedAssinatura.nome}.`
+        : "Assinatura temporária removida. O preview voltou a usar a configuração padrão da tela.";
+      setAssinaturaStatus(message, "info");
+      void renderLastCertificate();
     });
   }
 
@@ -3795,6 +4514,88 @@ if (templateAdminForm) {
   });
 }
 
+if (secretariaAssetResetBtn) {
+  secretariaAssetResetBtn.addEventListener("click", () => {
+    resetSecretariaAssetForm();
+  });
+}
+
+if (secretariaAssetForm) {
+  secretariaAssetForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!isAdminSession()) return;
+
+    const editingId = sanitizeText(
+      secretariaAssetEditIdInput ? secretariaAssetEditIdInput.value : ""
+    );
+    const file = secretariaAssetFileInput && secretariaAssetFileInput.files
+      ? secretariaAssetFileInput.files[0]
+      : null;
+    const payload = {
+      secretariaId: secretariaAssetSecretariaSelect ? secretariaAssetSecretariaSelect.value : "",
+      tipo: secretariaAssetTypeSelect ? secretariaAssetTypeSelect.value : "logo",
+      nome: secretariaAssetNameInput ? secretariaAssetNameInput.value.trim() : "",
+      ativo: secretariaAssetActiveInput ? secretariaAssetActiveInput.checked : true,
+      padrao: secretariaAssetDefaultInput ? secretariaAssetDefaultInput.checked : false,
+      ordem: secretariaAssetOrderInput ? secretariaAssetOrderInput.value : "0",
+    };
+
+    if (!payload.secretariaId || !payload.nome || !payload.tipo) {
+      setSecretariaAssetAdminStatus(
+        "Selecione a secretaria, o tipo e informe o nome do item.",
+        "error"
+      );
+      return;
+    }
+    if (!editingId && !file) {
+      setSecretariaAssetAdminStatus(
+        "Envie o arquivo da logo ou assinatura para o cadastro inicial.",
+        "error"
+      );
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("nome", payload.nome);
+    formData.set("ativo", String(payload.ativo));
+    formData.set("padrao", String(payload.padrao));
+    formData.set("ordem", String(payload.ordem || 0));
+    if (file) {
+      formData.set("arquivo", file, file.name);
+    }
+
+    try {
+      setSecretariaAssetAdminStatus(`Salvando ${payload.tipo}...`, "info");
+      if (editingId) {
+        await apiFormRequest(`/api/admin/secretaria-assets/${editingId}`, formData, {
+          method: "PATCH",
+        });
+      } else {
+        formData.set("secretaria_id", payload.secretariaId);
+        formData.set("tipo", payload.tipo);
+        await apiFormRequest("/api/admin/secretaria-assets", formData, {
+          method: "POST",
+        });
+      }
+
+      resetSecretariaAssetForm();
+      setSecretariaAssetAdminStatus("Item salvo com sucesso.", "success");
+      await loadAdminData();
+      await loadAvailableSecretariaAssets();
+    } catch (error) {
+      console.error(error);
+      if (error && error.status === 401) {
+        await handleUnauthorized();
+        return;
+      }
+      setSecretariaAssetAdminStatus(
+        (error && error.message) || "Nao foi possivel salvar o item.",
+        "error"
+      );
+    }
+  });
+}
+
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -4011,9 +4812,12 @@ setTodayDate();
 syncUserFormState();
 syncSecretariaFormState();
 syncTemplateAdminFormState();
+syncSecretariaAssetFormState();
 syncGenerateSubmitButton();
 updateControlLabels();
 syncTemplateControls();
 setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");
+setLogoStatus("Nenhuma logo temporária carregada.", "info");
+setAssinaturaStatus("Nenhuma assinatura temporária carregada.", "info");
 void renderLastCertificate();
 void refreshSession();

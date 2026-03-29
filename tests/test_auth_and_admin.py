@@ -115,3 +115,35 @@ def test_admin_nao_vincula_operador_a_secretaria_inativa(client, seed_data, logi
 
     assert create_response.status_code == 422
     assert "secretarias ativas" in create_response.text.lower()
+
+
+def test_admin_global_nao_mantem_vinculos_de_secretaria(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+
+    create_response = client.post(
+        "/api/admin/usuarios",
+        json={
+            "nome": "Admin Sem Vinculo",
+            "username": "admin.sem.vinculo",
+            "password": "senha1234",
+            "papel": "admin_global",
+            "ativo": True,
+            "secretaria_ids": [seed_data["seafi_id"]],
+        },
+    )
+
+    assert create_response.status_code == 201
+    assert create_response.json()["papel"] == "admin_global"
+    assert create_response.json()["secretarias"] == []
+
+    update_response = client.patch(
+        f"/api/admin/usuarios/{seed_data['operador_id']}",
+        json={
+            "papel": "admin_global",
+            "secretaria_ids": [seed_data["seafi_id"]],
+        },
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["papel"] == "admin_global"
+    assert update_response.json()["secretarias"] == []

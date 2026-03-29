@@ -14,11 +14,12 @@ from sqlalchemy.orm import Session
 from bootstrap import run_startup_bootstrap
 from database import SessionLocal, get_db
 from migrations import ensure_database_schema
-from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, Usuario
+from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, SecretariaAsset, Usuario
 from schemas import (
     AuditEventResponse,
     CertificateResponse,
     CertificateTemplateResponse,
+    SecretariaAssetResponse,
     SecretariaResponse,
     SessionResponse,
     UserAdminResponse,
@@ -258,6 +259,29 @@ def build_template_relative_path(secretaria_sigla: str, template_name: str, file
     return f"{folder}/{base_name}-{unique_suffix}{suffix}"
 
 
+def normalize_secretaria_asset_type(value: str | None) -> str:
+    normalized = (value or "").strip().lower()
+    if normalized not in {"logo", "assinatura"}:
+        raise HTTPException(status_code=422, detail="Tipo de asset invalido. Use logo ou assinatura.")
+    return normalized
+
+
+def build_secretaria_asset_relative_path(
+    secretaria_sigla: str,
+    asset_type: str,
+    asset_name: str,
+    filename: str,
+) -> str:
+    suffix = Path(filename or "").suffix.lower()
+    if suffix not in {".png", ".jpg", ".jpeg", ".webp"}:
+        suffix = ".png"
+    folder = normalize_secretaria_sigla(secretaria_sigla) or "SECRETARIA"
+    type_folder = normalize_secretaria_asset_type(asset_type)
+    base_name = sanitize_template_name(asset_name, type_folder)
+    unique_suffix = uuid4().hex[:10]
+    return f"{folder}/{type_folder}/{base_name}-{unique_suffix}{suffix}"
+
+
 def resolve_media_path(relative_path: str) -> Path:
     candidate = (CERTIFICADOS_MEDIA_DIR / relative_path).resolve()
     if not str(candidate).startswith(str(CERTIFICADOS_MEDIA_DIR)):
@@ -294,6 +318,10 @@ def build_template_file_url(request: Request, template_id: int) -> str:
     return build_route_path(request, "get_template_file", template_id=str(template_id))
 
 
+def build_secretaria_asset_file_url(request: Request, asset_id: int) -> str:
+    return build_route_path(request, "get_secretaria_asset_file", asset_id=str(asset_id))
+
+
 def build_secretaria_response(secretaria: Secretaria) -> SecretariaResponse:
     return SecretariaResponse(
         id=secretaria.id,
@@ -320,6 +348,27 @@ def build_template_response(
         criado_em=template.criado_em,
         criado_por_usuario_id=template.criado_por_usuario_id,
         criado_por_username=template.criado_por.username if template.criado_por else None,
+    )
+
+
+def build_secretaria_asset_response(
+    asset: SecretariaAsset,
+    request: Request,
+) -> SecretariaAssetResponse:
+    return SecretariaAssetResponse(
+        id=asset.id,
+        secretaria_id=asset.secretaria_id,
+        secretaria_sigla=asset.secretaria.sigla if asset.secretaria else None,
+        secretaria_nome=asset.secretaria.nome if asset.secretaria else None,
+        tipo=asset.tipo,
+        nome=asset.nome,
+        ativo=asset.ativo,
+        padrao=asset.padrao,
+        ordem=asset.ordem,
+        arquivo_url=build_secretaria_asset_file_url(request, asset.id),
+        criado_em=asset.criado_em,
+        criado_por_usuario_id=asset.criado_por_usuario_id,
+        criado_por_username=asset.criado_por.username if asset.criado_por else None,
     )
 
 
@@ -479,6 +528,15 @@ def ensure_template_access(db: Session, usuario: Usuario, template: CertificateT
     allowed_secretaria_ids = {secretaria.id for secretaria in get_accessible_secretarias(db, usuario)}
     if template.secretaria_id not in allowed_secretaria_ids:
         raise HTTPException(status_code=403, detail="Acesso negado a este molde.")
+
+
+def ensure_secretaria_asset_access(db: Session, usuario: Usuario, asset: SecretariaAsset) -> None:
+    if is_admin(usuario):
+        return
+
+    allowed_secretaria_ids = {secretaria.id for secretaria in get_accessible_secretarias(db, usuario)}
+    if asset.secretaria_id not in allowed_secretaria_ids:
+        raise HTTPException(status_code=403, detail="Acesso negado a este asset da secretaria.")
 
 
 def get_secretarias_by_ids(db: Session, secretaria_ids: list[int]) -> list[Secretaria]:
@@ -658,5 +716,19 @@ def build_template_file_response(template: CertificateTemplate) -> FileResponse:
     return FileResponse(
         path=file_path,
         media_type=template.arquivo_mime or "application/octet-stream",
+        filename=filename,
+    )
+
+
+def build_secretaria_asset_file_response(asset: SecretariaAsset) -> FileResponse:
+    file_path = resolve_template_media_path(asset.arquivo_relpath)
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Arquivo do asset nao encontrado.")
+
+    suffix = Path(asset.arquivo_relpath).suffix or ".png"
+    filename = f"{sanitize_template_name(asset.nome, asset.tipo)}{suffix}"
+    return FileResponse(
+        path=file_path,
+        media_type=asset.arquivo_mime or "application/octet-stream",
         filename=filename,
     )

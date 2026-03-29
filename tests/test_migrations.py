@@ -8,4 +8,4 @@ def test_database_schema_is_versioned_with_alembic(app_ctx):
     finally:
         db.close()
 
-    assert version == "20260328_06"
+    assert version == "20260329_07"

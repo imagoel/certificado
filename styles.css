@@ -396,6 +396,12 @@ button[disabled] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.grid-three {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .checkbox-field {
   display: flex;
   align-items: center;
@@ -445,6 +451,18 @@ button[disabled] {
   margin: 0;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.asset-type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #1a4f8b;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: capitalize;
 }
 
 .table-wrap {
@@ -637,6 +655,7 @@ button[disabled] {
 
   .filter-grid,
   .grid-two,
+  .grid-three,
   .audit-grid {
     grid-template-columns: 1fr;
   }

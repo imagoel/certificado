@@ -1,29 +1,29 @@
 # Sistema de Certificados
 
-Aplicação interna para emissão, consulta, validação e administração de certificados digitais por secretaria.
+Aplicacao interna para emissao, consulta, validacao e administracao de certificados digitais por secretaria.
 
-## Visão Geral
+## Visao Geral
 
-O projeto está dividido em duas partes:
+O projeto esta dividido em duas partes:
 
-- **Frontend**: exige login, faz a pré-visualização do certificado no navegador, monta o PNG final em `canvas` e envia esse arquivo pronto para a API armazenar.
-- **API**: autentica usuários, controla secretarias, gera o código oficial, gera o QR Code em PNG, valida certificados por código, guarda o PNG final e registra auditoria.
+- **Frontend**: exige login, faz a pre-visualizacao do certificado no navegador, monta o PNG final em `canvas` e envia esse arquivo pronto para a API armazenar.
+- **API**: autentica usuarios, controla secretarias, gera o codigo oficial, gera o QR Code em PNG, valida certificados por codigo, guarda o PNG final e registra auditoria.
 
 Resumo importante:
 
-- o **QR Code** é gerado no backend
-- o **PNG final do certificado** é gerado no frontend
-- o backend **não renderiza o certificado inteiro**
-- a tela inicial do gerador é **restrita por login**
-- a validação em `/validar/{codigo}` continua **pública**
+- o **QR Code** e gerado no backend
+- o **PNG final do certificado** e gerado no frontend
+- o backend **nao renderiza o certificado inteiro**
+- a tela inicial do gerador e **restrita por login**
+- a validacao em `/validar/{codigo}` continua **publica**
 
 ## Stack e Tecnologias
 
 ### Frontend
 
 - HTML, CSS e JavaScript puro
-- `canvas` para renderização do certificado
-- `JSZip` para geração do arquivo `.zip` no lote
+- `canvas` para renderizacao do certificado
+- `JSZip` para geracao do arquivo `.zip` no lote
 - `SheetJS/XLSX` para leitura de `.xlsx`, `.xls` e `.csv`
 
 ### Backend
@@ -38,62 +38,67 @@ Resumo importante:
 ### Infraestrutura
 
 - Docker / Docker Compose
-- Nginx para servir o frontend estático
-- Portainer para deploy em produção
-- Cloudflare Tunnel ou proxy reverso para publicação no domínio final
+- Nginx para servir o frontend estatico
+- Portainer para deploy em producao
+- Cloudflare Tunnel ou proxy reverso para publicacao no dominio final
 
 ## Funcionalidades Implementadas
 
-### Operação
+### Operacao
 
-- login obrigatório na página inicial
-- sessão por cookie HTTP-only
+- login obrigatorio na pagina inicial
+- sessao por cookie HTTP-only
 - perfis `admin_global` e `operador`
-- suporte a múltiplas secretarias
-- seleção de secretaria ativa em sessão
-- geração individual de certificado
-- geração em lote por planilha
+- suporte a multiplas secretarias
+- selecao de secretaria ativa em sessao
+- geracao individual de certificado
+- geracao em lote por planilha
 - download do PNG individual
 - download do lote em `.zip`
-- pré-visualização da planilha antes do lote
-- confirmação antes de gerar lote
-- retry automático no upload de PNG do lote
-- alerta de possível duplicidade antes da geração individual
-- reimpressão e visualização dos certificados já emitidos
-- página pública de validação por QR Code
+- pre-visualizacao da planilha antes do lote
+- confirmacao antes de gerar lote
+- retry automatico no upload de PNG do lote
+- alerta de possivel duplicidade antes da geracao individual
+- reimpressao e visualizacao dos certificados ja emitidos
+- pagina publica de validacao por QR Code
 
-### Administração
+### Administracao
 
-- cadastro e edição de usuários
-- vínculo de operador a uma ou mais secretarias
-- secretarias inativas deixam de aparecer para vínculo de operadores
-- cadastro, edição, ativação e desativação de secretarias
-- exclusão administrativa de usuários
-- exclusão administrativa de secretarias sem certificados emitidos
-- exclusão administrativa de certificados com confirmação por código e senha do admin
+- cadastro e edicao de usuarios
+- vinculo de operador a uma ou mais secretarias
+- `admin_global` acessa todas as secretarias e nao mantem vinculos salvos
+- secretarias inativas deixam de aparecer para vinculo de operadores
+- cadastro, edicao, ativacao e desativacao de secretarias
+- exclusao administrativa de usuarios
+- exclusao administrativa de secretarias sem certificados emitidos
+- exclusao administrativa de certificados com confirmacao por codigo e senha do admin
 - moldes por secretaria
-- molde temporário por tela de geração
-- auditoria de login, emissão, upload, exclusão e ações administrativas
+- logos por secretaria
+- assinaturas por secretaria
+- molde temporario por tela de geracao
+- logo temporaria por tela de geracao
+- assinatura temporaria por tela de geracao
+- auditoria de login, emissao, upload, exclusao e acoes administrativas
 
-### Segurança e Robustez
+### Seguranca e Robustez
 
-- limitação de tentativas de login
-- proteção dos endpoints administrativos
-- `/docs` protegida para admin ou desativável por ambiente
+- limitacao de tentativas de login
+- protecao dos endpoints administrativos
+- `/docs` protegida para admin ou desativavel por ambiente
 - lote limitado por `CERTIFICADOS_MAX_BATCH_ITEMS`
-- geração automática de código com reserva atômica por `prefixo + ano`
+- geracao automatica de codigo com reserva atomica por `prefixo + ano`
 - hashes novos em HMAC-SHA256
 - compatibilidade com hashes legados em SHA-256
 - bootstrap inicial validado no startup
-- persistência de certificados e moldes em volumes Docker separados
+- persistencia de certificados, moldes, logos e assinaturas em volumes Docker separados
 
 ## Arquitetura Atual
 
-Fluxo da emissão individual:
+Fluxo da emissao individual:
 
-1. o usuário faz login
-2. o frontend envia os dados básicos para a API
-3. a API reserva o próximo código oficial
+1. o usuario faz login
+2. o frontend envia os dados basicos para a API
+3. a API reserva o proximo codigo oficial
 4. a API devolve `codigo`, `url_validacao` e os metadados do certificado
 5. o frontend solicita o PNG do QR Code
 6. o frontend desenha o certificado completo em `canvas`
@@ -104,23 +109,24 @@ Fluxo da emissão individual:
 Fluxo do lote:
 
 1. o operador envia a planilha
-2. o frontend normaliza os dados, mostra uma prévia e valida as linhas
-3. a API registra o lote de certificados e reserva códigos oficiais
-4. o frontend gera um PNG por certificado
+2. o frontend detecta o cabecalho, normaliza os dados, mostra a previa e valida as linhas
+3. a API registra o lote de certificados e reserva codigos oficiais
+4. o frontend gera um PNG por certificado valido
 5. o frontend tenta enviar cada PNG com retry
 6. o frontend monta um `.zip` para download local
-7. a API mantém os certificados e os PNGs que foram salvos com sucesso
+7. a API mantem os certificados e os PNGs que foram salvos com sucesso
 
 ## Multi-secretaria
 
-O sistema já está preparado para:
+O sistema ja esta preparado para:
 
-- vincular usuários a uma ou mais secretarias
+- vincular usuarios a uma ou mais secretarias
 - gravar em cada certificado qual secretaria emitiu
-- gravar qual usuário emitiu o certificado
+- gravar qual usuario emitiu o certificado
 - manter moldes por secretaria
+- manter logos e assinaturas por secretaria
 
-Secretarias padrão do seed:
+Secretarias padrao do seed:
 
 - `SESAU`
 - `SEMED`
@@ -134,13 +140,13 @@ Secretarias padrão do seed:
 O sistema trabalha com dois tipos de molde:
 
 - **molde cadastrado da secretaria**: salvo no backend e administrado pelo `admin_global`
-- **molde temporário**: carregado localmente pelo operador apenas para a geração atual
+- **molde temporario**: carregado localmente pelo operador apenas para a geracao atual
 
 Regra importante:
 
 - o molde funciona como **fundo do certificado**
-- textos, QR Code, assinatura e logo continuam nas posições atuais
-- o operador **não move o layout dos campos**
+- textos, QR Code, assinatura e logo continuam nas posicoes atuais
+- o operador **nao move o layout dos campos**
 
 Formatos aceitos para moldes:
 
@@ -149,9 +155,31 @@ Formatos aceitos para moldes:
 - `jpeg`
 - `webp`
 
-`svg` foi removido para evitar risco de XSS em arquivos servidos no mesmo domínio da aplicação.
+`svg` foi removido para evitar risco de XSS em arquivos servidos no mesmo dominio da aplicacao.
 
-## Geração em Lote
+## Logos e Assinaturas por Secretaria
+
+O sistema tambem permite catalogos persistidos de:
+
+- **logos por secretaria**
+- **assinaturas por secretaria**
+
+Funcionamento:
+
+- o `admin_global` cadastra os arquivos aprovados da secretaria
+- cada secretaria pode ter um item padrao
+- ao selecionar a secretaria ativa, o gerador carrega automaticamente o molde, a logo e a assinatura padrao
+- o operador pode trocar para outro item aprovado da mesma secretaria
+- uploads manuais na tela continuam valendo como sobrescrita temporaria apenas para aquela geracao
+
+Formatos aceitos:
+
+- `png`
+- `jpg`
+- `jpeg`
+- `webp`
+
+## Geracao em Lote
 
 Formatos suportados:
 
@@ -161,16 +189,19 @@ Formatos suportados:
 
 Colunas reconhecidas:
 
-- obrigatória: `nome`
+- obrigatoria: `nome`
 - opcionais: `sobrenome`, `curso`, `data`, `carga_h`, `linha1`, `linha2`, `arquivo`
 
 Regras:
 
-- se a planilha vier só com `nome`, os campos do formulário são usados como padrão
-- colunas extras desconhecidas são ignoradas
-- o sistema aceita cabeçalhos como `nome`, `NOME`, `Nome` e aliases conhecidos
-- linhas totalmente vazias são ignoradas
-- datas inválidas geram erro explícito por linha
+- o sistema detecta automaticamente a linha de cabecalho nas primeiras linhas da planilha
+- se a planilha vier so com `nome`, os campos do formulario sao usados como padrao
+- colunas extras desconhecidas sao ignoradas
+- o sistema aceita cabecalhos como `nome`, `NOME`, `Nome` e aliases conhecidos
+- linhas totalmente vazias sao ignoradas
+- linhas sem `NOME` sao ignoradas no lote
+- nomes com caracteres de lixo no inicio sao saneados sem perder acentos validos
+- datas invalidas geram erro explicito por linha
 - o lote respeita `CERTIFICADOS_MAX_BATCH_ITEMS`
 
 ## Auditoria
@@ -183,18 +214,18 @@ Eventos auditados incluem:
 - certificado criado
 - PNG enviado
 - PNG acessado
-- certificado excluído
-- ações administrativas de usuários, secretarias e moldes
+- certificado excluido
+- acoes administrativas de usuarios, secretarias, moldes, logos e assinaturas
 
-Observações:
+Observacoes:
 
-- a auditoria é restrita a `admin_global`
-- o frontend agora interpreta os horários vindos da API como UTC e exibe no horário local de `America/Sao_Paulo`
-- a exclusão de certificado preserva o histórico anterior de auditoria
+- a auditoria e restrita a `admin_global`
+- o frontend interpreta os horarios vindos da API como UTC e exibe no horario local de `America/Sao_Paulo`
+- a exclusao de certificado preserva o historico anterior de auditoria
 
 ## Endpoints Principais
 
-### Públicos
+### Publicos
 
 - `GET /health`
 - `GET /api/qrcode?texto=...`
@@ -213,6 +244,9 @@ Observações:
 - `POST /api/certificados`
 - `POST /api/certificados/lote`
 - `POST /api/certificados/{codigo}/arquivo`
+- `GET /api/templates`
+- `GET /api/secretaria-assets`
+- `GET /api/secretaria-assets/{id}/arquivo`
 
 ### Administrativos (`admin_global`)
 
@@ -225,31 +259,36 @@ Observações:
 - `PATCH /api/admin/usuarios/{id}`
 - `DELETE /api/admin/usuarios/{id}`
 - `GET /api/admin/auditoria`
-- `GET /api/templates`
-- `POST /api/templates`
-- `PATCH /api/templates/{id}`
-- `DELETE /api/templates/{id}`
+- `GET /api/admin/templates`
+- `POST /api/admin/templates`
+- `PATCH /api/admin/templates/{id}`
+- `DELETE /api/admin/templates/{id}`
+- `GET /api/admin/secretaria-assets`
+- `POST /api/admin/secretaria-assets`
+- `PATCH /api/admin/secretaria-assets/{id}`
+- `DELETE /api/admin/secretaria-assets/{id}`
 - `GET /docs` (somente admin autenticado, se habilitado)
 - `GET /openapi.json` (somente admin autenticado, se habilitado)
 
 ## Estrutura do Projeto
 
-- `index.html`, `styles.css`, `app.js`: interface web, login, geração e administração
-- `api/main.py`: bootstrap da aplicação FastAPI
-- `api/common.py`: configuração compartilhada, helpers e dependências
-- `api/routes_auth.py`: autenticação e troca de secretaria
-- `api/routes_admin.py`: usuários, secretarias, auditoria e exclusões administrativas
-- `api/routes_certificates.py`: emissão, listagem e arquivos dos certificados
-- `api/routes_public.py`: `health`, QR Code e validação pública
+- `index.html`, `styles.css`, `app.js`: interface web, login, geracao e administracao
+- `api/main.py`: bootstrap da aplicacao FastAPI
+- `api/common.py`: configuracao compartilhada, helpers e dependencias
+- `api/routes_auth.py`: autenticacao e troca de secretaria
+- `api/routes_admin.py`: usuarios, secretarias, auditoria e exclusoes administrativas
+- `api/routes_certificates.py`: emissao, listagem e arquivos dos certificados
+- `api/routes_public.py`: `health`, QR Code e validacao publica
 - `api/routes_templates.py`: moldes por secretaria
-- `api/certificate_sequences.py`: reserva atômica de códigos
+- `api/routes_secretaria_assets.py`: logos e assinaturas por secretaria
+- `api/certificate_sequences.py`: reserva atomica de codigos
 - `api/models.py`: modelos SQLAlchemy
 - `api/schemas.py`: contratos da API
 - `api/security.py`: hashes e senha
 - `api/manage.py`: comandos administrativos
-- `api/migrations.py`, `api/alembic/`: migrações Alembic
-- `api/templates/validacao.html`: página pública de validação
-- `api/static/style.css`: estilo da página pública
+- `api/migrations.py`, `api/alembic/`: migracoes Alembic
+- `api/templates/validacao.html`: pagina publica de validacao
+- `api/static/style.css`: estilo da pagina publica
 - `tests/`: testes automatizados do backend
 
 ## Subindo Localmente
@@ -260,7 +299,7 @@ Use `.env.example` como base para o seu `.env`.
 docker compose up -d --build
 ```
 
-Serviços locais:
+Servicos locais:
 
 - frontend: `http://localhost:28754`
 - API: `http://localhost:29180`
@@ -271,10 +310,11 @@ Volumes:
 - `postgres_data`
 - `certificados_media`
 - `templates_media`
+- `secretaria_assets_media`
 
 ## Deploy com Portainer
 
-Para produção:
+Para producao:
 
 - use `docker-compose.portainer.yml`
 - mantenha o `.env` real fora do Git
@@ -282,7 +322,7 @@ Para produção:
 - deixe `AUTO_BOOTSTRAP_ADMIN=true`
 - informe `BOOTSTRAP_ADMIN_USERNAME` e `BOOTSTRAP_ADMIN_PASSWORD`
 
-Fluxo recomendado com domínio público:
+Fluxo recomendado com dominio publico:
 
 - `/` -> frontend
 - `/api/*` -> API
@@ -292,8 +332,8 @@ Fluxo recomendado com domínio público:
 
 Com isso:
 
-- frontend e API ficam no mesmo domínio
-- o frontend usa a mesma origem automaticamente em produção
+- frontend e API ficam no mesmo dominio
+- o frontend usa a mesma origem automaticamente em producao
 - o QR Code aponta para `PUBLIC_VALIDATION_BASE_URL`
 
 ## Provisionamento Inicial
@@ -305,7 +345,7 @@ docker exec certificado-api python manage.py seed-secretarias
 docker exec certificado-api python manage.py create-admin --nome "Administrador Local" --username admin --password "troque-esta-senha"
 ```
 
-### Automático
+### Automatico
 
 Use:
 
@@ -315,13 +355,13 @@ Use:
 - `BOOTSTRAP_ADMIN_USERNAME=admin`
 - `BOOTSTRAP_ADMIN_PASSWORD=uma-senha-forte`
 
-Com essa opção:
+Com essa opcao:
 
-- as secretarias padrão são criadas se estiverem ausentes
-- o admin inicial é criado automaticamente
+- as secretarias padrao sao criadas se estiverem ausentes
+- o admin inicial e criado automaticamente
 - se faltarem `BOOTSTRAP_ADMIN_USERNAME` ou `BOOTSTRAP_ADMIN_PASSWORD`, a API falha no startup para evitar uma stack sem acesso administrativo
 
-## Variáveis de Ambiente Importantes
+## Variaveis de Ambiente Importantes
 
 Principais:
 
@@ -350,22 +390,22 @@ Principais:
 - `BOOTSTRAP_ADMIN_USERNAME`
 - `BOOTSTRAP_ADMIN_PASSWORD`
 
-Observações:
+Observacoes:
 
 - em ambiente local, o frontend usa `localhost:29180` automaticamente
-- em produção, se frontend e API estiverem no mesmo domínio, o frontend usa a mesma origem automaticamente
-- `SESSION_SECRET` e `CERTIFICATE_HASH_SECRET` devem ser longos, exclusivos e estáveis
-- para Cloudflare Tunnel ou proxy confiável, use `TRUST_PROXY_HEADERS=true`
-- `ENABLE_ADMIN_DOCS=false` é o padrão recomendado para produção
+- em producao, se frontend e API estiverem no mesmo dominio, o frontend usa a mesma origem automaticamente
+- `SESSION_SECRET` e `CERTIFICATE_HASH_SECRET` devem ser longos, exclusivos e estaveis
+- para Cloudflare Tunnel ou proxy confiavel, use `TRUST_PROXY_HEADERS=true`
+- `ENABLE_ADMIN_DOCS=false` e o padrao recomendado para producao
 
-## Cloudflare Tunnel / Teste de Domínio
+## Cloudflare Tunnel / Teste de Dominio
 
-Para teste local com domínio público:
+Para teste local com dominio publico:
 
-- manter um `.env.cloudflare` fora do Git
-- apontar `PUBLIC_VALIDATION_BASE_URL` para o domínio do tunnel
-- incluir o domínio em `CORS_ALLOW_ORIGINS`
-- rebuildar a stack com:
+- mantenha um `.env.cloudflare` fora do Git
+- aponte `PUBLIC_VALIDATION_BASE_URL` para o dominio do tunnel
+- inclua o dominio em `CORS_ALLOW_ORIGINS`
+- rebuild a stack com:
 
 ```bash
 docker compose --env-file .env.cloudflare up -d --build
@@ -383,24 +423,25 @@ Exemplo de rotas do tunnel:
 
 Cobertura atual:
 
-- autenticação e autorização
-- criação e validação pública de certificados
-- exclusão administrativa
+- autenticacao e autorizacao
+- criacao e validacao publica de certificados
+- exclusao administrativa
 - duplicidade
 - lotes
 - auditoria
 - templates
-- migrações Alembic
+- logos e assinaturas por secretaria
+- migracoes Alembic
 - compatibilidade entre hash legado e HMAC
 
-Execução:
+Execucao:
 
 ```bash
 python3 -m pip install -r requirements-dev.txt
 PYTHONPATH=api pytest -q
 ```
 
-## Migrações
+## Migracoes
 
 O projeto usa Alembic para versionar o banco.
 
@@ -414,20 +455,20 @@ python3 manage.py migrate
 Compatibilidade:
 
 - bancos vazios sobem pela migration baseline
-- bancos legados sem `alembic_version` são adotados no startup
-- novas mudanças de schema devem entrar por revisão Alembic
+- bancos legados sem `alembic_version` sao adotados no startup
+- novas mudancas de schema devem entrar por revisao Alembic
 
-## Limitações Conhecidas
+## Limitacoes Conhecidas
 
-- o backend não gera o certificado completo, apenas guarda o PNG final enviado pelo frontend
-- o layout do certificado continua fixo; o molde só atua como fundo visual
-- ainda não há personalização avançada de posições de texto por secretaria
-- reimpressão e segunda via usam o certificado já salvo; a prevenção de duplicidade trabalha por alerta e confirmação, não por bloqueio absoluto
+- o backend nao gera o certificado completo, apenas guarda o PNG final enviado pelo frontend
+- o layout do certificado continua fixo; o molde so atua como fundo visual
+- ainda nao ha personalizacao avancada de posicoes de texto por secretaria
+- reimpressao e segunda via usam o certificado ja salvo; a prevencao de duplicidade trabalha por alerta e confirmacao, nao por bloqueio absoluto
 
-## Próximas Evoluções Naturais
+## Proximas Evolucoes Naturais
 
-- relatórios operacionais
-- política de retenção/arquivamento da auditoria
-- personalização visual mais avançada por secretaria
+- relatorios operacionais
+- politica de retencao/arquivamento da auditoria
+- personalizacao visual mais avancada por secretaria
 - testes automatizados adicionais no frontend
 - maior refinamento de UX mobile conforme uso real

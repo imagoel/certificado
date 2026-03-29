@@ -148,7 +148,7 @@ def admin_create_user(
     if existing:
         raise HTTPException(status_code=409, detail="Ja existe um usuario com este username.")
 
-    secretarias = get_secretarias_by_ids(db, payload.secretaria_ids)
+    secretarias = [] if payload.papel == "admin_global" else get_secretarias_by_ids(db, payload.secretaria_ids)
     validate_role_and_secretarias(payload.papel, secretarias)
 
     usuario = Usuario(
@@ -199,6 +199,8 @@ def admin_update_user(
         if payload.secretaria_ids is not None
         else list(usuario.secretarias)
     )
+    if papel == "admin_global":
+        secretarias = []
     validate_role_and_secretarias(papel, secretarias)
 
     usuario.papel = papel
