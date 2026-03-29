@@ -94,6 +94,7 @@ const secretariaAssetEditIdInput = document.getElementById("secretaria-asset-edi
 const secretariaAssetSecretariaSelect = document.getElementById("secretaria-asset-secretaria");
 const secretariaAssetTypeSelect = document.getElementById("secretaria-asset-type");
 const secretariaAssetNameInput = document.getElementById("secretaria-asset-name");
+const secretariaAssetNameLabel = document.getElementById("secretaria-asset-name-label");
 const secretariaAssetActiveInput = document.getElementById("secretaria-asset-active");
 const secretariaAssetDefaultInput = document.getElementById("secretaria-asset-default");
 const secretariaAssetOrderInput = document.getElementById("secretaria-asset-order");
@@ -1257,6 +1258,24 @@ function syncSecretariaAssetFormState() {
   }
   if (secretariaAssetFileInput) {
     secretariaAssetFileInput.required = !editing;
+  }
+  syncSecretariaAssetTypeUi();
+}
+
+function syncSecretariaAssetTypeUi() {
+  const tipo = sanitizeText(
+    secretariaAssetTypeSelect ? secretariaAssetTypeSelect.value : "logo"
+  ).toLowerCase();
+  const isAssinatura = tipo === "assinatura";
+  if (secretariaAssetNameLabel) {
+    secretariaAssetNameLabel.textContent = isAssinatura
+      ? "Nome da assinatura"
+      : "Nome da logo";
+  }
+  if (secretariaAssetNameInput) {
+    secretariaAssetNameInput.placeholder = isAssinatura
+      ? "Ex.: Assinatura oficial da secretaria"
+      : "Ex.: Logo institucional principal";
   }
 }
 
@@ -4603,6 +4622,12 @@ if (templateAdminForm) {
 if (secretariaAssetResetBtn) {
   secretariaAssetResetBtn.addEventListener("click", () => {
     resetSecretariaAssetForm();
+  });
+}
+
+if (secretariaAssetTypeSelect) {
+  secretariaAssetTypeSelect.addEventListener("change", () => {
+    syncSecretariaAssetTypeUi();
   });
 }
 
