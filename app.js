@@ -245,6 +245,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
   second: "2-digit",
   hour12: false,
+  timeZone: "America/Sao_Paulo",
 });
 
 function pad2(value) {
@@ -382,7 +383,12 @@ function getActiveTemplateImage() {
 
 function formatDateTime(dateStr) {
   if (!dateStr) return "-";
-  const parsed = new Date(dateStr);
+
+  const normalizedDateStr = String(dateStr)
+    .trim()
+    .replace(/(\.\d{3})\d+(?=Z|[+-]\d{2}:\d{2}$)/, "$1");
+  const hasExplicitTimezone = /(Z|[+-]\d{2}:\d{2})$/i.test(normalizedDateStr);
+  const parsed = new Date(hasExplicitTimezone ? normalizedDateStr : `${normalizedDateStr}Z`);
   if (Number.isNaN(parsed.getTime())) return dateStr;
   return dateTimeFormatter.format(parsed);
 }

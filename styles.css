@@ -20,12 +20,14 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: radial-gradient(circle at top, #e9f2ff, var(--bg) 40%);
   color: var(--text);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
 }
 
 .container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 24px 24px 12px;
+  padding: clamp(16px, 3vw, 24px) clamp(14px, 3vw, 24px) 12px;
   position: relative;
 }
 
@@ -42,13 +44,14 @@ h1 {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 16px;
+  padding: clamp(14px, 2vw, 18px);
   margin-bottom: 18px;
 }
 
 .auth-panel {
+  width: min(100%, 460px);
   max-width: 460px;
-  margin: 64px auto 18px;
+  margin: clamp(28px, 7vh, 64px) auto 18px;
   padding: 22px;
 }
 
@@ -169,6 +172,8 @@ input {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
 }
 
 select {
@@ -177,6 +182,8 @@ select {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fff;
+  font: inherit;
+  font-size: 16px;
 }
 
 input[type="file"] {
@@ -226,6 +233,8 @@ button {
   color: #fff;
   font-weight: 600;
   cursor: pointer;
+  font: inherit;
+  font-size: 16px;
 }
 
 .secondary-btn {
@@ -353,6 +362,7 @@ button[disabled] {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
+  overflow: hidden;
 }
 
 .filter-grid {
@@ -440,6 +450,7 @@ button[disabled] {
 .table-wrap {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #fff;
@@ -545,6 +556,7 @@ button[disabled] {
 }
 
 #canvas {
+  display: block;
   width: 100%;
   height: auto;
   border: 1px dashed #b5c5d7;
@@ -564,7 +576,7 @@ button[disabled] {
   filter: drop-shadow(0 10px 26px rgba(17, 32, 49, 0.12));
 }
 
-@media (max-width: 700px) {
+@media (max-width: 960px) {
   .app-session {
     flex-direction: column;
   }
@@ -574,23 +586,49 @@ button[disabled] {
     min-width: 0;
   }
 
+  .panel-header {
+    flex-direction: column;
+  }
+
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .audit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .site-footer-logo {
-    right: 16px;
-    bottom: 14px;
-    width: min(160px, 36vw);
+    width: min(170px, 26vw);
+    right: 20px;
+    bottom: 16px;
+    opacity: 0.84;
+  }
+}
+
+@media (max-width: 700px) {
+  .container {
+    padding: 12px 12px 18px;
+  }
+
+  .panel,
+  .preview-wrap,
+  .asset-controls,
+  .batch-controls {
+    padding: 14px;
+  }
+
+  .site-footer-logo {
+    display: none;
   }
 
   .auth-panel {
-    margin-top: 32px;
-    padding: 18px;
+    margin-top: 20px;
+    padding: 18px 16px;
   }
 
   .login-brand-logo {
-    width: min(210px, 72%);
-  }
-
-  .panel-header {
-    flex-direction: column;
+    width: min(190px, 64%);
   }
 
   .summary-pill {
@@ -598,12 +636,37 @@ button[disabled] {
   }
 
   .filter-grid,
-  .grid-two {
+  .grid-two,
+  .audit-grid {
     grid-template-columns: 1fr;
+  }
+
+  .section-tab {
+    flex: 1 1 120px;
   }
 
   .actions-end,
   .pagination-row {
     justify-content: flex-start;
+  }
+
+  .modal-dialog {
+    width: min(calc(100vw - 16px), 520px);
+  }
+}
+
+@media (max-width: 520px) {
+  .actions > button,
+  .actions > a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .compact-table {
+    min-width: 560px;
+  }
+
+  .data-table {
+    min-width: 760px;
   }
 }
