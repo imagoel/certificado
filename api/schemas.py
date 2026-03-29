@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500")))
+MAX_CERTIFICATE_UPLOAD_BYTES = max(1, int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "8388608")))
+MAX_TEMPLATE_UPLOAD_BYTES = max(1, int(os.getenv("TEMPLATES_MAX_UPLOAD_BYTES", "10485760")))
 UserRole = Literal["admin_global", "operador"]
 SecretariaAssetType = Literal["logo", "assinatura"]
 
@@ -121,11 +123,18 @@ class UserSessionResponse(BaseModel):
     papel: UserRole
 
 
+class SessionRuntimeConfigResponse(BaseModel):
+    certificados_max_upload_bytes: int = MAX_CERTIFICATE_UPLOAD_BYTES
+    certificados_max_batch_items: int = MAX_BATCH_ITEMS
+    templates_max_upload_bytes: int = MAX_TEMPLATE_UPLOAD_BYTES
+
+
 class SessionResponse(BaseModel):
     autenticado: bool
     usuario: Optional[UserSessionResponse] = None
     secretarias: list[SecretariaResponse] = Field(default_factory=list)
     secretaria_ativa_id: Optional[int] = None
+    configuracoes: SessionRuntimeConfigResponse = Field(default_factory=SessionRuntimeConfigResponse)
 
 
 class LoginRequest(BaseModel):

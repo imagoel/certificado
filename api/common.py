@@ -21,6 +21,7 @@ from schemas import (
     CertificateTemplateResponse,
     SecretariaAssetResponse,
     SecretariaResponse,
+    SessionRuntimeConfigResponse,
     SessionResponse,
     UserAdminResponse,
     UserSessionResponse,
@@ -35,7 +36,7 @@ CODE_REGEX = re.compile(r"^[A-Z0-9]{1,8}-\d{4}-\d{5}$")
 DEFAULT_PREFIX = os.getenv("CODE_PREFIX", "ABC")
 DEFAULT_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "certificados"))
 CERTIFICADOS_MEDIA_DIR = Path(os.getenv("CERTIFICADOS_MEDIA_DIR", DEFAULT_MEDIA_DIR)).resolve()
-MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "5242880"))
+MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "8388608"))
 DEFAULT_TEMPLATES_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "templates"))
 TEMPLATES_MEDIA_DIR = Path(
     os.getenv("TEMPLATES_MEDIA_DIR", DEFAULT_TEMPLATES_MEDIA_DIR)
@@ -476,6 +477,13 @@ def build_session_response(request: Request, db: Session, usuario: Usuario) -> S
         usuario=build_user_session_response(usuario),
         secretarias=[build_secretaria_response(secretaria) for secretaria in secretarias],
         secretaria_ativa_id=secretaria_ativa.id if secretaria_ativa else None,
+        configuracoes=SessionRuntimeConfigResponse(
+            certificados_max_upload_bytes=MAX_UPLOAD_BYTES,
+            certificados_max_batch_items=max(
+                1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500"))
+            ),
+            templates_max_upload_bytes=MAX_TEMPLATE_UPLOAD_BYTES,
+        ),
     )
 
 

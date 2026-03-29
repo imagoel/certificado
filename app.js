@@ -218,6 +218,8 @@ let savedLogoImage = null;
 let savedAssinatura = null;
 let savedAssinaturaImage = null;
 
+const DEFAULT_CERTIFICATE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
+
 const certListState = {
   page: 1,
   perPage: 10,
@@ -317,6 +319,70 @@ function getApiBaseUrl() {
     return `${protocol}//${hostname}:29180`;
   }
   return origin.replace(/\/+$/, "");
+}
+
+function formatFileSize(bytes) {
+  const safeBytes = Number(bytes) || 0;
+  if (safeBytes <= 0) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB"];
+  let value = safeBytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  const decimals = value >= 10 || unitIndex === 0 ? 0 : 1;
+  return `${value.toFixed(decimals).replace(".", ",")} ${units[unitIndex]}`;
+}
+
+function getCertificateUploadMaxBytes() {
+  const fromSession = Number.parseInt(
+    sessionState &&
+      sessionState.configuracoes &&
+      sessionState.configuracoes.certificados_max_upload_bytes,
+    10
+  );
+  if (Number.isFinite(fromSession) && fromSession > 0) {
+    return fromSession;
+  }
+  return DEFAULT_CERTIFICATE_UPLOAD_MAX_BYTES;
+}
+
+function ensureCertificatePngWithinLimit(pngBlob, codigo = "") {
+  if (!pngBlob) {
+    throw new Error("PNG do certificado ausente para validacao.");
+  }
+
+  const maxBytes = getCertificateUploadMaxBytes();
+  if (pngBlob.size <= maxBytes) {
+    return;
+  }
+
+  const codeLabel = sanitizeText(codigo).toUpperCase();
+  const certLabel = codeLabel ? ` do certificado ${codeLabel}` : "";
+  const error = new Error(
+    `O PNG final${certLabel} ficou com ${formatFileSize(pngBlob.size)} e excede o limite configurado de ${formatFileSize(maxBytes)}. Isso costuma acontecer quando molde, logo ou assinatura estao muito pesados. Use imagens mais leves ou peca ao administrador para ajustar o limite do sistema.`
+  );
+  error.operation = "png_size";
+  error.codigo = codeLabel;
+  error.maxBytes = maxBytes;
+  error.actualBytes = pngBlob.size;
+  throw error;
+}
+
+function summarizePngFailure(errorMessage) {
+  const message = sanitizeText(errorMessage).toLowerCase();
+  if (!message) return "falha no upload";
+  if (message.includes("excede o limite") || message.includes("muito pesado")) {
+    return "png acima do limite";
+  }
+  if (message.includes("nao foi salvo no servidor")) {
+    return "nao salvo no servidor";
+  }
+  return "falha no upload";
 }
 
 async function apiJsonRequest(path, options = {}) {
@@ -2380,6 +2446,7 @@ async function executeSingleCertificateGeneration(prepared) {
       prepared.cargaH
     );
     const pngBlob = await canvasToPngBlob();
+    ensureCertificatePngWithinLimit(pngBlob, codigo);
     setBatchStatus(`Salvando o certificado ${codigo} no servidor...`, "info");
     await uploadCertificateImage(codigo, pngBlob, codigo);
     downloadBtn.disabled = false;
@@ -2395,6 +2462,10 @@ async function executeSingleCertificateGeneration(prepared) {
       return;
     }
     const message = (() => {
+      if (error && error.operation === "png_size") {
+        const codeLabel = sanitizeText(error.codigo).toUpperCase() || "sem codigo";
+        return `Certificado ${codeLabel} registrado, mas o PNG nao foi salvo no servidor porque excedeu o limite permitido. Use o botao "Baixar PNG" para revisar o arquivo e ajuste os ativos visuais antes de tentar novamente.`;
+      }
       if (error && error.operation === "png_upload") {
         const codeLabel = sanitizeText(error.codigo).toUpperCase() || "sem código";
         return `Certificado ${codeLabel} registrado, mas o PNG não foi salvo no servidor após ${error.maxAttempts || 1} tentativa(s).`;
@@ -2403,6 +2474,10 @@ async function executeSingleCertificateGeneration(prepared) {
         ? error.message
         : "Falha ao gerar o certificado. Tente novamente.";
     })();
+    if (error && (error.operation === "png_upload" || error.operation === "png_size")) {
+      downloadBtn.disabled = false;
+      await loadCertificates(1);
+    }
     setBatchStatus(message, "error");
   } finally {
     isSingleGenerationRunning = false;
@@ -3787,6 +3862,17 @@ async function executeBatchGeneration(prepared) {
       );
 
       const pngBlob = await canvasToPngBlob();
+      try {
+        ensureCertificatePngWithinLimit(pngBlob, cert.codigo);
+      } catch (error) {
+        failedUploads.push({
+          codigo: cert.codigo,
+          nome: cert.nome,
+          message: error && error.message ? error.message : "PNG acima do limite permitido.",
+        });
+        zip.file(cert.fileName, pngBlob);
+        continue;
+      }
       zip.file(cert.fileName, pngBlob);
 
       setBatchStatus(
@@ -3833,7 +3919,7 @@ async function executeBatchGeneration(prepared) {
     if (failedUploads.length) {
       const preview = failedUploads
         .slice(0, 3)
-        .map((item) => `${item.codigo} (${item.nome})`)
+        .map((item) => `${item.codigo} (${summarizePngFailure(item.message)})`)
         .join(", ");
       const suffix = failedUploads.length > 3 ? ", ..." : "";
       const ignoredPreview = ignoredCount ? ` ${ignoredSummary}` : "";
