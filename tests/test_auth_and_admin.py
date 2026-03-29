@@ -1,3 +1,14 @@
+PNG_BYTES = (
+    b"\x89PNG\r\n\x1a\n"
+    b"\x00\x00\x00\rIHDR"
+    b"\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00"
+    b"\x1f\x15\xc4\x89"
+    b"\x00\x00\x00\rIDATx\x9cc\xf8\xcf\xc0\xf0\x1f\x00\x05\x00\x01\xff"
+    b"\x89\x99=\x1d"
+    b"\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
+
 def test_admin_can_access_admin_auditoria(client, seed_data, login):
     response = login("admin", seed_data["admin_password"])
 
@@ -53,6 +64,55 @@ def test_admin_exclui_usuario_sem_apagar_historico(client, seed_data, login):
     users_response = client.get("/api/admin/usuarios")
     usernames = [item["username"] for item in users_response.json()]
     assert "operador" not in usernames
+
+
+def test_admin_exclui_usuario_que_criou_asset_sem_quebrar(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+
+    create_admin_response = client.post(
+        "/api/admin/usuarios",
+        json={
+            "nome": "Admin Asset",
+            "username": "admin.asset",
+            "password": "senha1234",
+            "papel": "admin_global",
+            "ativo": True,
+            "secretaria_ids": [],
+        },
+    )
+    assert create_admin_response.status_code == 201
+    created_admin = create_admin_response.json()
+
+    client.post("/api/auth/logout")
+    login("admin.asset", "senha1234")
+
+    create_asset_response = client.post(
+        "/api/admin/secretaria-assets",
+        data={
+            "secretaria_id": str(seed_data["seafi_id"]),
+            "tipo": "logo",
+            "nome": "Logo Criada por Admin Asset",
+            "ativo": "true",
+            "padrao": "false",
+            "ordem": "1",
+        },
+        files={"arquivo": ("logo.png", PNG_BYTES, "image/png")},
+    )
+    assert create_asset_response.status_code == 201
+
+    client.post("/api/auth/logout")
+    login("admin", seed_data["admin_password"])
+
+    delete_response = client.delete(f"/api/admin/usuarios/{created_admin['id']}", json={})
+    assert delete_response.status_code == 200
+
+    assets_response = client.get("/api/admin/secretaria-assets")
+    assert assets_response.status_code == 200
+    target = next(
+        item for item in assets_response.json() if item["nome"] == "Logo Criada por Admin Asset"
+    )
+    assert target["criado_por_usuario_id"] is None
+    assert target["criado_por_username"] is None
 
 
 def test_admin_nao_exclui_secretaria_com_certificados_emitidos(client, seed_data, login):

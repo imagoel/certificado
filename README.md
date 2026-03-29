@@ -90,7 +90,7 @@ Resumo importante:
 - hashes novos em HMAC-SHA256
 - compatibilidade com hashes legados em SHA-256
 - bootstrap inicial validado no startup
-- persistencia de certificados, moldes, logos e assinaturas em volumes Docker separados
+- persistencia de certificados e assets visuais em volumes Docker persistentes
 
 ## Arquitetura Atual
 
@@ -310,7 +310,6 @@ Volumes:
 - `postgres_data`
 - `certificados_media`
 - `templates_media`
-- `secretaria_assets_media`
 
 ## Deploy com Portainer
 

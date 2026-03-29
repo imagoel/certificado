@@ -19,7 +19,7 @@ from common import (
     validate_role_and_secretarias,
 )
 from database import get_db
-from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, Usuario
+from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, SecretariaAsset, Usuario
 from schemas import (
     ActionResponse,
     CertificateAdminDeleteRequest,
@@ -249,6 +249,12 @@ def admin_delete_user(
         {CertificateTemplate.criado_por_usuario_id: None},
         synchronize_session=False,
     )
+    db.query(SecretariaAsset).filter(
+        SecretariaAsset.criado_por_usuario_id == user_id
+    ).update(
+        {SecretariaAsset.criado_por_usuario_id: None},
+        synchronize_session=False,
+    )
     db.query(AuditEvent).filter(AuditEvent.usuario_id == user_id).update(
         {AuditEvent.usuario_id: None},
         synchronize_session=False,
@@ -298,6 +304,7 @@ def admin_delete_secretaria(
     sigla = secretaria.sigla
     secretaria_id_original = secretaria.id
     templates = list(secretaria.moldes)
+    assets = list(secretaria.assets)
 
     for template in templates:
         file_path = None
@@ -315,6 +322,23 @@ def admin_delete_secretaria(
                     detail=f"Nao foi possivel remover um arquivo de molde: {error}",
                 ) from error
         db.delete(template)
+
+    for asset in assets:
+        file_path = None
+        if asset.arquivo_relpath:
+            try:
+                file_path = resolve_template_media_path(asset.arquivo_relpath)
+            except HTTPException:
+                file_path = None
+        if file_path and file_path.exists():
+            try:
+                file_path.unlink()
+            except OSError as error:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Nao foi possivel remover um arquivo de asset da secretaria: {error}",
+                ) from error
+        db.delete(asset)
 
     secretaria.usuarios.clear()
     db.query(AuditEvent).filter(AuditEvent.secretaria_id == secretaria.id).update(
