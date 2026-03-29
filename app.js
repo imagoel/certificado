@@ -29,8 +29,10 @@ const secretariaWrap = document.getElementById("secretaria-wrap");
 const secretariaSelect = document.getElementById("secretaria-select");
 const generatorSection = document.getElementById("generator-section");
 const certificatesSection = document.getElementById("certificates-section");
+const auditSection = document.getElementById("audit-section");
 const adminSection = document.getElementById("admin-section");
 const sectionTabs = Array.from(document.querySelectorAll("[data-section]"));
+const auditTab = document.getElementById("tab-audit");
 const adminTab = document.getElementById("tab-admin");
 
 const certListForm = document.getElementById("cert-list-filters");
@@ -118,7 +120,6 @@ const auditListBody = document.getElementById("audit-list-body");
 const auditPrevPageBtn = document.getElementById("audit-prev-page");
 const auditNextPageBtn = document.getElementById("audit-next-page");
 const auditPageIndicator = document.getElementById("audit-page-indicator");
-const auditPanel = document.getElementById("audit-panel");
 
 const duplicateCertDialog = document.getElementById("duplicate-cert-dialog");
 const duplicateCertForm = document.getElementById("duplicate-cert-form");
@@ -272,6 +273,7 @@ const assinaturaAspectRatio = 80 / 230;
 const viewSections = {
   generator: generatorSection,
   certificates: certificatesSection,
+  audit: auditSection,
   admin: adminSection,
 };
 const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -589,6 +591,10 @@ function isAdminSession(session = sessionState) {
   return Boolean(session && session.usuario && session.usuario.papel === "admin_global");
 }
 
+function isAdminOnlySection(sectionName) {
+  return sectionName === "admin" || sectionName === "audit";
+}
+
 function switchSection(sectionName) {
   currentSection = viewSections[sectionName] ? sectionName : "generator";
 
@@ -821,10 +827,10 @@ function renderSession(session) {
   if (adminTab) {
     adminTab.hidden = !isAdminSession(session);
   }
-  if (auditPanel) {
-    auditPanel.hidden = !isAdminSession(session);
+  if (auditTab) {
+    auditTab.hidden = !isAdminSession(session);
   }
-  if (!isAdminSession(session) && currentSection === "admin") {
+  if (!isAdminSession(session) && isAdminOnlySection(currentSection)) {
     switchSection("generator");
   }
 }
@@ -880,8 +886,10 @@ function clearSessionUi(message = "") {
   }
   if (certListSummary) certListSummary.textContent = "";
   if (certPageIndicator) certPageIndicator.textContent = "Página 1";
+  if (auditSummary) auditSummary.textContent = "";
+  if (auditPageIndicator) auditPageIndicator.textContent = "Página 1";
   if (adminTab) adminTab.hidden = true;
-  if (auditPanel) auditPanel.hidden = true;
+  if (auditTab) auditTab.hidden = true;
   if (userListBody) {
     userListBody.innerHTML = `
       <tr>
@@ -1869,6 +1877,8 @@ async function loadAuditEvents(page = auditState.page) {
           </tr>
         `;
       }
+      if (auditTab) auditTab.hidden = true;
+      if (currentSection === "audit") switchSection("generator");
       return;
     }
     setAuditStatus(
@@ -1976,7 +1986,8 @@ async function loadAdminData() {
     }
     if (error && error.status === 403) {
       if (adminTab) adminTab.hidden = true;
-      if (currentSection === "admin") switchSection("generator");
+      if (auditTab) auditTab.hidden = true;
+      if (isAdminOnlySection(currentSection)) switchSection("generator");
       return;
     }
     setUserFormStatus(
@@ -4295,10 +4306,13 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 sectionTabs.forEach((button) => {
   button.addEventListener("click", () => {
     const { section } = button.dataset;
-    if (section === "admin" && !isAdminSession()) return;
+    if (isAdminOnlySection(section) && !isAdminSession()) return;
     switchSection(section || "generator");
     if (section === "certificates" && sessionState) {
       void loadCertificates(certListState.page || 1);
+    }
+    if (section === "audit" && sessionState && isAdminSession()) {
+      void loadAuditEvents(auditState.page || 1);
     }
     if (section === "admin" && sessionState && isAdminSession()) {
       void loadAdminData();

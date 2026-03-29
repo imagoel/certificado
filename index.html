@@ -57,11 +57,12 @@
       <section class="panel section-switcher">
         <button id="tab-generator" class="section-tab is-active" type="button" data-section="generator">Gerar</button>
         <button id="tab-certificates" class="section-tab" type="button" data-section="certificates">Certificados</button>
+        <button id="tab-audit" class="section-tab" type="button" data-section="audit" hidden>Auditoria</button>
         <button id="tab-admin" class="section-tab" type="button" data-section="admin" hidden>Administração</button>
       </section>
 
       <section id="generator-section" class="stack-section">
-        <section id="audit-panel" class="panel" hidden>
+        <section class="panel">
           <form id="cert-form" class="form">
             <label for="nome">Nome do participante</label>
             <input id="nome" type="text" placeholder="Ex.: Maria da Silva" required />
@@ -303,7 +304,9 @@
             <button id="cert-next-page" type="button" class="secondary-btn">Próxima</button>
           </div>
         </section>
+      </section>
 
+      <section id="audit-section" class="stack-section" hidden>
         <section class="panel">
           <div class="panel-header">
             <div>
