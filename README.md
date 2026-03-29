@@ -1,50 +1,127 @@
 # Sistema de Certificados
 
-Projeto dividido em duas partes:
-- **Frontend**: exige login, monta o certificado no navegador, faz a pre-visualizacao em `canvas` e exporta o PNG final.
-- **API**: autentica usuarios, registra certificados, gera o QR Code em PNG, valida por codigo e armazena o arquivo final enviado pelo frontend.
+Aplicação interna para emissão, consulta, validação e administração de certificados digitais por secretaria.
+
+## Visão Geral
+
+O projeto está dividido em duas partes:
+
+- **Frontend**: exige login, faz a pré-visualização do certificado no navegador, monta o PNG final em `canvas` e envia esse arquivo pronto para a API armazenar.
+- **API**: autentica usuários, controla secretarias, gera o código oficial, gera o QR Code em PNG, valida certificados por código, guarda o PNG final e registra auditoria.
+
+Resumo importante:
+
+- o **QR Code** é gerado no backend
+- o **PNG final do certificado** é gerado no frontend
+- o backend **não renderiza o certificado inteiro**
+- a tela inicial do gerador é **restrita por login**
+- a validação em `/validar/{codigo}` continua **pública**
+
+## Stack e Tecnologias
+
+### Frontend
+
+- HTML, CSS e JavaScript puro
+- `canvas` para renderização do certificado
+- `JSZip` para geração do arquivo `.zip` no lote
+- `SheetJS/XLSX` para leitura de `.xlsx`, `.xls` e `.csv`
+
+### Backend
+
+- Python 3.12
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Alembic
+- HMAC-SHA256 para integridade dos certificados
+
+### Infraestrutura
+
+- Docker / Docker Compose
+- Nginx para servir o frontend estático
+- Portainer para deploy em produção
+- Cloudflare Tunnel ou proxy reverso para publicação no domínio final
+
+## Funcionalidades Implementadas
+
+### Operação
+
+- login obrigatório na página inicial
+- sessão por cookie HTTP-only
+- perfis `admin_global` e `operador`
+- suporte a múltiplas secretarias
+- seleção de secretaria ativa em sessão
+- geração individual de certificado
+- geração em lote por planilha
+- download do PNG individual
+- download do lote em `.zip`
+- pré-visualização da planilha antes do lote
+- confirmação antes de gerar lote
+- retry automático no upload de PNG do lote
+- alerta de possível duplicidade antes da geração individual
+- reimpressão e visualização dos certificados já emitidos
+- página pública de validação por QR Code
+
+### Administração
+
+- cadastro e edição de usuários
+- vínculo de operador a uma ou mais secretarias
+- secretarias inativas deixam de aparecer para vínculo de operadores
+- cadastro, edição, ativação e desativação de secretarias
+- exclusão administrativa de usuários
+- exclusão administrativa de secretarias sem certificados emitidos
+- exclusão administrativa de certificados com confirmação por código e senha do admin
+- moldes por secretaria
+- molde temporário por tela de geração
+- auditoria de login, emissão, upload, exclusão e ações administrativas
+
+### Segurança e Robustez
+
+- limitação de tentativas de login
+- proteção dos endpoints administrativos
+- `/docs` protegida para admin ou desativável por ambiente
+- lote limitado por `CERTIFICADOS_MAX_BATCH_ITEMS`
+- geração automática de código com reserva atômica por `prefixo + ano`
+- hashes novos em HMAC-SHA256
+- compatibilidade com hashes legados em SHA-256
+- bootstrap inicial validado no startup
+- persistência de certificados e moldes em volumes Docker separados
 
 ## Arquitetura Atual
 
-Fluxo atual:
-1. o usuario entra com login e senha no frontend
-2. o frontend envia os dados do certificado para a API
-3. a API gera o codigo oficial e a URL de validacao
-4. o frontend solicita a imagem PNG do QR Code a API
-5. o frontend desenha o certificado completo no `canvas`
-6. o frontend converte o `canvas` para PNG
-7. o frontend envia esse PNG final para a API armazenar
+Fluxo da emissão individual:
 
-Resumo importante:
-- o **QR Code** e gerado no backend
-- o **PNG final do certificado** e gerado no frontend
-- o backend **nao desenha o certificado completo** hoje; ele apenas recebe e salva o PNG pronto
-- a tela inicial do gerador agora e **restrita por login**
-- a validacao do QR em `/validar/{codigo}` continua **publica**
+1. o usuário faz login
+2. o frontend envia os dados básicos para a API
+3. a API reserva o próximo código oficial
+4. a API devolve `codigo`, `url_validacao` e os metadados do certificado
+5. o frontend solicita o PNG do QR Code
+6. o frontend desenha o certificado completo em `canvas`
+7. o frontend converte o `canvas` para PNG
+8. o frontend envia o PNG final para a API
+9. a API salva o arquivo e registra auditoria
 
-## Autenticacao e Acesso
+Fluxo do lote:
 
-Modelo atual:
-- sessao por cookie HTTP-only
-- usuarios salvos no banco
-- papeis iniciais: `admin_global` e `operador`
-- estrutura pronta para multiplas secretarias
-
-Regras desta etapa:
-- `http://localhost:28754` abre em tela de login
-- geracao individual, lote e upload do PNG exigem autenticacao
-- `GET /validar/{codigo}` e `GET /api/validar/{codigo}` continuam publicos
-- `GET /health` continua publico
-- a documentacao em `/docs` pode ficar liberada apenas para admin ou ser desativada por ambiente
+1. o operador envia a planilha
+2. o frontend normaliza os dados, mostra uma prévia e valida as linhas
+3. a API registra o lote de certificados e reserva códigos oficiais
+4. o frontend gera um PNG por certificado
+5. o frontend tenta enviar cada PNG com retry
+6. o frontend monta um `.zip` para download local
+7. a API mantém os certificados e os PNGs que foram salvos com sucesso
 
 ## Multi-secretaria
 
-O banco ja esta preparado para:
-- vincular usuarios a uma ou mais secretarias
-- gravar em cada certificado qual secretaria emitiu
-- gravar qual usuario emitiu o certificado
+O sistema já está preparado para:
 
-Secretarias iniciais do seed:
+- vincular usuários a uma ou mais secretarias
+- gravar em cada certificado qual secretaria emitiu
+- gravar qual usuário emitiu o certificado
+- manter moldes por secretaria
+
+Secretarias padrão do seed:
+
 - `SESAU`
 - `SEMED`
 - `SEAFI`
@@ -52,147 +129,280 @@ Secretarias iniciais do seed:
 - `SEMOP`
 - `SUGEP`
 
-## Frontend
+## Moldes de Certificado
 
-### Funcionalidades
-- login na pagina inicial
-- geracao individual de certificado em PNG no navegador
-- geracao em lote por planilha (`.xlsx`, `.xls`, `.csv`)
-- exportacao do lote em `.zip`
-- area interna de certificados com filtros, consulta e reimpressao
-- filtros por texto, secretaria, periodo de conclusao, periodo de emissao e presenca do PNG salvo
-- area administrativa para cadastro de usuarios e secretarias
-- painel de auditoria para acompanhar logins, emissoes, uploads e acoes administrativas
-- registro automatico de certificados na API antes da geracao do PNG
-- uso automatico do QR Code oficial retornado pela API
-- upload automatico do PNG final para armazenamento no servidor
-- visualizacao do certificado salvo na pagina publica de validacao
+O sistema trabalha com dois tipos de molde:
 
-### Colunas da planilha
-- obrigatoria: `nome` (ou `nome` + `sobrenome` em colunas separadas)
-- opcionais: `curso`, `data`, `linha1`, `linha2`, `arquivo`
-- modelo minimo recomendado: apenas a coluna `nome`
+- **molde cadastrado da secretaria**: salvo no backend e administrado pelo `admin_global`
+- **molde temporário**: carregado localmente pelo operador apenas para a geração atual
+
+Regra importante:
+
+- o molde funciona como **fundo do certificado**
+- textos, QR Code, assinatura e logo continuam nas posições atuais
+- o operador **não move o layout dos campos**
+
+Formatos aceitos para moldes:
+
+- `png`
+- `jpg`
+- `jpeg`
+- `webp`
+
+`svg` foi removido para evitar risco de XSS em arquivos servidos no mesmo domínio da aplicação.
+
+## Geração em Lote
+
+Formatos suportados:
+
+- `.xlsx`
+- `.xls`
+- `.csv`
+
+Colunas reconhecidas:
+
+- obrigatória: `nome`
+- opcionais: `sobrenome`, `curso`, `data`, `carga_h`, `linha1`, `linha2`, `arquivo`
 
 Regras:
-- se a planilha vier so com `nome`, os campos do formulario (`curso`, `data` e textos) sao usados como padrao para todos os alunos
-- se a planilha vier com `nome` e `sobrenome`, o sistema concatena automaticamente para formar o nome completo
-- o codigo do certificado e sempre gerado pelo backend
-- a URL do QR e sempre definida pelo backend (`url_validacao`)
-- a imagem do QR Code e gerada pela API (`GET /api/qrcode`)
-- o arquivo PNG final e gerado no frontend e enviado automaticamente para o backend apos a geracao
 
-## API
+- se a planilha vier só com `nome`, os campos do formulário são usados como padrão
+- colunas extras desconhecidas são ignoradas
+- o sistema aceita cabeçalhos como `nome`, `NOME`, `Nome` e aliases conhecidos
+- linhas totalmente vazias são ignoradas
+- datas inválidas geram erro explícito por linha
+- o lote respeita `CERTIFICADOS_MAX_BATCH_ITEMS`
 
-### Responsabilidades
-- autenticar usuarios
-- registrar certificados e gerar codigos oficiais
-- gerar o PNG do QR Code usado pelo frontend
-- validar integridade por HMAC-SHA256
-- armazenar e servir o PNG final do certificado
+## Auditoria
 
-### Endpoints principais
+Eventos auditados incluem:
 
-Publicos:
+- login com sucesso
+- login com falha
+- login bloqueado
+- certificado criado
+- PNG enviado
+- PNG acessado
+- certificado excluído
+- ações administrativas de usuários, secretarias e moldes
+
+Observações:
+
+- a auditoria é restrita a `admin_global`
+- o frontend agora interpreta os horários vindos da API como UTC e exibe no horário local de `America/Sao_Paulo`
+- a exclusão de certificado preserva o histórico anterior de auditoria
+
+## Endpoints Principais
+
+### Públicos
+
 - `GET /health`
 - `GET /api/qrcode?texto=...`
 - `GET /api/validar/{codigo}`
 - `GET /validar/{codigo}`
 - `GET /api/certificados/{codigo}/arquivo`
 
-Autenticados:
+### Autenticados
+
 - `GET /api/auth/me`
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `POST /api/auth/select-secretaria`
 - `GET /api/certificados`
+- `GET /api/certificados/possiveis-duplicados`
 - `POST /api/certificados`
 - `POST /api/certificados/lote`
 - `POST /api/certificados/{codigo}/arquivo`
-- `GET /docs` (somente admin autenticado)
-- `GET /openapi.json` (somente admin autenticado)
 
-Administrativos (`admin_global`):
+### Administrativos (`admin_global`)
+
 - `GET /api/admin/secretarias`
 - `POST /api/admin/secretarias`
 - `PATCH /api/admin/secretarias/{id}`
+- `DELETE /api/admin/secretarias/{id}`
 - `GET /api/admin/usuarios`
 - `POST /api/admin/usuarios`
 - `PATCH /api/admin/usuarios/{id}`
+- `DELETE /api/admin/usuarios/{id}`
 - `GET /api/admin/auditoria`
+- `GET /api/templates`
+- `POST /api/templates`
+- `PATCH /api/templates/{id}`
+- `DELETE /api/templates/{id}`
+- `GET /docs` (somente admin autenticado, se habilitado)
+- `GET /openapi.json` (somente admin autenticado, se habilitado)
 
-## Subindo com Docker Compose
+## Estrutura do Projeto
 
-Se estiver configurando um ambiente novo, use `.env.example` como base para gerar seu `.env`.
+- `index.html`, `styles.css`, `app.js`: interface web, login, geração e administração
+- `api/main.py`: bootstrap da aplicação FastAPI
+- `api/common.py`: configuração compartilhada, helpers e dependências
+- `api/routes_auth.py`: autenticação e troca de secretaria
+- `api/routes_admin.py`: usuários, secretarias, auditoria e exclusões administrativas
+- `api/routes_certificates.py`: emissão, listagem e arquivos dos certificados
+- `api/routes_public.py`: `health`, QR Code e validação pública
+- `api/routes_templates.py`: moldes por secretaria
+- `api/certificate_sequences.py`: reserva atômica de códigos
+- `api/models.py`: modelos SQLAlchemy
+- `api/schemas.py`: contratos da API
+- `api/security.py`: hashes e senha
+- `api/manage.py`: comandos administrativos
+- `api/migrations.py`, `api/alembic/`: migrações Alembic
+- `api/templates/validacao.html`: página pública de validação
+- `api/static/style.css`: estilo da página pública
+- `tests/`: testes automatizados do backend
+
+## Subindo Localmente
+
+Use `.env.example` como base para o seu `.env`.
 
 ```bash
 docker compose up -d --build
 ```
 
-Servicos:
-- Frontend: `http://localhost:28754`
+Serviços locais:
+
+- frontend: `http://localhost:28754`
 - API: `http://localhost:29180`
 - PostgreSQL: `localhost:25432`
 
 Volumes:
-- `postgres_data`: dados do banco
-- `certificados_media`: arquivos PNG salvos no servidor (`/app/data/certificados` no container da API)
-- `templates_media`: moldes persistidos por secretaria (`/app/data/templates` no container da API)
 
-Em deploy por Portainer + repositorio Git privado:
-- mantenha o `docker-compose.yml` no repositorio
-- configure as variaveis de ambiente da stack diretamente no Portainer
-- use os volumes nomeados do Compose ou bind mounts definidos no servidor
-- nao publique o `.env` real no Git
-- para a stack de producao, prefira `docker-compose.portainer.yml`
+- `postgres_data`
+- `certificados_media`
+- `templates_media`
+
+## Deploy com Portainer
+
+Para produção:
+
+- use `docker-compose.portainer.yml`
+- mantenha o `.env` real fora do Git
+- deixe `AUTO_SEED_SECRETARIAS=true`
+- deixe `AUTO_BOOTSTRAP_ADMIN=true`
+- informe `BOOTSTRAP_ADMIN_USERNAME` e `BOOTSTRAP_ADMIN_PASSWORD`
+
+Fluxo recomendado com domínio público:
+
+- `/` -> frontend
+- `/api/*` -> API
+- `/health` -> API
+- `/validar/*` -> API
+- `/static/*` -> API
+
+Com isso:
+
+- frontend e API ficam no mesmo domínio
+- o frontend usa a mesma origem automaticamente em produção
+- o QR Code aponta para `PUBLIC_VALIDATION_BASE_URL`
 
 ## Provisionamento Inicial
 
-Depois de subir os containers, voce pode rodar os seeds iniciais dentro do container da API:
+### Manual
 
 ```bash
 docker exec certificado-api python manage.py seed-secretarias
 docker exec certificado-api python manage.py create-admin --nome "Administrador Local" --username admin --password "troque-esta-senha"
 ```
 
-Opcionalmente, o bootstrap inicial pode ser automatico no startup da API:
+### Automático
+
+Use:
+
 - `AUTO_SEED_SECRETARIAS=true`
 - `AUTO_BOOTSTRAP_ADMIN=true`
 - `BOOTSTRAP_ADMIN_NAME=Administrador`
 - `BOOTSTRAP_ADMIN_USERNAME=admin`
 - `BOOTSTRAP_ADMIN_PASSWORD=uma-senha-forte`
 
-Com essa opcao ligada:
-- as secretarias iniciais sao criadas automaticamente se estiverem ausentes
-- o admin inicial so e criado/atualizado se ainda nao existir nenhum `admin_global`
-- se `AUTO_BOOTSTRAP_ADMIN=true` e faltarem `BOOTSTRAP_ADMIN_USERNAME` ou `BOOTSTRAP_ADMIN_PASSWORD`, a API falha no startup para evitar uma stack "saudavel" sem acesso administrativo
+Com essa opção:
 
-Em seguida:
-1. abra `http://localhost:28754`
-2. entre com o usuario criado
-3. escolha a secretaria ativa, se aparecer o seletor
-4. use a aba `Certificados` para consultar e reimprimir os PNGs salvos
-5. se estiver com perfil `admin_global`, use a aba `Administracao` para criar usuarios e secretarias
-6. na mesma aba `Administracao`, acompanhe a trilha de auditoria do sistema
+- as secretarias padrão são criadas se estiverem ausentes
+- o admin inicial é criado automaticamente
+- se faltarem `BOOTSTRAP_ADMIN_USERNAME` ou `BOOTSTRAP_ADMIN_PASSWORD`, a API falha no startup para evitar uma stack sem acesso administrativo
+
+## Variáveis de Ambiente Importantes
+
+Principais:
+
+- `APP_ENV`
+- `CODE_PREFIX`
+- `PUBLIC_VALIDATION_BASE_URL`
+- `CERTIFICADOS_MAX_UPLOAD_BYTES`
+- `CERTIFICADOS_MAX_BATCH_ITEMS`
+- `TEMPLATES_MEDIA_DIR`
+- `TEMPLATES_MAX_UPLOAD_BYTES`
+- `SESSION_SECRET`
+- `CERTIFICATE_HASH_SECRET`
+- `SESSION_COOKIE_NAME`
+- `SESSION_SAME_SITE`
+- `SESSION_HTTPS_ONLY`
+- `SESSION_MAX_AGE_SECONDS`
+- `ENABLE_ADMIN_DOCS`
+- `TRUST_PROXY_HEADERS`
+- `LOGIN_MAX_ATTEMPTS`
+- `LOGIN_WINDOW_SECONDS`
+- `LOGIN_BLOCK_SECONDS`
+- `CORS_ALLOW_ORIGINS`
+- `AUTO_SEED_SECRETARIAS`
+- `AUTO_BOOTSTRAP_ADMIN`
+- `BOOTSTRAP_ADMIN_NAME`
+- `BOOTSTRAP_ADMIN_USERNAME`
+- `BOOTSTRAP_ADMIN_PASSWORD`
+
+Observações:
+
+- em ambiente local, o frontend usa `localhost:29180` automaticamente
+- em produção, se frontend e API estiverem no mesmo domínio, o frontend usa a mesma origem automaticamente
+- `SESSION_SECRET` e `CERTIFICATE_HASH_SECRET` devem ser longos, exclusivos e estáveis
+- para Cloudflare Tunnel ou proxy confiável, use `TRUST_PROXY_HEADERS=true`
+- `ENABLE_ADMIN_DOCS=false` é o padrão recomendado para produção
+
+## Cloudflare Tunnel / Teste de Domínio
+
+Para teste local com domínio público:
+
+- manter um `.env.cloudflare` fora do Git
+- apontar `PUBLIC_VALIDATION_BASE_URL` para o domínio do tunnel
+- incluir o domínio em `CORS_ALLOW_ORIGINS`
+- rebuildar a stack com:
+
+```bash
+docker compose --env-file .env.cloudflare up -d --build
+```
+
+Exemplo de rotas do tunnel:
+
+1. `^/api` -> `http://certificado-api:8000`
+2. `^/health$` -> `http://certificado-api:8000`
+3. `^/validar` -> `http://certificado-api:8000`
+4. `^/static` -> `http://certificado-api:8000`
+5. `*` -> `http://certificado-web:80`
 
 ## Testes Automatizados
 
-Suite inicial coberta:
-- autenticacao e autorizacao de `admin_global` e `operador`
-- criacao e validacao publica de certificados
-- exclusao administrativa de certificados
-- compatibilidade entre hashes legados em SHA-256 e hashes novos em HMAC-SHA256
-- versionamento do schema com Alembic
+Cobertura atual:
 
-Para executar em um ambiente Python com dependencias de desenvolvimento:
+- autenticação e autorização
+- criação e validação pública de certificados
+- exclusão administrativa
+- duplicidade
+- lotes
+- auditoria
+- templates
+- migrações Alembic
+- compatibilidade entre hash legado e HMAC
+
+Execução:
 
 ```bash
 python3 -m pip install -r requirements-dev.txt
 PYTHONPATH=api pytest -q
 ```
 
-## Migracoes
+## Migrações
 
-O projeto agora usa Alembic para versionar o schema do banco.
+O projeto usa Alembic para versionar o banco.
 
 Comando manual:
 
@@ -202,105 +412,22 @@ python3 manage.py migrate
 ```
 
 Compatibilidade:
+
 - bancos vazios sobem pela migration baseline
-- bancos legados sem `alembic_version` sao adotados automaticamente no startup
-- a ponte legada existe apenas para absorver a base atual sem quebra; proximas mudancas de schema devem entrar por revisoes do Alembic
+- bancos legados sem `alembic_version` são adotados no startup
+- novas mudanças de schema devem entrar por revisão Alembic
 
-## Configuracao Local
+## Limitações Conhecidas
 
-Variaveis principais em `.env`:
-- `APP_ENV=development`
-- `CODE_PREFIX=ABC`
-- `PUBLIC_VALIDATION_BASE_URL=http://localhost:29180/validar`
-- `CERTIFICADOS_MAX_UPLOAD_BYTES=5242880`
-- `CERTIFICADOS_MAX_BATCH_ITEMS=500`
-- `TEMPLATES_MEDIA_DIR=/app/data/templates`
-- `TEMPLATES_MAX_UPLOAD_BYTES=10485760`
-- `SESSION_SECRET=troque-esta-chave-local`
-- `CERTIFICATE_HASH_SECRET=troque-esta-chave-do-certificado`
-- `SESSION_COOKIE_NAME=certificado_session`
-- `SESSION_SAME_SITE=lax`
-- `SESSION_HTTPS_ONLY=false`
-- `SESSION_MAX_AGE_SECONDS=43200`
-- `ENABLE_ADMIN_DOCS=true`
-- `TRUST_PROXY_HEADERS=false`
-- `LOGIN_MAX_ATTEMPTS=5`
-- `LOGIN_WINDOW_SECONDS=900`
-- `LOGIN_BLOCK_SECONDS=900`
-- `CORS_ALLOW_ORIGINS=http://localhost:28754,http://127.0.0.1:28754`
-- `AUTO_SEED_SECRETARIAS=false`
-- `AUTO_BOOTSTRAP_ADMIN=false`
-- `BOOTSTRAP_ADMIN_NAME=Administrador`
-- `BOOTSTRAP_ADMIN_USERNAME=admin`
-- `BOOTSTRAP_ADMIN_PASSWORD=troque-esta-senha`
+- o backend não gera o certificado completo, apenas guarda o PNG final enviado pelo frontend
+- o layout do certificado continua fixo; o molde só atua como fundo visual
+- ainda não há personalização avançada de posições de texto por secretaria
+- reimpressão e segunda via usam o certificado já salvo; a prevenção de duplicidade trabalha por alerta e confirmação, não por bloqueio absoluto
 
-Observacoes:
-- em ambiente local, o frontend usa `localhost:29180` automaticamente
-- em producao, se frontend e API estiverem no mesmo dominio com proxy/tunnel, o frontend usa a mesma origem automaticamente
-- em producao, troque `PUBLIC_VALIDATION_BASE_URL` pelo dominio publico oficial
-- em producao, troque `SESSION_SECRET` por uma chave longa e exclusiva
-- em producao, troque `CERTIFICATE_HASH_SECRET` por uma chave longa e exclusiva e mantenha esse valor estavel
-- em producao, use `APP_ENV=production`
-- em producao, prefira `SESSION_HTTPS_ONLY=true`
-- em producao, defina `TRUST_PROXY_HEADERS=true` somente se houver proxy confiavel na frente da API
-- em producao, revise `CORS_ALLOW_ORIGINS` para o dominio oficial do frontend
-- em producao, decida entre `ENABLE_ADMIN_DOCS=false` ou docs liberada apenas para administradores
-- o backend agora limita tentativas de login por `usuario + IP`; ajuste `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_SECONDS` e `LOGIN_BLOCK_SECONDS` conforme a operacao
-- o backend limita o lote de certificados por `CERTIFICADOS_MAX_BATCH_ITEMS`; acima disso a API responde `422`
-- o upload de moldes por secretaria aceita `png`, `jpg`, `jpeg` e `webp`; ajuste `TEMPLATES_MAX_UPLOAD_BYTES` se precisar aumentar o limite
-- os moldes cadastrados agora ficam em volume persistente separado (`templates_media`)
-- hashes antigos em SHA-256 continuam validando; novos certificados passam a usar HMAC-SHA256
-- o comando `create-admin` pode ser usado novamente para trocar a senha temporaria do administrador
-- com `AUTO_SEED_SECRETARIAS=true` e `AUTO_BOOTSTRAP_ADMIN=true`, a stack sobe no Portainer sem precisar rodar comandos manuais no console
+## Próximas Evoluções Naturais
 
-### Checklist de producao
-
-Antes de publicar:
-1. troque a senha do admin inicial com `docker exec certificado-api python manage.py create-admin --nome "Administrador" --username admin --password "uma-senha-forte"`
-2. configure `APP_ENV=production`
-3. configure `SESSION_SECRET` com uma chave longa e exclusiva
-4. configure `SESSION_HTTPS_ONLY=true`
-5. revise `CORS_ALLOW_ORIGINS` para o dominio real do frontend
-6. decida se `ENABLE_ADMIN_DOCS` fica `false`
-
-## Portainer e Tunnel
-
-Fluxo recomendado para a prefeitura:
-- Portainer lendo o repositorio Git privado
-- stack de producao usando `docker-compose.portainer.yml`
-- tunnel/dominio publico encaminhando:
-  - `/` para `http://10.75.2.16:28754`
-  - `/api/*`, `/health` e `/validar/*` para `http://10.75.2.16:29180`
-
-Com esse modelo:
-- o frontend e a API ficam no mesmo dominio publico
-- o frontend passa a usar a mesma origem automaticamente em producao
-- o QR Code deve apontar para o dominio publico configurado em `PUBLIC_VALIDATION_BASE_URL`
-
-## Estrutura
-
-- `index.html`, `styles.css`, `app.js`: login, interface, pre-visualizacao e geracao local do PNG final
-- `api/main.py`: bootstrap da API, middlewares e inclusao dos routers
-- `api/common.py`: configuracao compartilhada, dependencias, builders e helpers do dominio
-- `api/routes_auth.py`: login, logout e troca de secretaria
-- `api/routes_admin.py`: usuarios, secretarias, auditoria e exclusao administrativa
-- `api/routes_certificates.py`: listagem, emissao e arquivos dos certificados
-- `api/routes_public.py`: health, QR Code e validacao publica
-- `api/certificate_sequences.py`: reserva atomica de codigos por prefixo e ano
-- `api/models.py`: modelos de usuarios, secretarias e certificados
-- `api/security.py`: hash de certificado e senha
-- `api/schemas.py`: contratos da API
-- `api/manage.py`: comandos de seed administrativo
-- `api/migrations.py`, `api/alembic/`: migracoes versionadas do banco
-- `api/templates/validacao.html`: pagina publica de validacao
-- `api/static/style.css`: estilo da pagina de validacao
-
-## Observacao de Evolucao
-
-Se no futuro o objetivo for gerar o certificado completo no backend, sera necessario mover para a API:
-- a composicao visual do layout
-- a insercao de logo e assinatura
-- a renderizacao do texto
-- a geracao do PNG final
-
-Hoje isso ainda nao acontece.
+- relatórios operacionais
+- política de retenção/arquivamento da auditoria
+- personalização visual mais avançada por secretaria
+- testes automatizados adicionais no frontend
+- maior refinamento de UX mobile conforme uso real
