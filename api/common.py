@@ -282,12 +282,16 @@ def has_certificate_file(cert: Certificate) -> bool:
     return file_path.exists() and file_path.is_file()
 
 
+def build_route_path(request: Request, route_name: str, **params) -> str:
+    return str(request.app.url_path_for(route_name, **params))
+
+
 def build_certificate_file_url(request: Request, codigo: str) -> str:
-    return str(request.url_for("get_certificate_file", codigo=sanitize_code(codigo)))
+    return build_route_path(request, "get_certificate_file", codigo=sanitize_code(codigo))
 
 
 def build_template_file_url(request: Request, template_id: int) -> str:
-    return str(request.url_for("get_template_file", template_id=template_id))
+    return build_route_path(request, "get_template_file", template_id=str(template_id))
 
 
 def build_secretaria_response(secretaria: Secretaria) -> SecretariaResponse:
@@ -373,7 +377,11 @@ def normalize_secretaria_sigla(value: str) -> str:
 
 
 def build_internal_certificate_file_url(request: Request, codigo: str) -> str:
-    return str(request.url_for("get_certificate_file_internal", codigo=sanitize_code(codigo)))
+    return build_route_path(
+        request,
+        "get_certificate_file_internal",
+        codigo=sanitize_code(codigo),
+    )
 
 
 def get_accessible_secretarias(db: Session, usuario: Usuario) -> list[Secretaria]:
@@ -499,6 +507,17 @@ def validate_role_and_secretarias(papel: str, secretarias: list[Secretaria]) -> 
             status_code=422,
             detail="Usuarios operadores precisam ter pelo menos uma secretaria vinculada.",
         )
+
+    if normalized_role != ROLE_ADMIN_GLOBAL:
+        inactive_secretarias = [secretaria.sigla for secretaria in secretarias if not secretaria.ativa]
+        if inactive_secretarias:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Usuarios operadores so podem ser vinculados a secretarias ativas. "
+                    f"Remova: {', '.join(inactive_secretarias)}."
+                ),
+            )
 
 
 def record_audit_event(

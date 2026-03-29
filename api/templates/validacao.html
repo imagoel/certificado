@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Validação de Certificado</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/style.css?v=20260329-1" />
 </head>
 <body>
   <main class="wrap">
@@ -56,7 +56,13 @@
 
           <div class="preview-section">
             <p class="preview-label">Pré-visualização</p>
-            <img class="preview-img" src="{{ arquivo_url }}" alt="Certificado {{ certificado.codigo }}" loading="lazy" />
+            <img
+              class="preview-img"
+              src="{{ arquivo_url }}"
+              alt="Certificado {{ certificado.codigo }}"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
         {% else %}
           <p class="muted">O arquivo visual do certificado ainda não foi enviado para o servidor.</p>

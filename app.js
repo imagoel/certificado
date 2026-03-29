@@ -1,4 +1,5 @@
 const form = document.getElementById("cert-form");
+const generateSubmitBtn = form ? form.querySelector('button[type="submit"]') : null;
 const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
@@ -95,6 +96,15 @@ const auditNextPageBtn = document.getElementById("audit-next-page");
 const auditPageIndicator = document.getElementById("audit-page-indicator");
 const auditPanel = document.getElementById("audit-panel");
 
+const duplicateCertDialog = document.getElementById("duplicate-cert-dialog");
+const duplicateCertForm = document.getElementById("duplicate-cert-form");
+const duplicateCertMessage = document.getElementById("duplicate-cert-message");
+const duplicateCertSummary = document.getElementById("duplicate-cert-summary");
+const duplicateCertList = document.getElementById("duplicate-cert-list");
+const duplicateCertStatus = document.getElementById("duplicate-cert-status");
+const duplicateCertViewExistingBtn = document.getElementById("duplicate-cert-view-existing");
+const duplicateCertCancelBtn = document.getElementById("duplicate-cert-cancel");
+
 const deleteCertDialog = document.getElementById("delete-cert-dialog");
 const deleteCertForm = document.getElementById("delete-cert-form");
 const deleteCertMessage = document.getElementById("delete-cert-message");
@@ -170,8 +180,10 @@ const fieldAliases = {
 let lastData = null;
 let renderTicket = 0;
 let isBatchRunning = false;
+let isSingleGenerationRunning = false;
 let sessionState = null;
 let currentSection = "generator";
+let pendingDuplicateCertificate = null;
 let pendingDeleteCertificate = null;
 let pendingBatchGeneration = null;
 let savedTemplate = null;
@@ -764,6 +776,10 @@ function setBatchConfirmStatus(message, type = "info") {
   setStatusMessage(batchConfirmStatus, message, type);
 }
 
+function setDuplicateCertStatus(message, type = "info") {
+  setStatusMessage(duplicateCertStatus, message, type);
+}
+
 function closeDeleteCertificateDialog() {
   pendingDeleteCertificate = null;
   if (deleteCertForm) deleteCertForm.reset();
@@ -792,6 +808,88 @@ function openDeleteCertificateDialog(item) {
   setDeleteCertStatus("", "info");
   if (typeof deleteCertDialog.showModal === "function") {
     deleteCertDialog.showModal();
+  }
+}
+
+function renderDuplicateCertificateList(items = []) {
+  if (!duplicateCertList) return;
+
+  duplicateCertList.innerHTML = "";
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "duplicate-cert-meta";
+    empty.textContent = "Nenhum certificado semelhante encontrado.";
+    duplicateCertList.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "duplicate-cert-item";
+
+    const title = document.createElement("strong");
+    title.textContent = `${item.codigo || "-"} · ${item.nome || "-"}`;
+
+    const meta = document.createElement("p");
+    meta.className = "duplicate-cert-meta";
+    meta.textContent =
+      `Curso: ${item.curso || "-"} | Conclusão: ${formatDate(item.concluido)} | ` +
+      `Emitido em: ${formatDateTime(item.emitido_em)}`;
+
+    const actions = document.createElement("div");
+    actions.className = "inline-actions";
+
+    const openTarget = item.arquivo_admin_url || item.arquivo_url || item.url_validacao || "";
+    const openLabel = item.arquivo_admin_url || item.arquivo_url ? "Abrir PNG" : "Abrir validação";
+    const openBtn = createInlineButton(openLabel, () => {
+      if (!openTarget) return;
+      window.open(openTarget, "_blank", "noopener,noreferrer");
+    });
+    openBtn.disabled = !openTarget;
+    actions.appendChild(openBtn);
+
+    wrapper.append(title, meta, actions);
+    duplicateCertList.appendChild(wrapper);
+  });
+}
+
+function closeDuplicateCertificateDialog({ keepPending = false } = {}) {
+  if (!keepPending) {
+    pendingDuplicateCertificate = null;
+  }
+  setDuplicateCertStatus("", "info");
+  if (
+    duplicateCertDialog &&
+    typeof duplicateCertDialog.close === "function" &&
+    duplicateCertDialog.open
+  ) {
+    duplicateCertDialog.close();
+  }
+}
+
+function openDuplicateCertificateDialog(prepared, duplicates) {
+  if (!duplicateCertDialog || !duplicateCertForm) return;
+
+  pendingDuplicateCertificate = {
+    prepared,
+    duplicates: Array.isArray(duplicates) ? duplicates : [],
+  };
+
+  if (duplicateCertMessage) {
+    duplicateCertMessage.textContent =
+      "Já existem certificados emitidos com o mesmo nome, curso e data na secretaria ativa.";
+  }
+  if (duplicateCertSummary) {
+    duplicateCertSummary.textContent =
+      `${pendingDuplicateCertificate.duplicates.length} certificado(s) semelhante(s) encontrado(s). ` +
+      "Abra um existente para reimpressão ou escolha gerar mesmo assim.";
+  }
+
+  renderDuplicateCertificateList(pendingDuplicateCertificate.duplicates);
+  setDuplicateCertStatus("", "info");
+  if (typeof duplicateCertDialog.showModal === "function") {
+    duplicateCertDialog.showModal();
   }
 }
 
@@ -1109,6 +1207,15 @@ function renderUsersTable() {
         switchSection("admin");
       })
     );
+    actionsWrap.appendChild(
+      createInlineButton(
+        "Excluir",
+        () => {
+          void deleteUser(usuario);
+        },
+        "danger-btn"
+      )
+    );
     actionsCell.appendChild(actionsWrap);
 
     row.append(
@@ -1158,6 +1265,15 @@ function renderSecretariasTable() {
         fillSecretariaForm(secretaria);
         switchSection("admin");
       })
+    );
+    actionsWrap.appendChild(
+      createInlineButton(
+        "Excluir",
+        () => {
+          void deleteSecretaria(secretaria);
+        },
+        "danger-btn"
+      )
     );
     actionsCell.appendChild(actionsWrap);
 
@@ -1396,7 +1512,7 @@ async function loadAdminData() {
     adminState.templates = Array.isArray(templates) ? templates : [];
     populateSecretariaOptions(
       userSecretariasSelect,
-      adminState.secretarias,
+      adminState.secretarias.filter((secretaria) => secretaria.ativa),
       "",
       false
     );
@@ -1532,8 +1648,14 @@ async function applySavedTemplateSelection(templateId, options = {}) {
     savedTemplate = null;
     savedTemplateImage = null;
     if (!silentStatus) {
+      let message =
+        (error && error.message) || "Nao foi possivel carregar o modelo selecionado.";
+      if (error && error.status === 404) {
+        message =
+          "O arquivo do molde cadastrado nao foi encontrado no servidor. Reenvie o molde na administracao.";
+      }
       setTemplateSelectStatus(
-        (error && error.message) || "Nao foi possivel carregar o modelo selecionado.",
+        message,
         "error"
       );
     }
@@ -1620,6 +1742,83 @@ async function deleteTemplate(template) {
   }
 }
 
+async function deleteUser(usuario) {
+  if (!usuario || !isAdminSession()) return;
+
+  const confirmed = window.confirm(
+    `Excluir o usuário ${usuario.username}? Os certificados já emitidos continuarão no histórico, mas ficarão sem vínculo com esse usuário.`
+  );
+  if (!confirmed) return;
+
+  try {
+    setUserFormStatus(`Excluindo usuário ${usuario.username}...`, "info");
+    const payload = await apiJsonRequest(`/api/admin/usuarios/${usuario.id}`, {
+      method: "DELETE",
+      body: "{}",
+    });
+    if (sanitizeText(userEditIdInput ? userEditIdInput.value : "") === String(usuario.id)) {
+      resetUserForm();
+    }
+    setUserFormStatus(
+      (payload && payload.message) || `Usuário ${usuario.username} excluído com sucesso.`,
+      "success"
+    );
+    await loadAdminData();
+    await loadAuditEvents(1);
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setUserFormStatus(
+      (error && error.message) || "Nao foi possivel excluir o usuario.",
+      "error"
+    );
+  }
+}
+
+async function deleteSecretaria(secretaria) {
+  if (!secretaria || !isAdminSession()) return;
+
+  const confirmed = window.confirm(
+    `Excluir a secretaria ${secretaria.sigla}? Isso removerá os moldes dela e desvinculará os usuários. Se houver certificados emitidos, a exclusão será bloqueada.`
+  );
+  if (!confirmed) return;
+
+  try {
+    setSecretariaFormStatus(`Excluindo secretaria ${secretaria.sigla}...`, "info");
+    const payload = await apiJsonRequest(`/api/admin/secretarias/${secretaria.id}`, {
+      method: "DELETE",
+      body: "{}",
+    });
+    if (
+      sanitizeText(secretariaEditIdInput ? secretariaEditIdInput.value : "") ===
+      String(secretaria.id)
+    ) {
+      resetSecretariaForm();
+    }
+    setSecretariaFormStatus(
+      (payload && payload.message) || `Secretaria ${secretaria.sigla} excluída com sucesso.`,
+      "success"
+    );
+    await refreshSession();
+    await loadAdminData();
+    await loadAvailableTemplates();
+    await loadAuditEvents(1);
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setSecretariaFormStatus(
+      (error && error.message) || "Nao foi possivel excluir a secretaria.",
+      "error"
+    );
+  }
+}
+
 async function refreshProtectedData(options = {}) {
   if (!sessionState) return;
 
@@ -1642,6 +1841,86 @@ async function registerSingleCertificate(cert) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+async function findPossibleDuplicateCertificates(cert) {
+  const query = buildQueryString({
+    nome: sanitizeText(cert.nome),
+    curso: sanitizeText(cert.curso),
+    concluido: sanitizeText(cert.data),
+    limite: 5,
+  });
+  const payload = await apiJsonRequest(`/api/certificados/possiveis-duplicados${query}`);
+  return Array.isArray(payload) ? payload : [];
+}
+
+async function executeSingleCertificateGeneration(prepared) {
+  if (!prepared) return;
+
+  isSingleGenerationRunning = true;
+  syncGenerateSubmitButton();
+
+  try {
+    setBatchStatus("Registrando certificado no backend...", "info");
+    const registered = await registerSingleCertificate({
+      nome: prepared.nome,
+      curso: prepared.curso,
+      data: prepared.data,
+      carga_h: prepared.cargaH,
+    });
+
+    const codigo = sanitizeText(registered.codigo).toUpperCase();
+    const qrText = sanitizeText(registered.url_validacao);
+
+    lastData = {
+      nome: prepared.nome,
+      curso: prepared.curso,
+      data: prepared.data,
+      cargaH: prepared.cargaH,
+      codigo,
+      linha1: prepared.linha1,
+      linha2: prepared.linha2,
+      qrText,
+    };
+    await drawCertificate(
+      prepared.nome,
+      prepared.curso,
+      prepared.data,
+      prepared.linha1,
+      prepared.linha2,
+      qrText,
+      codigo,
+      prepared.cargaH
+    );
+    const pngBlob = await canvasToPngBlob();
+    setBatchStatus(`Salvando o certificado ${codigo} no servidor...`, "info");
+    await uploadCertificateImage(codigo, pngBlob, codigo);
+    downloadBtn.disabled = false;
+    setBatchStatus(
+      `Certificado ${codigo} gerado com sucesso e salvo no servidor.`,
+      "success"
+    );
+    await loadCertificates(1);
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    const message = (() => {
+      if (error && error.operation === "png_upload") {
+        const codeLabel = sanitizeText(error.codigo).toUpperCase() || "sem código";
+        return `Certificado ${codeLabel} registrado, mas o PNG não foi salvo no servidor após ${error.maxAttempts || 1} tentativa(s).`;
+      }
+      return error && error.message
+        ? error.message
+        : "Falha ao gerar o certificado. Tente novamente.";
+    })();
+    setBatchStatus(message, "error");
+  } finally {
+    isSingleGenerationRunning = false;
+    syncGenerateSubmitButton();
+  }
 }
 
 async function registerBatchCertificates(items) {
@@ -2598,6 +2877,15 @@ function buildTimestamp() {
 function setBatchButtonsDisabled(disabled) {
   if (batchPreviewBtn) batchPreviewBtn.disabled = disabled;
   if (batchGenerateBtn) batchGenerateBtn.disabled = disabled;
+  syncGenerateSubmitButton();
+}
+
+function syncGenerateSubmitButton() {
+  if (!generateSubmitBtn) return;
+  generateSubmitBtn.disabled = isBatchRunning || isSingleGenerationRunning;
+  generateSubmitBtn.textContent = isSingleGenerationRunning
+    ? "Gerando..."
+    : "Gerar Certificado";
 }
 
 function getBatchDefaults() {
@@ -2985,7 +3273,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 } else {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (isBatchRunning) return;
+    if (isBatchRunning || isSingleGenerationRunning) return;
     if (!sessionState) {
       await handleUnauthorized();
       return;
@@ -3005,43 +3293,37 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     try {
       const textoLinha1 = textoLinha1Input ? textoLinha1Input.value.trim() : "";
       const textoLinha2 = textoLinha2Input ? textoLinha2Input.value.trim() : "";
-      const linha1 = textoLinha1 || defaultTextoLinha1;
-      const linha2 = textoLinha2 || defaultTextoLinha2;
-
-      setBatchStatus("Registrando certificado no backend...", "info");
-      const registered = await registerSingleCertificate({
+      const prepared = {
         nome,
         curso,
         data,
-        carga_h: cargaH,
-      });
+        cargaH,
+        linha1: textoLinha1 || defaultTextoLinha1,
+        linha2: textoLinha2 || defaultTextoLinha2,
+      };
 
-      const codigo = sanitizeText(registered.codigo).toUpperCase();
-      const qrText = sanitizeText(registered.url_validacao);
+      setBatchStatus("Verificando possíveis certificados já emitidos...", "info");
+      const duplicates = await findPossibleDuplicateCertificates(prepared);
+      if (duplicates.length) {
+        setBatchStatus(
+          `Encontramos ${duplicates.length} certificado(s) semelhante(s) já emitido(s).`,
+          "error"
+        );
+        openDuplicateCertificateDialog(prepared, duplicates);
+        return;
+      }
 
-      lastData = { nome, curso, data, cargaH, codigo, linha1, linha2, qrText };
-      await drawCertificate(nome, curso, data, linha1, linha2, qrText, codigo, cargaH);
-      const pngBlob = await canvasToPngBlob();
-      await uploadCertificateImage(codigo, pngBlob, codigo);
-      downloadBtn.disabled = false;
-      setBatchStatus("", "info");
-      await loadCertificates(1);
+      await executeSingleCertificateGeneration(prepared);
     } catch (error) {
       console.error(error);
       if (error && error.status === 401) {
         await handleUnauthorized();
         return;
       }
-      const message = (() => {
-        if (error && error.operation === "png_upload") {
-          const codeLabel = sanitizeText(error.codigo).toUpperCase() || "sem código";
-          return `Certificado ${codeLabel} registrado, mas o PNG não foi salvo no servidor após ${error.maxAttempts || 1} tentativa(s).`;
-        }
-        return error && error.message
-          ? error.message
-          : "Falha ao gerar o certificado. Tente novamente.";
-      })();
-      setBatchStatus(message, "error");
+      setBatchStatus(
+        (error && error.message) || "Nao foi possivel verificar certificados semelhantes.",
+        "error"
+      );
     }
   });
 
@@ -3590,6 +3872,58 @@ if (deleteCertCancelBtn) {
   });
 }
 
+if (duplicateCertCancelBtn) {
+  duplicateCertCancelBtn.addEventListener("click", () => {
+    closeDuplicateCertificateDialog();
+    setBatchStatus("Geração cancelada. Use um certificado existente ou ajuste os dados.", "info");
+  });
+}
+
+if (duplicateCertViewExistingBtn) {
+  duplicateCertViewExistingBtn.addEventListener("click", () => {
+    if (!pendingDuplicateCertificate || !pendingDuplicateCertificate.duplicates.length) {
+      setDuplicateCertStatus("Nenhum certificado existente disponível para abrir.", "error");
+      return;
+    }
+
+    const [firstMatch] = pendingDuplicateCertificate.duplicates;
+    const openTarget =
+      firstMatch.arquivo_admin_url || firstMatch.arquivo_url || firstMatch.url_validacao || "";
+    if (!openTarget) {
+      setDuplicateCertStatus("O certificado existente não possui um arquivo para abrir.", "error");
+      return;
+    }
+
+    window.open(openTarget, "_blank", "noopener,noreferrer");
+    closeDuplicateCertificateDialog();
+    setBatchStatus(
+      `Abrindo o certificado existente ${firstMatch.codigo}. Gere um novo apenas se realmente precisar duplicar.`,
+      "info"
+    );
+  });
+}
+
+if (duplicateCertDialog) {
+  duplicateCertDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeDuplicateCertificateDialog();
+  });
+}
+
+if (duplicateCertForm) {
+  duplicateCertForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!pendingDuplicateCertificate || isSingleGenerationRunning || isBatchRunning) {
+      setDuplicateCertStatus("Nenhuma geração pendente para confirmar.", "error");
+      return;
+    }
+
+    const prepared = pendingDuplicateCertificate.prepared;
+    closeDuplicateCertificateDialog();
+    await executeSingleCertificateGeneration(prepared);
+  });
+}
+
 if (deleteCertDialog) {
   deleteCertDialog.addEventListener("cancel", (event) => {
     event.preventDefault();
@@ -3671,6 +4005,7 @@ setTodayDate();
 syncUserFormState();
 syncSecretariaFormState();
 syncTemplateAdminFormState();
+syncGenerateSubmitButton();
 updateControlLabels();
 syncTemplateControls();
 setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");

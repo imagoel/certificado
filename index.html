@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
-  <link rel="stylesheet" href="styles.css?v=20260328-2" />
+  <link rel="stylesheet" href="styles.css?v=20260328-3" />
 </head>
 <body>
   <main class="container">
@@ -584,6 +584,36 @@
     </section>
   </main>
 
+  <dialog id="duplicate-cert-dialog" class="modal-dialog">
+    <form id="duplicate-cert-form" class="form modal-form" method="dialog">
+      <div class="panel-header">
+        <div>
+          <h2>Possível Duplicidade</h2>
+          <p id="duplicate-cert-message" class="subtitle">
+            Encontramos certificados já emitidos com os mesmos dados.
+          </p>
+        </div>
+      </div>
+
+      <div id="duplicate-cert-summary" class="confirm-summary">
+        Nenhum certificado semelhante encontrado.
+      </div>
+
+      <div id="duplicate-cert-list" class="duplicate-cert-list"></div>
+
+      <div class="actions">
+        <button type="submit">Gerar mesmo assim</button>
+        <button id="duplicate-cert-view-existing" type="button" class="secondary-btn">
+          Ver existente
+        </button>
+        <button id="duplicate-cert-cancel" type="button" class="secondary-btn">
+          Cancelar
+        </button>
+      </div>
+      <p id="duplicate-cert-status" class="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
   <dialog id="delete-cert-dialog" class="modal-dialog">
     <form id="delete-cert-form" class="form modal-form" method="dialog">
       <div class="panel-header">
@@ -658,6 +688,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260328-7"></script>
+  <script src="app.js?v=20260328-9"></script>
 </body>
 </html>

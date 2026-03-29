@@ -14,11 +14,12 @@ from common import (
     record_audit_event,
     require_admin_user,
     resolve_media_path,
+    resolve_template_media_path,
     sanitize_code,
     validate_role_and_secretarias,
 )
 from database import get_db
-from models import AuditEvent, Certificate, Secretaria, Usuario
+from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, Usuario
 from schemas import (
     ActionResponse,
     CertificateAdminDeleteRequest,
@@ -214,6 +215,123 @@ def admin_update_user(
     db.commit()
     db.refresh(usuario)
     return build_user_admin_response(usuario)
+
+
+@router.delete("/api/admin/usuarios/{usuario_id}", response_model=ActionResponse)
+def admin_delete_user(
+    usuario_id: int,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> ActionResponse:
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado.")
+
+    if usuario.id == admin_user.id:
+        raise HTTPException(
+            status_code=422,
+            detail="Nao e permitido excluir o usuario atualmente autenticado.",
+        )
+
+    username = usuario.username
+    user_id = usuario.id
+    user_secretaria = usuario.secretarias[0] if usuario.secretarias else None
+
+    db.query(Certificate).filter(Certificate.emitido_por_usuario_id == user_id).update(
+        {Certificate.emitido_por_usuario_id: None},
+        synchronize_session=False,
+    )
+    db.query(CertificateTemplate).filter(
+        CertificateTemplate.criado_por_usuario_id == user_id
+    ).update(
+        {CertificateTemplate.criado_por_usuario_id: None},
+        synchronize_session=False,
+    )
+    db.query(AuditEvent).filter(AuditEvent.usuario_id == user_id).update(
+        {AuditEvent.usuario_id: None},
+        synchronize_session=False,
+    )
+
+    usuario.secretarias.clear()
+    db.delete(usuario)
+    db.flush()
+    record_audit_event(
+        db,
+        evento="usuario_excluido",
+        descricao=f"Usuario {username} excluido por {admin_user.username}.",
+        usuario=admin_user,
+        secretaria=user_secretaria,
+        entidade_tipo="usuario",
+        entidade_id=user_id,
+    )
+    db.commit()
+
+    return ActionResponse(message=f"Usuario {username} excluido com sucesso.")
+
+
+@router.delete("/api/admin/secretarias/{secretaria_id}", response_model=ActionResponse)
+def admin_delete_secretaria(
+    secretaria_id: int,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> ActionResponse:
+    secretaria = db.query(Secretaria).filter(Secretaria.id == secretaria_id).first()
+    if not secretaria:
+        raise HTTPException(status_code=404, detail="Secretaria nao encontrada.")
+
+    cert_count = (
+        db.query(Certificate.id)
+        .filter(Certificate.secretaria_id == secretaria.id)
+        .count()
+    )
+    if cert_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"A secretaria {secretaria.sigla} possui {cert_count} certificado(s) emitido(s). "
+                "Por seguranca, ela nao pode ser excluida; use desativacao."
+            ),
+        )
+
+    sigla = secretaria.sigla
+    secretaria_id_original = secretaria.id
+    templates = list(secretaria.moldes)
+
+    for template in templates:
+        file_path = None
+        if template.arquivo_relpath:
+            try:
+                file_path = resolve_template_media_path(template.arquivo_relpath)
+            except HTTPException:
+                file_path = None
+        if file_path and file_path.exists():
+            try:
+                file_path.unlink()
+            except OSError as error:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Nao foi possivel remover um arquivo de molde: {error}",
+                ) from error
+        db.delete(template)
+
+    secretaria.usuarios.clear()
+    db.query(AuditEvent).filter(AuditEvent.secretaria_id == secretaria.id).update(
+        {AuditEvent.secretaria_id: None},
+        synchronize_session=False,
+    )
+    db.delete(secretaria)
+    db.flush()
+    record_audit_event(
+        db,
+        evento="secretaria_excluida",
+        descricao=f"Secretaria {sigla} excluida por {admin_user.username}.",
+        usuario=admin_user,
+        entidade_tipo="secretaria",
+        entidade_id=secretaria_id_original,
+    )
+    db.commit()
+
+    return ActionResponse(message=f"Secretaria {sigla} excluida com sucesso.")
 
 
 @router.get("/api/admin/auditoria", response_model=PaginatedAuditEventResponse)

@@ -27,6 +27,37 @@ def test_operador_cria_certificado_com_secretaria_ativa_e_validacao_publica(
     assert validation_response.json()["valido"] is True
 
 
+def test_api_lista_possiveis_duplicados_na_secretaria_ativa(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    create_response = client.post(
+        "/api/certificados",
+        json={
+            "nome": "Lucas Silva",
+            "cpf": None,
+            "curso": "Filosofia",
+            "carga_h": 45,
+            "concluido": "2026-03-28",
+        },
+    )
+    assert create_response.status_code == 201
+
+    duplicate_response = client.get(
+        "/api/certificados/possiveis-duplicados",
+        params={
+            "nome": "Lucas Silva",
+            "curso": "Filosofia",
+            "concluido": "2026-03-28",
+        },
+    )
+
+    assert duplicate_response.status_code == 200
+    payload = duplicate_response.json()
+    assert len(payload) == 1
+    assert payload[0]["nome"] == "Lucas Silva"
+    assert payload[0]["curso"] == "Filosofia"
+
+
 def test_admin_exclui_certificado_com_confirmacao_e_senha(client, seed_data, login):
     login("operador", seed_data["operador_password"])
     create_response = client.post(
