@@ -274,12 +274,19 @@ button[disabled] {
   margin-bottom: 2px;
 }
 
+.generator-asset-block .status {
+  min-height: 0;
+}
+
+.generator-asset-block .status:empty {
+  display: none;
+}
+
 .asset-upload-group {
   display: grid;
-  gap: 6px;
-  margin-top: 4px;
-  padding-top: 10px;
-  border-top: 1px dashed #cbd9ec;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 2px;
 }
 
 .asset-upload-group input[type="file"] {

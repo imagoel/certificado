@@ -936,7 +936,7 @@ function clearSessionUi(message = "") {
   if (logoInput) logoInput.value = "";
   if (assinaturaInput) assinaturaInput.value = "";
   syncTemplateControls();
-  setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");
+  setTemplateStatus("", "info");
   if (templateSelect) {
     populateTemplateOptions(templateSelect, [], "", true);
   }
@@ -2016,6 +2016,9 @@ async function applySavedTemplateSelection(templateId, options = {}) {
   if (templateSelect) {
     templateSelect.value = normalizedId;
   }
+  if (!assets.template) {
+    setTemplateStatus("", "info");
+  }
 
   if (!normalizedId) {
     savedTemplate = null;
@@ -2150,6 +2153,9 @@ async function applySavedSecretariaAssetSelection(type, assetId, options = {}) {
   catalog.selectedId = normalizedId;
   if (ui.select) {
     ui.select.value = normalizedId;
+  }
+  if (!assets[type]) {
+    ui.setManualStatus("", "info");
   }
 
   if (!normalizedId) {
@@ -3122,17 +3128,17 @@ async function handleAssetChange(input, key, options = {}) {
     if (key === "template") {
       const message = savedTemplate
         ? `Molde temporário removido. A prévia voltou a usar o modelo ${savedTemplate.nome}.`
-        : "Nenhum molde carregado. O certificado seguirá usando o fundo padrão.";
+        : "";
       setTemplateStatus(message, "info");
     } else if (key === "logo") {
       const message = savedLogo
         ? `Logo temporária removida. A prévia voltou a usar a logo ${savedLogo.nome}.`
-        : "Nenhuma logo temporária carregada. A prévia seguirá sem logo ou com a logo cadastrada selecionada.";
+        : "";
       setLogoStatus(message, "info");
     } else if (key === "assinatura") {
       const message = savedAssinatura
         ? `Assinatura temporária removida. A prévia voltou a usar a assinatura ${savedAssinatura.nome}.`
-        : "Nenhuma assinatura temporária carregada. A prévia seguirá sem assinatura ou com a assinatura cadastrada selecionada.";
+        : "";
       setAssinaturaStatus(message, "info");
     }
     void renderLastCertificate();
