@@ -233,6 +233,14 @@
             <p id="cert-list-summary" class="summary-pill"></p>
           </div>
 
+          <div class="quick-filter-bar" aria-label="Filtros rápidos de certificados">
+            <span class="quick-filter-label">Atalhos</span>
+            <button type="button" id="cert-quick-today" class="quick-filter-btn">Hoje</button>
+            <button type="button" id="cert-quick-last7" class="quick-filter-btn">Últimos 7 dias</button>
+            <button type="button" id="cert-quick-active-secretaria" class="quick-filter-btn">Secretaria ativa</button>
+            <button type="button" id="cert-quick-with-file" class="quick-filter-btn">Com PNG</button>
+          </div>
+
           <form id="cert-list-filters" class="filter-grid">
             <div class="field-stack field-span-2">
               <label for="cert-filter-busca">Busca</label>
@@ -320,6 +328,13 @@
             <p id="audit-summary" class="summary-pill"></p>
           </div>
 
+          <div class="quick-filter-bar" aria-label="Filtros rápidos de auditoria">
+            <span class="quick-filter-label">Atalhos</span>
+            <button type="button" id="audit-quick-today" class="quick-filter-btn">Hoje</button>
+            <button type="button" id="audit-quick-last7" class="quick-filter-btn">Últimos 7 dias</button>
+            <button type="button" id="audit-quick-active-secretaria" class="quick-filter-btn">Secretaria ativa</button>
+          </div>
+
           <form id="audit-form" class="filter-grid audit-grid">
             <div class="field-stack field-span-2">
               <label for="audit-search">Busca</label>
@@ -351,6 +366,16 @@
               <select id="audit-secretaria">
                 <option value="">Todas</option>
               </select>
+            </div>
+
+            <div class="field-stack">
+              <label for="audit-created-de">De</label>
+              <input id="audit-created-de" type="date" />
+            </div>
+
+            <div class="field-stack">
+              <label for="audit-created-ate">Até</label>
+              <input id="audit-created-ate" type="date" />
             </div>
 
             <div class="actions actions-end">

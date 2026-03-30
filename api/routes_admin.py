@@ -1,5 +1,6 @@
 import math
 from pathlib import Path
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_
@@ -367,6 +368,8 @@ def admin_list_audit_events(
     busca: str = Query(default="", description="Busca por descricao, usuario ou codigo"),
     evento: str = Query(default="", description="Filtrar por tipo de evento"),
     secretaria_id: int | None = Query(default=None, ge=1, description="Filtrar por secretaria"),
+    criado_de: date | None = Query(default=None, description="Filtrar eventos a partir de"),
+    criado_ate: date | None = Query(default=None, description="Filtrar eventos ate"),
     db: Session = Depends(get_db),
     _usuario: Usuario = Depends(require_admin_user),
 ) -> PaginatedAuditEventResponse:
@@ -389,6 +392,12 @@ def admin_list_audit_events(
 
     if secretaria_id:
         query = query.filter(AuditEvent.secretaria_id == secretaria_id)
+
+    if criado_de:
+        query = query.filter(AuditEvent.criado_em >= datetime.combine(criado_de, datetime.min.time()))
+
+    if criado_ate:
+        query = query.filter(AuditEvent.criado_em <= datetime.combine(criado_ate, datetime.max.time()))
 
     total = query.count()
     paginas = max(1, math.ceil(total / por_pagina))

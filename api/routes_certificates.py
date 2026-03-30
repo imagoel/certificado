@@ -16,8 +16,8 @@ from common import (
     ensure_certificate_access,
     get_accessible_secretarias,
     get_current_user,
-    has_certificate_file,
     is_admin,
+    is_certificate_ready,
     normalize_prefix,
     record_audit_event,
     require_active_secretaria,
@@ -29,8 +29,9 @@ from common import (
 )
 from certificate_sequences import build_reserved_codes, reserve_sequence_block
 from database import get_db
-from models import Certificate, Secretaria, Usuario
+from models import AuditEvent, Certificate, Secretaria, Usuario
 from schemas import (
+    ActionResponse,
     CertificateBatchCreate,
     CertificateCreate,
     CertificateResponse,
@@ -89,6 +90,8 @@ def list_certificates(
         query = query.filter(Certificate.emitido_em < datetime.combine(emitido_ate, datetime.max.time()))
     if somente_com_arquivo:
         query = query.filter(Certificate.arquivo_relpath.isnot(None))
+
+    query = query.filter(Certificate.arquivo_pendente.is_(False))
 
     if is_admin(usuario):
         if secretaria_id:
@@ -149,6 +152,7 @@ def list_possible_duplicate_certificates(
         db.query(Certificate)
         .filter(
             Certificate.secretaria_id == secretaria.id,
+            Certificate.arquivo_pendente.is_(False),
             Certificate.concluido == concluido,
             func.lower(Certificate.nome) == nome_normalizado,
             func.lower(Certificate.curso) == curso_normalizado,
@@ -202,6 +206,7 @@ def create_certificate(
         concluido=payload.concluido,
         emitido_em=utc_now(),
         hash=cert_hash,
+        arquivo_pendente=True,
         secretaria_id=secretaria.id,
         emitido_por_usuario_id=usuario.id,
     )
@@ -283,6 +288,7 @@ def create_certificates_batch(
             concluido=item.concluido,
             emitido_em=utc_now(),
             hash=cert_hash,
+            arquivo_pendente=True,
             secretaria_id=secretaria.id,
             emitido_por_usuario_id=usuario.id,
         )
@@ -344,6 +350,7 @@ async def upload_certificate_file(
     cert.arquivo_relpath = relative_path.replace("\\", "/")
     cert.arquivo_mime = "image/png"
     cert.arquivo_bytes = len(content)
+    cert.arquivo_pendente = False
     record_audit_event(
         db,
         evento="certificado_png_enviado",
@@ -357,6 +364,79 @@ async def upload_certificate_file(
     db.commit()
     db.refresh(cert)
     return to_response(cert, request)
+
+
+@router.delete("/api/certificados/{codigo}/pendente", response_model=ActionResponse)
+def discard_pending_certificate(
+    codigo: str,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> ActionResponse:
+    normalized_code = sanitize_code(codigo)
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
+
+    ensure_certificate_access(db, usuario, cert)
+    if not is_admin(usuario) and cert.emitido_por_usuario_id != usuario.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Somente o emissor original ou um administrador pode descartar este pendente.",
+        )
+
+    if is_certificate_ready(cert):
+        raise HTTPException(
+            status_code=409,
+            detail="O certificado ja possui PNG salvo e nao pode ser descartado por esta rota.",
+        )
+
+    cert_id = cert.id
+    cert_code = cert.codigo
+    cert_name = cert.nome
+    cert_secretaria = cert.secretaria
+
+    if cert.arquivo_relpath:
+        try:
+            file_path = resolve_media_path(cert.arquivo_relpath)
+        except HTTPException:
+            file_path = None
+        if file_path and file_path.exists():
+            try:
+                file_path.unlink()
+            except OSError as error:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Nao foi possivel remover o arquivo pendente do certificado: {error}",
+                ) from error
+
+    db.query(AuditEvent).filter(AuditEvent.certificado_id == cert_id).update(
+        {
+            AuditEvent.certificado_codigo_snapshot: cert_code,
+            AuditEvent.certificado_id: None,
+        },
+        synchronize_session=False,
+    )
+    db.delete(cert)
+    db.flush()
+    record_audit_event(
+        db,
+        evento="certificado_pendente_descartado",
+        descricao=(
+            f"Certificado pendente {cert_code} ({cert_name}) descartado automaticamente por "
+            f"{usuario.username} apos falha no salvamento do PNG."
+        ),
+        usuario=usuario,
+        secretaria=cert_secretaria,
+        certificado_codigo=cert_code,
+        entidade_tipo="certificado",
+        entidade_id=cert_id,
+    )
+    db.commit()
+
+    return ActionResponse(
+        message=f"Certificado pendente {cert_code} descartado com sucesso.",
+        codigo=cert_code,
+    )
 
 
 @router.get("/api/certificados/{codigo}/arquivo", name="get_certificate_file")

@@ -44,6 +44,10 @@ const certFilterConcluidoAteInput = document.getElementById("cert-filter-conclui
 const certFilterEmitidoDeInput = document.getElementById("cert-filter-emitido-de");
 const certFilterEmitidoAteInput = document.getElementById("cert-filter-emitido-ate");
 const certFilterComArquivoInput = document.getElementById("cert-filter-com-arquivo");
+const certQuickTodayBtn = document.getElementById("cert-quick-today");
+const certQuickLast7Btn = document.getElementById("cert-quick-last7");
+const certQuickActiveSecretariaBtn = document.getElementById("cert-quick-active-secretaria");
+const certQuickWithFileBtn = document.getElementById("cert-quick-with-file");
 const certFilterResetBtn = document.getElementById("cert-filter-reset");
 const certListStatus = document.getElementById("cert-list-status");
 const certListSummary = document.getElementById("cert-list-summary");
@@ -113,6 +117,11 @@ const auditSearchInput = document.getElementById("audit-search");
 const auditEventSelect = document.getElementById("audit-event");
 const auditSecretariaWrap = document.getElementById("audit-secretaria-wrap");
 const auditSecretariaSelect = document.getElementById("audit-secretaria");
+const auditCreatedDeInput = document.getElementById("audit-created-de");
+const auditCreatedAteInput = document.getElementById("audit-created-ate");
+const auditQuickTodayBtn = document.getElementById("audit-quick-today");
+const auditQuickLast7Btn = document.getElementById("audit-quick-last7");
+const auditQuickActiveSecretariaBtn = document.getElementById("audit-quick-active-secretaria");
 const auditResetBtn = document.getElementById("audit-reset");
 const auditStatus = document.getElementById("audit-status");
 const auditSummary = document.getElementById("audit-summary");
@@ -263,6 +272,8 @@ const auditState = {
     busca: "",
     evento: "",
     secretariaId: "",
+    criadoDe: "",
+    criadoAte: "",
   },
 };
 
@@ -305,6 +316,21 @@ function toDateInputValue(date) {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function getLastDaysRange(days) {
+  const end = new Date();
+  const start = addDays(end, -(days - 1));
+  return {
+    start: toDateInputValue(start),
+    end: toDateInputValue(end),
+  };
+}
+
 function setTodayDate() {
   const dateInput = document.getElementById("data");
   if (!dateInput) return;
@@ -339,6 +365,144 @@ function formatFileSize(bytes) {
 
   const decimals = value >= 10 || unitIndex === 0 ? 0 : 1;
   return `${value.toFixed(decimals).replace(".", ",")} ${units[unitIndex]}`;
+}
+
+function setQuickButtonState(button, active) {
+  if (!button) return;
+  button.classList.toggle("is-active", Boolean(active));
+}
+
+function syncCertificateFilterInputsFromState() {
+  if (certFilterBuscaInput) certFilterBuscaInput.value = certListState.filters.busca || "";
+  if (certFilterSecretariaSelect) {
+    certFilterSecretariaSelect.value = certListState.filters.secretariaId || "";
+  }
+  if (certFilterConcluidoDeInput) {
+    certFilterConcluidoDeInput.value = certListState.filters.concluidoDe || "";
+  }
+  if (certFilterConcluidoAteInput) {
+    certFilterConcluidoAteInput.value = certListState.filters.concluidoAte || "";
+  }
+  if (certFilterEmitidoDeInput) {
+    certFilterEmitidoDeInput.value = certListState.filters.emitidoDe || "";
+  }
+  if (certFilterEmitidoAteInput) {
+    certFilterEmitidoAteInput.value = certListState.filters.emitidoAte || "";
+  }
+  if (certFilterComArquivoInput) {
+    certFilterComArquivoInput.checked = Boolean(certListState.filters.somenteComArquivo);
+  }
+  updateCertificateQuickFilterButtons();
+}
+
+function readCertificateFiltersFromInputs() {
+  certListState.filters.busca = certFilterBuscaInput ? certFilterBuscaInput.value.trim() : "";
+  certListState.filters.secretariaId = certFilterSecretariaSelect
+    ? certFilterSecretariaSelect.value
+    : "";
+  certListState.filters.concluidoDe = certFilterConcluidoDeInput
+    ? certFilterConcluidoDeInput.value
+    : "";
+  certListState.filters.concluidoAte = certFilterConcluidoAteInput
+    ? certFilterConcluidoAteInput.value
+    : "";
+  certListState.filters.emitidoDe = certFilterEmitidoDeInput
+    ? certFilterEmitidoDeInput.value
+    : "";
+  certListState.filters.emitidoAte = certFilterEmitidoAteInput
+    ? certFilterEmitidoAteInput.value
+    : "";
+  certListState.filters.somenteComArquivo = certFilterComArquivoInput
+    ? certFilterComArquivoInput.checked
+    : false;
+}
+
+function resetCertificateFiltersState() {
+  certListState.filters.busca = "";
+  certListState.filters.secretariaId = "";
+  certListState.filters.concluidoDe = "";
+  certListState.filters.concluidoAte = "";
+  certListState.filters.emitidoDe = "";
+  certListState.filters.emitidoAte = "";
+  certListState.filters.somenteComArquivo = false;
+}
+
+function updateCertificateQuickFilterButtons() {
+  const todayRange = getLastDaysRange(1);
+  const last7Range = getLastDaysRange(7);
+  const activeSecretariaId = sessionState && sessionState.secretaria_ativa_id
+    ? String(sessionState.secretaria_ativa_id)
+    : "";
+
+  setQuickButtonState(
+    certQuickTodayBtn,
+    certListState.filters.emitidoDe === todayRange.start
+      && certListState.filters.emitidoAte === todayRange.end
+  );
+  setQuickButtonState(
+    certQuickLast7Btn,
+    certListState.filters.emitidoDe === last7Range.start
+      && certListState.filters.emitidoAte === last7Range.end
+  );
+  setQuickButtonState(
+    certQuickActiveSecretariaBtn,
+    Boolean(activeSecretariaId)
+      && String(certListState.filters.secretariaId || "") === activeSecretariaId
+  );
+  setQuickButtonState(certQuickWithFileBtn, Boolean(certListState.filters.somenteComArquivo));
+}
+
+function syncAuditFilterInputsFromState() {
+  if (auditSearchInput) auditSearchInput.value = auditState.filters.busca || "";
+  if (auditEventSelect) auditEventSelect.value = auditState.filters.evento || "";
+  if (auditSecretariaSelect) {
+    auditSecretariaSelect.value = auditState.filters.secretariaId || "";
+  }
+  if (auditCreatedDeInput) auditCreatedDeInput.value = auditState.filters.criadoDe || "";
+  if (auditCreatedAteInput) auditCreatedAteInput.value = auditState.filters.criadoAte || "";
+  updateAuditQuickFilterButtons();
+}
+
+function readAuditFiltersFromInputs() {
+  auditState.filters.busca = auditSearchInput ? auditSearchInput.value.trim() : "";
+  auditState.filters.evento = auditEventSelect ? auditEventSelect.value : "";
+  auditState.filters.secretariaId = auditSecretariaSelect
+    ? auditSecretariaSelect.value
+    : "";
+  auditState.filters.criadoDe = auditCreatedDeInput ? auditCreatedDeInput.value : "";
+  auditState.filters.criadoAte = auditCreatedAteInput ? auditCreatedAteInput.value : "";
+}
+
+function resetAuditFiltersState() {
+  auditState.filters.busca = "";
+  auditState.filters.evento = "";
+  auditState.filters.secretariaId = "";
+  auditState.filters.criadoDe = "";
+  auditState.filters.criadoAte = "";
+}
+
+function updateAuditQuickFilterButtons() {
+  const todayRange = getLastDaysRange(1);
+  const last7Range = getLastDaysRange(7);
+  const activeSecretariaId = sessionState && sessionState.secretaria_ativa_id
+    ? String(sessionState.secretaria_ativa_id)
+    : "";
+
+  setQuickButtonState(
+    auditQuickTodayBtn,
+    auditState.filters.criadoDe === todayRange.start
+      && auditState.filters.criadoAte === todayRange.end
+  );
+  setQuickButtonState(
+    auditQuickLast7Btn,
+    auditState.filters.criadoDe === last7Range.start
+      && auditState.filters.criadoAte === last7Range.end
+  );
+  setQuickButtonState(
+    auditQuickActiveSecretariaBtn,
+    Boolean(activeSecretariaId)
+      && String(auditState.filters.secretariaId || "") === activeSecretariaId
+  );
 }
 
 function getCertificateUploadMaxBytes() {
@@ -833,6 +997,9 @@ function renderSession(session) {
   if (!isAdminSession(session) && isAdminOnlySection(currentSection)) {
     switchSection("generator");
   }
+
+  syncCertificateFilterInputsFromState();
+  syncAuditFilterInputsFromState();
 }
 
 function clearSessionUi(message = "") {
@@ -855,6 +1022,8 @@ function clearSessionUi(message = "") {
   auditState.filters.busca = "";
   auditState.filters.evento = "";
   auditState.filters.secretariaId = "";
+  auditState.filters.criadoDe = "";
+  auditState.filters.criadoAte = "";
   setAuthenticatedView(false);
   downloadBtn.disabled = true;
   if (sessionUser) sessionUser.textContent = "";
@@ -873,10 +1042,14 @@ function clearSessionUi(message = "") {
   if (certFilterSecretariaWrap) certFilterSecretariaWrap.hidden = false;
   if (auditSearchInput) auditSearchInput.value = "";
   if (auditEventSelect) auditEventSelect.value = "";
+  if (auditCreatedDeInput) auditCreatedDeInput.value = "";
+  if (auditCreatedAteInput) auditCreatedAteInput.value = "";
   if (auditSecretariaSelect) {
     auditSecretariaSelect.innerHTML = '<option value="">Todas</option>';
   }
   if (auditSecretariaWrap) auditSecretariaWrap.hidden = false;
+  updateCertificateQuickFilterButtons();
+  updateAuditQuickFilterButtons();
   if (certListBody) {
     certListBody.innerHTML = `
       <tr>
@@ -1791,6 +1964,7 @@ async function loadCertificates(page = certListState.page) {
   if (!sessionState) return;
 
   certListState.page = page;
+  syncCertificateFilterInputsFromState();
   setCertListStatus("Carregando certificados...", "info");
 
   try {
@@ -1823,6 +1997,9 @@ async function loadCertificates(page = certListState.page) {
     setCertListStatus("", "info");
   } catch (error) {
     console.error(error);
+    if (unresolvedCertificates.size) {
+      await cleanupPendingCertificates(Array.from(unresolvedCertificates.values()));
+    }
     if (error && error.status === 401) {
       await handleUnauthorized();
       return;
@@ -1838,6 +2015,7 @@ async function loadAuditEvents(page = auditState.page) {
   if (!sessionState || !isAdminSession()) return;
 
   auditState.page = page;
+  syncAuditFilterInputsFromState();
   setAuditStatus("Carregando auditoria...", "info");
 
   try {
@@ -1848,6 +2026,8 @@ async function loadAuditEvents(page = auditState.page) {
         busca: auditState.filters.busca,
         evento: auditState.filters.evento,
         secretaria_id: auditState.filters.secretariaId,
+        criado_de: auditState.filters.criadoDe,
+        criado_ate: auditState.filters.criadoAte,
       })}`
     );
 
@@ -2454,6 +2634,8 @@ async function executeSingleCertificateGeneration(prepared) {
 
   isSingleGenerationRunning = true;
   syncGenerateSubmitButton();
+  let registeredCode = "";
+  let uploadSucceeded = false;
 
   try {
     setBatchStatus("Registrando certificado no backend...", "info");
@@ -2465,6 +2647,7 @@ async function executeSingleCertificateGeneration(prepared) {
     });
 
     const codigo = sanitizeText(registered.codigo).toUpperCase();
+    registeredCode = codigo;
     const qrText = sanitizeText(registered.url_validacao);
 
     lastData = {
@@ -2491,6 +2674,7 @@ async function executeSingleCertificateGeneration(prepared) {
     ensureCertificatePngWithinLimit(pngBlob, codigo);
     setBatchStatus(`Salvando o certificado ${codigo} no servidor...`, "info");
     await uploadCertificateImage(codigo, pngBlob, codigo);
+    uploadSucceeded = true;
     downloadBtn.disabled = false;
     setBatchStatus(
       `Certificado ${codigo} gerado com sucesso e salvo no servidor.`,
@@ -2503,10 +2687,56 @@ async function executeSingleCertificateGeneration(prepared) {
       await handleUnauthorized();
       return;
     }
+    const shouldAttemptCleanup = Boolean(registeredCode) && !uploadSucceeded;
+    const cleanupResult = shouldAttemptCleanup
+      ? await tryDiscardPendingCertificate(registeredCode)
+      : null;
+
+    if (error && error.operation === "png_size") {
+      const codeLabel = sanitizeText(error.codigo || registeredCode).toUpperCase() || "sem codigo";
+      error.message =
+        cleanupResult && cleanupResult.discarded
+          ? `O PNG do certificado ${codeLabel} excedeu o limite permitido e o cadastro pendente foi descartado automaticamente. Ajuste os ativos visuais e gere novamente.`
+          : `O PNG do certificado ${codeLabel} excedeu o limite permitido. O cadastro pendente nao pode ser descartado automaticamente: ${cleanupResult && cleanupResult.message ? cleanupResult.message : "verifique o certificado pendente antes de tentar novamente."}`;
+      error.operation = "png_size_handled";
+    }
+
+    if (error && error.operation === "png_upload") {
+      const codeLabel = sanitizeText(error.codigo || registeredCode).toUpperCase() || "sem codigo";
+      error.message =
+        cleanupResult && cleanupResult.discarded
+          ? `Nao foi possivel salvar o PNG do certificado ${codeLabel} apos ${error.maxAttempts || 1} tentativa(s). O cadastro pendente foi descartado automaticamente para evitar certificado incompleto no sistema.`
+          : `Nao foi possivel salvar o PNG do certificado ${codeLabel} apos ${error.maxAttempts || 1} tentativa(s). O cadastro pendente nao pode ser descartado automaticamente: ${cleanupResult && cleanupResult.message ? cleanupResult.message : "verifique o certificado pendente antes de tentar novamente."}`;
+      error.operation = "png_upload_handled";
+    }
+
+    if (
+      shouldAttemptCleanup &&
+      cleanupResult &&
+      cleanupResult.discarded &&
+      error &&
+      !error.message
+    ) {
+      error.message = `Falha ao gerar o certificado. O cadastro pendente ${registeredCode} foi descartado automaticamente.`;
+    }
+
+    if (
+      shouldAttemptCleanup &&
+      cleanupResult &&
+      !cleanupResult.discarded &&
+      error &&
+      !error.message
+    ) {
+      error.message = `Falha ao gerar o certificado. O cadastro pendente ${registeredCode} nao pode ser descartado automaticamente: ${cleanupResult.message}`;
+    }
+
     const message = (() => {
       if (error && error.operation === "png_size") {
-        const codeLabel = sanitizeText(error.codigo).toUpperCase() || "sem codigo";
-        return `Certificado ${codeLabel} registrado, mas o PNG nao foi salvo no servidor porque excedeu o limite permitido. Use o botao "Baixar PNG" para revisar o arquivo e ajuste os ativos visuais antes de tentar novamente.`;
+        const codeLabel = sanitizeText(error.codigo || registeredCode).toUpperCase() || "sem codigo";
+        if (cleanupResult && cleanupResult.discarded) {
+          return `O PNG do certificado ${codeLabel} excedeu o limite permitido e o cadastro pendente foi descartado automaticamente. Ajuste os ativos visuais e gere novamente.`;
+        }
+        return `O PNG do certificado ${codeLabel} excedeu o limite permitido. O cadastro pendente nao pode ser descartado automaticamente: ${cleanupResult && cleanupResult.message ? cleanupResult.message : "verifique o certificado pendente antes de tentar novamente."}`;
       }
       if (error && error.operation === "png_upload") {
         const codeLabel = sanitizeText(error.codigo).toUpperCase() || "sem código";
@@ -2516,8 +2746,8 @@ async function executeSingleCertificateGeneration(prepared) {
         ? error.message
         : "Falha ao gerar o certificado. Tente novamente.";
     })();
-    if (error && (error.operation === "png_upload" || error.operation === "png_size")) {
-      downloadBtn.disabled = false;
+    if (shouldAttemptCleanup) {
+      downloadBtn.disabled = true;
       await loadCertificates(1);
     }
     setBatchStatus(message, "error");
@@ -2620,6 +2850,91 @@ async function uploadCertificateImage(codigo, pngBlob, fileName, options = {}) {
     }
   }
   return null;
+}
+
+async function discardPendingCertificate(codigo) {
+  const certCode = sanitizeText(codigo).toUpperCase();
+  if (!certCode) {
+    throw new Error("Codigo do certificado ausente para descarte do pendente.");
+  }
+
+  try {
+    return await apiJsonRequest(`/api/certificados/${encodeURIComponent(certCode)}/pendente`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    if (!error.operation) {
+      error.operation = "pending_discard";
+      error.codigo = certCode;
+    }
+    throw error;
+  }
+}
+
+async function tryDiscardPendingCertificate(codigo) {
+  const certCode = sanitizeText(codigo).toUpperCase();
+  if (!certCode) {
+    return {
+      attempted: false,
+      discarded: false,
+      message: "Codigo ausente para descarte do pendente.",
+    };
+  }
+
+  try {
+    const payload = await discardPendingCertificate(certCode);
+    return {
+      attempted: true,
+      discarded: true,
+      payload,
+      message:
+        (payload && payload.message) ||
+        `Certificado pendente ${certCode} descartado automaticamente.`,
+    };
+  } catch (error) {
+    if (error && error.status === 404) {
+      return {
+        attempted: true,
+        discarded: true,
+        message: `O certificado pendente ${certCode} ja nao estava mais disponivel para descarte.`,
+      };
+    }
+
+    return {
+      attempted: true,
+      discarded: false,
+      error,
+      message:
+        (error && error.message) ||
+        `Nao foi possivel descartar automaticamente o certificado pendente ${certCode}.`,
+    };
+  }
+}
+
+async function cleanupPendingCertificates(certificates) {
+  const discarded = [];
+  const failed = [];
+
+  for (const cert of certificates || []) {
+    if (!cert || !sanitizeText(cert.codigo)) continue;
+
+    const result = await tryDiscardPendingCertificate(cert.codigo);
+    if (result.discarded) {
+      discarded.push({
+        cert,
+        message: result.message,
+      });
+      continue;
+    }
+
+    failed.push({
+      cert,
+      message: result.message,
+      error: result.error || null,
+    });
+  }
+
+  return { discarded, failed };
 }
 
 function buildFont(style, weight, size, family) {
@@ -3872,10 +4187,13 @@ async function executeBatchGeneration(prepared) {
   isBatchRunning = true;
   setBatchButtonsDisabled(true);
   const previousLastData = lastData ? { ...lastData } : null;
+  let unresolvedCertificates = new Map();
 
   try {
     const certificates = prepared.certificates.map((item) => ({ ...item }));
     const failedUploads = [];
+    const successfulCertificates = [];
+    const discardedCertificates = [];
 
     setBatchStatus("Registrando lote no backend...", "info");
     const registered = await registerBatchCertificates(certificates);
@@ -3889,6 +4207,9 @@ async function executeBatchGeneration(prepared) {
       cert.codigo = sanitizeText(registered[index].codigo).toUpperCase();
       cert.qrText = sanitizeText(registered[index].url_validacao);
     });
+    unresolvedCertificates = new Map(
+      certificates.map((cert) => [sanitizeText(cert.codigo).toUpperCase(), cert])
+    );
 
     const zip = new window.JSZip();
 
@@ -3911,15 +4232,20 @@ async function executeBatchGeneration(prepared) {
       try {
         ensureCertificatePngWithinLimit(pngBlob, cert.codigo);
       } catch (error) {
+        const cleanupResult = await tryDiscardPendingCertificate(cert.codigo);
         failedUploads.push({
           codigo: cert.codigo,
           nome: cert.nome,
           message: error && error.message ? error.message : "PNG acima do limite permitido.",
+          discarded: cleanupResult.discarded,
+          cleanupMessage: cleanupResult.message,
         });
-        zip.file(cert.fileName, pngBlob);
+        if (cleanupResult.discarded) {
+          discardedCertificates.push(cert);
+          unresolvedCertificates.delete(cert.codigo);
+        }
         continue;
       }
-      zip.file(cert.fileName, pngBlob);
 
       setBatchStatus(
         `Salvando ${index + 1}/${certificates.length} no servidor: ${cert.nome}`,
@@ -3927,26 +4253,72 @@ async function executeBatchGeneration(prepared) {
       );
       try {
         await uploadCertificateImage(cert.codigo, pngBlob, cert.fileName);
+        zip.file(cert.fileName, pngBlob);
+        successfulCertificates.push(cert);
+        unresolvedCertificates.delete(cert.codigo);
       } catch (error) {
         if (error && error.status === 401) {
           throw error;
         }
         console.error(error);
+        const cleanupResult = await tryDiscardPendingCertificate(cert.codigo);
         failedUploads.push({
           codigo: cert.codigo,
           nome: cert.nome,
           message: error && error.message ? error.message : "Falha no upload do PNG.",
+          discarded: cleanupResult.discarded,
+          cleanupMessage: cleanupResult.message,
         });
+        if (cleanupResult.discarded) {
+          discardedCertificates.push(cert);
+          unresolvedCertificates.delete(cert.codigo);
+        }
       }
     }
 
-    setBatchStatus("Compactando certificados em ZIP...", "info");
-    const zipBlob = await zip.generateAsync({ type: "blob" });
-    const zipName = `certificados_lote_${buildTimestamp()}.zip`;
-    downloadBlob(zipBlob, zipName);
+    if (unresolvedCertificates.size) {
+      const cleanupSummary = await cleanupPendingCertificates(
+        Array.from(unresolvedCertificates.values())
+      );
+      cleanupSummary.discarded.forEach(({ cert, message }) => {
+        const previousIndex = failedUploads.findIndex((item) => item.codigo === cert.codigo);
+        if (previousIndex >= 0) {
+          failedUploads.splice(previousIndex, 1);
+        }
+        discardedCertificates.push(cert);
+        failedUploads.push({
+          codigo: cert.codigo,
+          nome: cert.nome,
+          message: "PNG nao foi concluido durante a geracao do lote.",
+          discarded: true,
+          cleanupMessage: message,
+        });
+        unresolvedCertificates.delete(cert.codigo);
+      });
+      cleanupSummary.failed.forEach(({ cert, message }) => {
+        const previousIndex = failedUploads.findIndex((item) => item.codigo === cert.codigo);
+        if (previousIndex >= 0) {
+          failedUploads.splice(previousIndex, 1);
+        }
+        failedUploads.push({
+          codigo: cert.codigo,
+          nome: cert.nome,
+          message: "PNG nao foi concluido durante a geracao do lote.",
+          discarded: false,
+          cleanupMessage: message,
+        });
+      });
+    }
 
-    if (!previousLastData && certificates.length) {
-      const lastGenerated = certificates[certificates.length - 1];
+    if (successfulCertificates.length) {
+      setBatchStatus("Compactando certificados em ZIP...", "info");
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipName = `certificados_lote_${buildTimestamp()}.zip`;
+      downloadBlob(zipBlob, zipName);
+    }
+
+    if (!previousLastData && successfulCertificates.length) {
+      const lastGenerated = successfulCertificates[successfulCertificates.length - 1];
       lastData = {
         nome: lastGenerated.nome,
         curso: lastGenerated.curso,
@@ -3965,18 +4337,24 @@ async function executeBatchGeneration(prepared) {
     if (failedUploads.length) {
       const preview = failedUploads
         .slice(0, 3)
-        .map((item) => `${item.codigo} (${summarizePngFailure(item.message)})`)
+        .map((item) => {
+          const detail = item.discarded
+            ? "descartado automaticamente"
+            : summarizePngFailure(item.message);
+          return `${item.codigo} (${detail})`;
+        })
         .join(", ");
       const suffix = failedUploads.length > 3 ? ", ..." : "";
+      const unresolvedCount = failedUploads.filter((item) => !item.discarded).length;
       const ignoredPreview = ignoredCount ? ` ${ignoredSummary}` : "";
       setBatchStatus(
-        `Lote concluido com ressalvas: ${certificates.length} certificado(s) gerado(s), ZIP baixado, mas ${failedUploads.length} PNG(s) nao foram salvos no servidor. Verifique: ${preview}${suffix}.${ignoredPreview}`,
+        `Lote concluido com ressalvas: ${successfulCertificates.length} certificado(s) foram concluido(s) e incluidos no ZIP. ${discardedCertificates.length} certificado(s) foram descartado(s) automaticamente apos falha no PNG.${unresolvedCount ? ` ${unresolvedCount} pendente(s) nao puderam ser descartado(s) automaticamente.` : ""} Verifique: ${preview}${suffix}.${ignoredPreview}`,
         "error"
       );
     } else {
       const ignoredPreview = ignoredCount ? ` ${ignoredSummary}` : "";
       setBatchStatus(
-        `Lote concluido: ${certificates.length} certificado(s) gerado(s), com PNGs salvos no servidor e ZIP baixado com sucesso.${ignoredPreview}`,
+        `Lote concluido: ${successfulCertificates.length} certificado(s) foram gerado(s), salvos no servidor e incluidos no ZIP com sucesso.${ignoredPreview}`,
         "success"
       );
     }
@@ -4339,25 +4717,7 @@ sectionTabs.forEach((button) => {
 if (certListForm) {
   certListForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    certListState.filters.busca = certFilterBuscaInput ? certFilterBuscaInput.value.trim() : "";
-    certListState.filters.secretariaId = certFilterSecretariaSelect
-      ? certFilterSecretariaSelect.value
-      : "";
-    certListState.filters.concluidoDe = certFilterConcluidoDeInput
-      ? certFilterConcluidoDeInput.value
-      : "";
-    certListState.filters.concluidoAte = certFilterConcluidoAteInput
-      ? certFilterConcluidoAteInput.value
-      : "";
-    certListState.filters.emitidoDe = certFilterEmitidoDeInput
-      ? certFilterEmitidoDeInput.value
-      : "";
-    certListState.filters.emitidoAte = certFilterEmitidoAteInput
-      ? certFilterEmitidoAteInput.value
-      : "";
-    certListState.filters.somenteComArquivo = certFilterComArquivoInput
-      ? certFilterComArquivoInput.checked
-      : false;
+    readCertificateFiltersFromInputs();
     certListState.page = 1;
     await loadCertificates(1);
   });
@@ -4365,21 +4725,47 @@ if (certListForm) {
 
 if (certFilterResetBtn) {
   certFilterResetBtn.addEventListener("click", async () => {
-    certListState.filters.busca = "";
-    certListState.filters.secretariaId = "";
-    certListState.filters.concluidoDe = "";
-    certListState.filters.concluidoAte = "";
-    certListState.filters.emitidoDe = "";
-    certListState.filters.emitidoAte = "";
-    certListState.filters.somenteComArquivo = false;
+    resetCertificateFiltersState();
     certListState.page = 1;
-    if (certFilterBuscaInput) certFilterBuscaInput.value = "";
-    if (certFilterSecretariaSelect) certFilterSecretariaSelect.value = "";
-    if (certFilterConcluidoDeInput) certFilterConcluidoDeInput.value = "";
-    if (certFilterConcluidoAteInput) certFilterConcluidoAteInput.value = "";
-    if (certFilterEmitidoDeInput) certFilterEmitidoDeInput.value = "";
-    if (certFilterEmitidoAteInput) certFilterEmitidoAteInput.value = "";
-    if (certFilterComArquivoInput) certFilterComArquivoInput.checked = false;
+    syncCertificateFilterInputsFromState();
+    await loadCertificates(1);
+  });
+}
+
+if (certQuickTodayBtn) {
+  certQuickTodayBtn.addEventListener("click", async () => {
+    const todayRange = getLastDaysRange(1);
+    certListState.filters.emitidoDe = todayRange.start;
+    certListState.filters.emitidoAte = todayRange.end;
+    certListState.page = 1;
+    await loadCertificates(1);
+  });
+}
+
+if (certQuickLast7Btn) {
+  certQuickLast7Btn.addEventListener("click", async () => {
+    const range = getLastDaysRange(7);
+    certListState.filters.emitidoDe = range.start;
+    certListState.filters.emitidoAte = range.end;
+    certListState.page = 1;
+    await loadCertificates(1);
+  });
+}
+
+if (certQuickActiveSecretariaBtn) {
+  certQuickActiveSecretariaBtn.addEventListener("click", async () => {
+    certListState.filters.secretariaId = sessionState && sessionState.secretaria_ativa_id
+      ? String(sessionState.secretaria_ativa_id)
+      : "";
+    certListState.page = 1;
+    await loadCertificates(1);
+  });
+}
+
+if (certQuickWithFileBtn) {
+  certQuickWithFileBtn.addEventListener("click", async () => {
+    certListState.filters.somenteComArquivo = !certListState.filters.somenteComArquivo;
+    certListState.page = 1;
     await loadCertificates(1);
   });
 }
@@ -4403,11 +4789,7 @@ if (certNextPageBtn) {
 if (auditForm) {
   auditForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    auditState.filters.busca = auditSearchInput ? auditSearchInput.value.trim() : "";
-    auditState.filters.evento = auditEventSelect ? auditEventSelect.value : "";
-    auditState.filters.secretariaId = auditSecretariaSelect
-      ? auditSecretariaSelect.value
-      : "";
+    readAuditFiltersFromInputs();
     auditState.page = 1;
     await loadAuditEvents(1);
   });
@@ -4415,13 +4797,39 @@ if (auditForm) {
 
 if (auditResetBtn) {
   auditResetBtn.addEventListener("click", async () => {
-    auditState.filters.busca = "";
-    auditState.filters.evento = "";
-    auditState.filters.secretariaId = "";
+    resetAuditFiltersState();
     auditState.page = 1;
-    if (auditSearchInput) auditSearchInput.value = "";
-    if (auditEventSelect) auditEventSelect.value = "";
-    if (auditSecretariaSelect) auditSecretariaSelect.value = "";
+    syncAuditFilterInputsFromState();
+    await loadAuditEvents(1);
+  });
+}
+
+if (auditQuickTodayBtn) {
+  auditQuickTodayBtn.addEventListener("click", async () => {
+    const todayRange = getLastDaysRange(1);
+    auditState.filters.criadoDe = todayRange.start;
+    auditState.filters.criadoAte = todayRange.end;
+    auditState.page = 1;
+    await loadAuditEvents(1);
+  });
+}
+
+if (auditQuickLast7Btn) {
+  auditQuickLast7Btn.addEventListener("click", async () => {
+    const range = getLastDaysRange(7);
+    auditState.filters.criadoDe = range.start;
+    auditState.filters.criadoAte = range.end;
+    auditState.page = 1;
+    await loadAuditEvents(1);
+  });
+}
+
+if (auditQuickActiveSecretariaBtn) {
+  auditQuickActiveSecretariaBtn.addEventListener("click", async () => {
+    auditState.filters.secretariaId = sessionState && sessionState.secretaria_ativa_id
+      ? String(sessionState.secretaria_ativa_id)
+      : "";
+    auditState.page = 1;
     await loadAuditEvents(1);
   });
 }

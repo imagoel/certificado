@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from common import (
     build_certificate_file_url,
-    has_certificate_file,
+    is_certificate_ready,
     sanitize_code,
     templates,
 )
@@ -56,7 +56,7 @@ def validate_certificate_json(
 ) -> ValidationResponse:
     normalized_code = sanitize_code(codigo)
     cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
-    if not cert:
+    if not cert or cert.arquivo_pendente:
         return ValidationResponse(status="nao_encontrado", codigo=normalized_code, valido=False)
 
     valido = verify_certificate_hash(
@@ -68,7 +68,7 @@ def validate_certificate_json(
         carga_h=cert.carga_h,
         concluido=cert.concluido.isoformat(),
     )
-    file_available = has_certificate_file(cert)
+    file_available = is_certificate_ready(cert)
 
     return ValidationResponse(
         status="valido" if valido else "invalido",
@@ -93,7 +93,7 @@ def validate_certificate_html(
     normalized_code = sanitize_code(codigo)
     cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
 
-    if not cert:
+    if not cert or cert.arquivo_pendente:
         return templates.TemplateResponse(
             "validacao.html",
             {
@@ -114,7 +114,7 @@ def validate_certificate_html(
         carga_h=cert.carga_h,
         concluido=cert.concluido.isoformat(),
     )
-    file_available = has_certificate_file(cert)
+    file_available = is_certificate_ready(cert)
 
     return templates.TemplateResponse(
         "validacao.html",

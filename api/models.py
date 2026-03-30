@@ -91,6 +91,7 @@ class Certificate(Base):
     concluido: Mapped[date] = mapped_column(Date, index=True, nullable=False)
     emitido_em: Mapped[datetime] = mapped_column(DateTime, index=True, default=utc_now, nullable=False)
     hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    arquivo_pendente: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     secretaria_id: Mapped[int | None] = mapped_column(
         ForeignKey("secretarias.id"), index=True, nullable=True
     )

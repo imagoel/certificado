@@ -402,6 +402,36 @@ button[disabled] {
   white-space: nowrap;
 }
 
+.quick-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.quick-filter-label {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.quick-filter-btn {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #1a4f8b;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.quick-filter-btn.is-active {
+  background: #1a4f8b;
+  color: #fff;
+}
+
 .hint {
   margin: 0 0 6px;
   color: var(--muted);
@@ -739,6 +769,16 @@ button[disabled] {
     white-space: normal;
   }
 
+  .quick-filter-bar {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .quick-filter-btn {
+    padding: 7px 10px;
+    font-size: 0.84rem;
+  }
+
   .filter-grid,
   .grid-two,
   .grid-three,
@@ -806,6 +846,11 @@ button[disabled] {
 
   .section-tab {
     flex-basis: calc(50% - 6px);
+  }
+
+  .quick-filter-label {
+    width: 100%;
+    margin-bottom: 2px;
   }
 
   .app-session,
@@ -878,6 +923,11 @@ button[disabled] {
     flex-wrap: wrap;
   }
 
+  .quick-filter-btn {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+
   .inline-actions {
     flex-direction: column;
   }
@@ -912,6 +962,10 @@ button[disabled] {
   }
 
   .section-tab {
+    flex-basis: 100%;
+  }
+
+  .quick-filter-btn {
     flex-basis: 100%;
   }
 

@@ -307,6 +307,10 @@ def has_certificate_file(cert: Certificate) -> bool:
     return file_path.exists() and file_path.is_file()
 
 
+def is_certificate_ready(cert: Certificate) -> bool:
+    return not bool(cert.arquivo_pendente) and has_certificate_file(cert)
+
+
 def build_route_path(request: Request, route_name: str, **params) -> str:
     return str(request.app.url_path_for(route_name, **params))
 
@@ -622,7 +626,7 @@ def code_exists(db: Session, codigo: str) -> bool:
 def to_response(
     cert: Certificate, request: Request, validation_url: str | None = None
 ) -> CertificateResponse:
-    file_available = has_certificate_file(cert)
+    file_available = is_certificate_ready(cert)
     return CertificateResponse(
         id=cert.id,
         codigo=cert.codigo,
@@ -700,7 +704,7 @@ def validate_template_upload(uploaded: UploadFile, content: bytes) -> None:
 
 
 def build_certificate_file_response(cert: Certificate) -> FileResponse:
-    if not cert.arquivo_relpath:
+    if cert.arquivo_pendente or not cert.arquivo_relpath:
         raise HTTPException(status_code=404, detail="Arquivo de certificado nao encontrado.")
 
     file_path = resolve_media_path(cert.arquivo_relpath)

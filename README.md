@@ -58,6 +58,8 @@ Resumo importante:
 - pre-visualizacao da planilha antes do lote
 - confirmacao antes de gerar lote
 - retry automatico no upload de PNG do lote
+- certificados ficam pendentes ate o PNG ser salvo
+- descarte automatico de certificados pendentes quando o PNG falha
 - alerta de possivel duplicidade antes da geracao individual
 - reimpressao e visualizacao dos certificados ja emitidos
 - pagina publica de validacao por QR Code
@@ -104,17 +106,18 @@ Fluxo da emissao individual:
 6. o frontend desenha o certificado completo em `canvas`
 7. o frontend converte o `canvas` para PNG
 8. o frontend envia o PNG final para a API
-9. a API salva o arquivo e registra auditoria
+9. a API marca o certificado como ativo apenas apos salvar o arquivo e registrar auditoria
 
 Fluxo do lote:
 
 1. o operador envia a planilha
 2. o frontend detecta o cabecalho, normaliza os dados, mostra a previa e valida as linhas
-3. a API registra o lote de certificados e reserva codigos oficiais
+3. a API registra o lote de certificados como pendentes e reserva codigos oficiais
 4. o frontend gera um PNG por certificado valido
 5. o frontend tenta enviar cada PNG com retry
-6. o frontend monta um `.zip` para download local
-7. a API mantem os certificados e os PNGs que foram salvos com sucesso
+6. a API ativa apenas os certificados cujo PNG foi salvo com sucesso
+7. pendentes que falham no PNG sao descartados automaticamente sempre que possivel
+8. o frontend monta um `.zip` apenas com os certificados concluidos
 
 ## Multi-secretaria
 
