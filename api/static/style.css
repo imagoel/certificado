@@ -316,23 +316,24 @@ body {
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
   .wrap {
-    padding: 0 12px 16px;
+    padding: 0 11px 14px;
   }
 
   .header {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
 
   .header h1 {
-    font-size: 1.32rem;
+    font-size: 1.22rem;
   }
 
   .card {
-    padding: 14px;
+    padding: 13px;
   }
 
   .info-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .btn,
@@ -352,22 +353,61 @@ body {
   }
 
   .wrap {
-    padding: 0 10px 14px;
+    padding: 0 9px 12px;
   }
 
   .header h1 {
-    font-size: 1.2rem;
+    font-size: 1.12rem;
   }
 
   .header .code-value {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
   }
 
   .card {
-    padding: 12px;
+    padding: 11px;
+  }
+
+  .header-icon {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 10px;
+  }
+
+  .status-badge {
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+  }
+
+  .info-item {
+    padding: 10px 11px;
+  }
+
+  .info-value {
+    font-size: 0.95rem;
+  }
+
+  .preview-label,
+  .info-label {
+    font-size: 0.72rem;
   }
 
   .preview-img:hover {
     transform: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .wrap {
+    padding: 0 8px 10px;
+  }
+
+  .card {
+    padding: 10px;
+  }
+
+  .btn {
+    padding: 9px 14px;
   }
 }

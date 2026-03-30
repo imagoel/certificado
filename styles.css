@@ -200,6 +200,44 @@ input[type="file"] {
   background: #fbfdff;
 }
 
+.asset-controls-details {
+  padding: 0;
+  overflow: hidden;
+}
+
+.asset-controls-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  color: #1a4f8b;
+}
+
+.asset-controls-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.asset-controls-details summary::after {
+  content: "+";
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.asset-controls-details[open] summary::after {
+  content: "−";
+}
+
+.asset-controls-body {
+  display: grid;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+
 .asset-controls h2 {
   margin: 8px 0;
   font-size: 1rem;
@@ -265,9 +303,13 @@ button[disabled] {
   color: #1a4f8b;
 }
 
+.generator-assets-intro {
+  margin-bottom: 0;
+}
+
 .generator-asset-block {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .generator-asset-block h2 {
@@ -285,12 +327,12 @@ button[disabled] {
 .asset-upload-group {
   display: grid;
   gap: 4px;
-  margin-top: 2px;
-  padding-top: 2px;
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .asset-upload-group input[type="file"] {
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .batch-preview {
@@ -661,20 +703,20 @@ button[disabled] {
 
 @media (max-width: 700px) {
   .container {
-    padding: 10px 10px 16px;
+    padding: 8px 8px 14px;
   }
 
   .panel,
   .preview-wrap,
   .asset-controls,
   .batch-controls {
-    padding: 12px;
+    padding: 11px;
   }
 
   .auth-panel {
     width: min(100%, 390px);
-    margin-top: 16px;
-    padding: 16px 14px;
+    margin-top: 12px;
+    padding: 14px 13px;
   }
 
   .login-brand-logo {
@@ -686,11 +728,11 @@ button[disabled] {
   }
 
   h1 {
-    font-size: 1.8rem;
+    font-size: 1.62rem;
   }
 
   .subtitle {
-    font-size: 0.94rem;
+    font-size: 0.9rem;
   }
 
   .summary-pill {
@@ -706,11 +748,13 @@ button[disabled] {
 
   .section-tab {
     flex: 1 1 120px;
+    padding: 8px 10px;
   }
 
   .session-user,
   .session-secretaria {
-    font-size: 0.94rem;
+    font-size: 0.9rem;
+    padding: 7px 9px;
   }
 
   .actions-end,
@@ -721,6 +765,20 @@ button[disabled] {
   .modal-dialog {
     width: min(calc(100vw - 12px), 500px);
   }
+
+  .asset-controls-details summary {
+    padding: 10px 11px;
+    font-size: 0.95rem;
+  }
+
+  .asset-controls-body {
+    padding: 0 11px 11px;
+  }
+
+  .batch-controls h2,
+  .asset-controls h2 {
+    font-size: 0.96rem;
+  }
 }
 
 @media (max-width: 520px) {
@@ -729,7 +787,7 @@ button[disabled] {
   }
 
   h1 {
-    font-size: 1.58rem;
+    font-size: 1.42rem;
   }
 
   .actions > button,
@@ -764,7 +822,7 @@ button[disabled] {
   .asset-controls,
   .batch-controls,
   .modal-form {
-    padding: 10px;
+    padding: 9px;
   }
 
   .panel-header {
@@ -784,6 +842,37 @@ button[disabled] {
     font-size: 16px;
   }
 
+  .form,
+  .generator-asset-block,
+  .field-stack {
+    gap: 5px;
+  }
+
+  .section-switcher {
+    gap: 6px;
+  }
+
+  .section-tab {
+    flex-basis: calc(50% - 4px);
+    padding: 8px 8px;
+  }
+
+  .batch-controls h2,
+  .asset-controls h2,
+  .asset-controls-details summary {
+    font-size: 0.93rem;
+  }
+
+  .batch-controls label,
+  .asset-controls label {
+    font-size: 0.92rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 8px;
+  }
+
   .pagination-row {
     gap: 8px;
     flex-wrap: wrap;
@@ -799,5 +888,43 @@ button[disabled] {
 
   .table-wrap {
     border-radius: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .container {
+    padding: 6px 6px 12px;
+  }
+
+  .auth-panel {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px 11px;
+  }
+
+  .login-brand {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .login-brand-logo {
+    width: min(156px, 56%);
+  }
+
+  .section-tab {
+    flex-basis: 100%;
+  }
+
+  .session-user,
+  .session-secretaria {
+    font-size: 0.86rem;
+  }
+
+  .compact-table {
+    min-width: 440px;
+  }
+
+  .data-table {
+    min-width: 620px;
   }
 }

@@ -2025,8 +2025,8 @@ async function applySavedTemplateSelection(templateId, options = {}) {
     savedTemplateImage = null;
     if (!silentStatus) {
       const fallbackMessage = templateCatalogState.items.length
-        ? "Usando o fundo padrão. Se desejar, escolha um arquivo abaixo para sobrescrever somente esta emissão."
-        : "A secretaria ativa ainda não tem moldes cadastrados. Se desejar, escolha um arquivo abaixo para usar um molde temporário nesta emissão.";
+        ? ""
+        : "A secretaria ativa ainda não tem moldes cadastrados. Você pode usar um arquivo temporário nesta emissão.";
       setTemplateSelectStatus(fallbackMessage, "info");
     }
     await renderLastCertificate();
@@ -2162,8 +2162,8 @@ async function applySavedSecretariaAssetSelection(type, assetId, options = {}) {
     setSavedSecretariaAsset(type, null, null);
     if (!silentStatus) {
       const fallbackMessage = catalog.items.length
-        ? `Nenhuma ${ui.label} cadastrada selecionada. Se desejar, escolha um arquivo abaixo para sobrescrever somente esta emissão.`
-        : `A secretaria ativa ainda não tem ${ui.pluralLabel} cadastradas. Se desejar, escolha um arquivo abaixo para usar uma ${ui.label} temporária nesta emissão.`;
+        ? ""
+        : `A secretaria ativa ainda não tem ${ui.pluralLabel} cadastradas. Você pode usar uma ${ui.label} temporária nesta emissão.`;
       ui.setSelectStatus(fallbackMessage, "info");
     }
     await renderLastCertificate();
@@ -4957,8 +4957,8 @@ syncSecretariaAssetFormState();
 syncGenerateSubmitButton();
 updateControlLabels();
 syncTemplateControls();
-setTemplateStatus("Nenhum molde carregado. O certificado segue com o fundo padrão.", "info");
-setLogoStatus("Nenhuma logo temporária carregada.", "info");
-setAssinaturaStatus("Nenhuma assinatura temporária carregada.", "info");
+setTemplateStatus("", "info");
+setLogoStatus("", "info");
+setAssinaturaStatus("", "info");
 void renderLastCertificate();
 void refreshSession();
