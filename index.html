@@ -64,23 +64,49 @@
       <section id="generator-section" class="stack-section">
         <section class="panel">
           <form id="cert-form" class="form">
-            <label for="nome">Nome do participante</label>
-            <input id="nome" type="text" placeholder="Ex.: Maria da Silva" required />
+            <fieldset class="form-fieldset">
+              <legend>Dados do certificado</legend>
+              <p class="fieldset-hint">Preencha as informações principais para emissão do certificado.</p>
 
-            <label for="curso">Nome do curso</label>
-            <input id="curso" type="text" placeholder="Ex.: Introdução ao Git" required />
+              <div class="form-fieldset-grid">
+                <div class="field-stack">
+                  <label for="nome">Nome do participante</label>
+                  <input id="nome" type="text" placeholder="Ex.: Maria da Silva" required />
+                </div>
 
-            <label for="data">Data de conclusão</label>
-            <input id="data" type="date" required />
+                <div class="field-stack">
+                  <label for="curso">Nome do curso</label>
+                  <input id="curso" type="text" placeholder="Ex.: Introdução ao Git" required />
+                </div>
 
-            <label for="carga_h">Carga horária (opcional)</label>
-            <input id="carga_h" type="number" min="0" max="2000" placeholder="Ex.: 40" />
+                <div class="field-stack">
+                  <label for="data">Data de conclusão</label>
+                  <input id="data" type="date" required />
+                </div>
 
-            <label for="textoLinha1">Texto (linha 1, opcional)</label>
-            <input id="textoLinha1" type="text" value="Certificamos que" />
+                <div class="field-stack">
+                  <label for="carga_h">Carga horária (opcional)</label>
+                  <input id="carga_h" type="number" min="0" max="2000" placeholder="Ex.: 40" />
+                </div>
+              </div>
+            </fieldset>
 
-            <label for="textoLinha2">Texto (linha 2, opcional)</label>
-            <input id="textoLinha2" type="text" value="concluiu com êxito o curso" />
+            <fieldset class="form-fieldset">
+              <legend>Textos customizáveis</legend>
+              <p class="fieldset-hint">Opcionalmente, ajuste as frases que aparecem no corpo do certificado.</p>
+
+              <div class="form-fieldset-grid form-fieldset-grid-single">
+                <div class="field-stack">
+                  <label for="textoLinha1">Texto (linha 1, opcional)</label>
+                  <input id="textoLinha1" type="text" value="Certificamos que" />
+                </div>
+
+                <div class="field-stack">
+                  <label for="textoLinha2">Texto (linha 2, opcional)</label>
+                  <input id="textoLinha2" type="text" value="concluiu com êxito o curso" />
+                </div>
+              </div>
+            </fieldset>
 
             <p class="hint generator-assets-intro">Os itens padrão da secretaria são carregados automaticamente. Você pode trocar a seleção ou enviar um arquivo temporário apenas nesta emissão.</p>
 
@@ -93,7 +119,8 @@
               <p id="template-select-status" class="status" aria-live="polite"></p>
 
               <div class="asset-upload-group">
-                <input id="template" type="file" accept="image/png,image/jpeg,image/webp" />
+                <label for="template" class="sr-only">Arquivo temporário do molde</label>
+                <input id="template" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="template-select-status template-status" />
                 <div class="actions asset-inline-actions">
                   <button id="template-remove" type="button" class="secondary-btn" disabled hidden>Remover molde temporário</button>
                 </div>
@@ -110,7 +137,8 @@
               <p id="logo-select-status" class="status" aria-live="polite"></p>
 
               <div class="asset-upload-group">
-                <input id="logo" type="file" accept="image/png,image/jpeg,image/webp" />
+                <label for="logo" class="sr-only">Arquivo temporário da logo</label>
+                <input id="logo" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="logo-select-status logo-status" />
                 <div class="actions asset-inline-actions">
                   <button id="logo-remove" type="button" class="secondary-btn" disabled hidden>Remover logo temporária</button>
                 </div>
@@ -127,7 +155,8 @@
               <p id="assinatura-select-status" class="status" aria-live="polite"></p>
 
               <div class="asset-upload-group">
-                <input id="assinatura" type="file" accept="image/png,image/jpeg,image/webp" />
+                <label for="assinatura" class="sr-only">Arquivo temporário da assinatura</label>
+                <input id="assinatura" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura-select-status assinatura-status" />
                 <div class="actions asset-inline-actions">
                   <button id="assinatura-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura temporária</button>
                 </div>
@@ -140,25 +169,33 @@
               <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo ou a assinatura na prévia.</p>
 
               <div class="asset-controls-body">
-                <h2>Ajuste da Logo</h2>
-                <label for="logoX">Posição X: <span id="logoXVal">600</span></label>
-                <input id="logoX" type="range" min="80" max="1120" step="1" value="600" />
+                <fieldset class="slider-fieldset">
+                  <legend>Ajuste da logo</legend>
+                  <p class="slider-hint">Use os controles enquanto observa a prévia. Para microajustes, clique no slider e use as setas do teclado.</p>
 
-                <label for="logoY">Posição Y: <span id="logoYVal">95</span></label>
-                <input id="logoY" type="range" min="60" max="260" step="1" value="95" />
+                  <label for="logoX">Posição X: <span id="logoXVal">600 px</span></label>
+                  <input id="logoX" type="range" min="80" max="1120" step="1" value="600" />
 
-                <label for="logoSize">Tamanho: <span id="logoSizeVal">150</span></label>
-                <input id="logoSize" type="range" min="60" max="300" step="1" value="150" />
+                  <label for="logoY">Posição Y: <span id="logoYVal">95 px</span></label>
+                  <input id="logoY" type="range" min="60" max="260" step="1" value="95" />
 
-                <h2>Ajuste da Assinatura</h2>
-                <label for="assinaturaX">Posição X: <span id="assinaturaXVal">330</span></label>
-                <input id="assinaturaX" type="range" min="140" max="520" step="1" value="330" />
+                  <label for="logoSize">Tamanho: <span id="logoSizeVal">150 px</span></label>
+                  <input id="logoSize" type="range" min="60" max="300" step="1" value="150" />
+                </fieldset>
 
-                <label for="assinaturaY">Posição Y: <span id="assinaturaYVal">662</span></label>
-                <input id="assinaturaY" type="range" min="600" max="720" step="1" value="662" />
+                <fieldset class="slider-fieldset">
+                  <legend>Ajuste da assinatura</legend>
+                  <p class="slider-hint">Se a assinatura parecer muito alta ou baixa, ajuste primeiro a posição Y e depois o tamanho.</p>
 
-                <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230</span></label>
-                <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
+                  <label for="assinaturaX">Posição X: <span id="assinaturaXVal">330 px</span></label>
+                  <input id="assinaturaX" type="range" min="140" max="520" step="1" value="330" />
+
+                  <label for="assinaturaY">Posição Y: <span id="assinaturaYVal">662 px</span></label>
+                  <input id="assinaturaY" type="range" min="600" max="720" step="1" value="662" />
+
+                  <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230 px</span></label>
+                  <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
+                </fieldset>
               </div>
             </details>
 
@@ -288,18 +325,18 @@
           <p id="cert-list-status" class="status" aria-live="polite"></p>
 
           <div class="table-wrap">
-            <table class="data-table">
+            <table class="data-table certificates-table">
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Participante</th>
-                  <th>Curso</th>
-                  <th>Secretaria</th>
-                  <th>Conclusão</th>
-                  <th>Emitido em</th>
-                  <th>Emitido por</th>
-                  <th>Arquivo</th>
-                  <th>Ações</th>
+                  <th class="cert-col-code">Código</th>
+                  <th class="cert-col-participant">Participante</th>
+                  <th class="cert-col-course">Curso</th>
+                  <th class="cert-col-secondary">Secretaria</th>
+                  <th class="cert-col-secondary">Conclusão</th>
+                  <th class="cert-col-secondary">Emitido em</th>
+                  <th class="cert-col-secondary">Emitido por</th>
+                  <th class="cert-col-status">Status</th>
+                  <th class="cert-col-actions">Ações</th>
                 </tr>
               </thead>
               <tbody id="cert-list-body">
@@ -345,19 +382,39 @@
               <label for="audit-event">Evento</label>
               <select id="audit-event">
                 <option value="">Todos</option>
-                <option value="auth_login">Login</option>
-                <option value="auth_login_falhou">Login falhou</option>
-                <option value="auth_login_bloqueado">Login bloqueado</option>
-                <option value="troca_secretaria">Troca de secretaria</option>
-                <option value="certificado_criado">Certificado criado</option>
-                <option value="certificado_lote_criado">Lote criado</option>
-                <option value="certificado_png_enviado">PNG enviado</option>
-                <option value="certificado_png_acessado">PNG acessado</option>
-                <option value="certificado_excluido">Certificado excluído</option>
-                <option value="usuario_criado">Usuário criado</option>
-                <option value="usuario_atualizado">Usuário atualizado</option>
-                <option value="secretaria_criada">Secretaria criada</option>
-                <option value="secretaria_atualizada">Secretaria atualizada</option>
+                <optgroup label="Autenticação e sessão">
+                  <option value="auth_login">Login</option>
+                  <option value="auth_login_falhou">Login falhou</option>
+                  <option value="auth_login_bloqueado">Login bloqueado</option>
+                  <option value="troca_secretaria">Troca de secretaria</option>
+                </optgroup>
+                <optgroup label="Certificados">
+                  <option value="certificado_criado">Certificado criado</option>
+                  <option value="certificado_lote_criado">Lote criado</option>
+                  <option value="certificado_png_enviado">PNG enviado</option>
+                  <option value="certificado_png_acessado">PNG acessado</option>
+                  <option value="certificado_pendente_descartado">Pendente descartado</option>
+                  <option value="certificado_excluido">Certificado excluído</option>
+                </optgroup>
+                <optgroup label="Usuários e secretarias">
+                  <option value="usuario_criado">Usuário criado</option>
+                  <option value="usuario_atualizado">Usuário atualizado</option>
+                  <option value="usuario_excluido">Usuário excluído</option>
+                  <option value="secretaria_criada">Secretaria criada</option>
+                  <option value="secretaria_atualizada">Secretaria atualizada</option>
+                  <option value="secretaria_excluida">Secretaria excluída</option>
+                </optgroup>
+                <optgroup label="Ativos visuais">
+                  <option value="template_criado">Molde criado</option>
+                  <option value="template_atualizado">Molde atualizado</option>
+                  <option value="template_excluido">Molde excluído</option>
+                  <option value="secretaria_asset_logo_criado">Logo criada</option>
+                  <option value="secretaria_asset_logo_atualizado">Logo atualizada</option>
+                  <option value="secretaria_asset_logo_excluido">Logo excluída</option>
+                  <option value="secretaria_asset_assinatura_criado">Assinatura criada</option>
+                  <option value="secretaria_asset_assinatura_atualizado">Assinatura atualizada</option>
+                  <option value="secretaria_asset_assinatura_excluido">Assinatura excluída</option>
+                </optgroup>
               </select>
             </div>
 

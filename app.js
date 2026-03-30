@@ -1570,37 +1570,66 @@ function renderCertificateRows(items) {
     const row = document.createElement("tr");
 
     const codeCell = document.createElement("td");
+    codeCell.className = "cert-col-code";
     const codeChip = document.createElement("span");
     codeChip.className = "code-chip";
     codeChip.textContent = item.codigo || "-";
     codeCell.appendChild(codeChip);
 
     const nameCell = document.createElement("td");
-    nameCell.textContent = item.nome || "-";
+    nameCell.className = "cert-name-cell";
+
+    const nameTitle = document.createElement("strong");
+    nameTitle.className = "cert-name-title";
+    nameTitle.textContent = item.nome || "-";
+
+    const nameMeta = document.createElement("div");
+    nameMeta.className = "table-mobile-meta";
+    const mobileMeta = [
+      `Secretaria: ${item.secretaria_sigla || "-"}`,
+      `Conclusão: ${formatDate(item.concluido)}`,
+      `Emitido em: ${formatDateTime(item.emitido_em)}`,
+      `Emitido por: ${item.emitido_por_username || "-"}`,
+    ];
+    mobileMeta.forEach((text) => {
+      const metaLine = document.createElement("span");
+      metaLine.className = "table-mobile-meta-item";
+      metaLine.textContent = text;
+      nameMeta.appendChild(metaLine);
+    });
+
+    nameCell.append(nameTitle, nameMeta);
 
     const courseCell = document.createElement("td");
+    courseCell.className = "cert-col-course";
     courseCell.textContent = item.curso || "-";
 
     const secretariaCell = document.createElement("td");
+    secretariaCell.className = "cert-col-secondary";
     secretariaCell.textContent = item.secretaria_sigla || "-";
 
     const concluidoCell = document.createElement("td");
+    concluidoCell.className = "cert-col-secondary";
     concluidoCell.textContent = formatDate(item.concluido);
 
     const emittedCell = document.createElement("td");
+    emittedCell.className = "cert-col-secondary";
     emittedCell.textContent = formatDateTime(item.emitido_em);
 
     const emittedByCell = document.createElement("td");
+    emittedByCell.className = "cert-col-secondary";
     emittedByCell.textContent = item.emitido_por_username || "-";
 
     const fileCell = document.createElement("td");
+    fileCell.className = "cert-col-status";
     fileCell.appendChild(
       buildStatusPill(item.arquivo_disponivel, "PNG salvo", "Sem PNG")
     );
 
     const actionsCell = document.createElement("td");
+    actionsCell.className = "cert-col-actions";
     const actionsWrap = document.createElement("div");
-    actionsWrap.className = "inline-actions";
+    actionsWrap.className = "inline-actions cert-actions";
 
     actionsWrap.appendChild(
       createInlineButton("Validar", () => {
@@ -3016,12 +3045,12 @@ function scaleHeightByWidth(width, ratio) {
 }
 
 function updateControlLabels() {
-  if (logoXVal) logoXVal.textContent = layout.logo.x;
-  if (logoYVal) logoYVal.textContent = layout.logo.y;
-  if (logoSizeVal) logoSizeVal.textContent = layout.logo.maxW;
-  if (assinaturaXVal) assinaturaXVal.textContent = layout.assinatura.x;
-  if (assinaturaYVal) assinaturaYVal.textContent = layout.assinatura.y;
-  if (assinaturaSizeVal) assinaturaSizeVal.textContent = layout.assinatura.maxW;
+  if (logoXVal) logoXVal.textContent = `${layout.logo.x} px`;
+  if (logoYVal) logoYVal.textContent = `${layout.logo.y} px`;
+  if (logoSizeVal) logoSizeVal.textContent = `${layout.logo.maxW} px`;
+  if (assinaturaXVal) assinaturaXVal.textContent = `${layout.assinatura.x} px`;
+  if (assinaturaYVal) assinaturaYVal.textContent = `${layout.assinatura.y} px`;
+  if (assinaturaSizeVal) assinaturaSizeVal.textContent = `${layout.assinatura.maxW} px`;
 }
 
 function applyLayoutFromControls() {
