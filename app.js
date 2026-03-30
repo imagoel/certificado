@@ -189,6 +189,7 @@ const assinaturaSizeVal = document.getElementById("assinaturaSizeVal");
 
 const defaultTextoLinha1 = "Certificamos que";
 const defaultTextoLinha2 = "concluiu com êxito o curso";
+const MAX_CARGA_HORARIA = 2000;
 
 const assets = {
   template: null,
@@ -3259,7 +3260,7 @@ function getPreviewCertificateData() {
     sanitizeText(textoLinha1Input ? textoLinha1Input.value : "") || defaultTextoLinha1;
   const linha2 =
     sanitizeText(textoLinha2Input ? textoLinha2Input.value : "") || defaultTextoLinha2;
-  const cargaResult = normalizeCargaHorariaResult(cargaHInput ? cargaHInput.value : "");
+  const cargaResult = getFormCargaHorariaResult();
 
   return {
     nome,
@@ -3626,8 +3627,8 @@ function normalizeCargaHorariaResult(value) {
   if (typeof value === "number" && Number.isFinite(value)) {
     const rounded = Math.trunc(value);
     return {
-      value: rounded >= 0 && rounded <= 2000 ? rounded : null,
-      invalid: rounded < 0 || rounded > 2000,
+      value: rounded >= 0 && rounded <= MAX_CARGA_HORARIA ? rounded : null,
+      invalid: rounded < 0 || rounded > MAX_CARGA_HORARIA,
     };
   }
 
@@ -3640,11 +3641,21 @@ function normalizeCargaHorariaResult(value) {
   }
 
   const parsed = Number.parseInt(match[1], 10);
-  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 2000) {
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > MAX_CARGA_HORARIA) {
     return { value: null, invalid: true };
   }
 
   return { value: parsed, invalid: false };
+}
+
+function getFormCargaHorariaResult() {
+  return normalizeCargaHorariaResult(cargaHInput ? cargaHInput.value : "");
+}
+
+function getFormCargaHorariaError() {
+  const result = getFormCargaHorariaResult();
+  if (!result.invalid) return "";
+  return `A carga horária deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`;
 }
 
 function formatInvalidCargaHoraria(value) {
@@ -4122,6 +4133,12 @@ async function prepareBatchCertificates(file) {
   }
 
   const batchDefaults = getBatchDefaults();
+  const defaultCargaResult = normalizeCargaHorariaResult(batchDefaults.carga_h);
+  if (defaultCargaResult.invalid) {
+    throw new Error(
+      `A carga horária do formulário deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`
+    );
+  }
   const certificates = [];
   const invalidRows = [];
   const headerInfo = detectSpreadsheetHeaderRow(rawRows);
@@ -4414,6 +4431,16 @@ async function handleBatchPreview() {
     return;
   }
 
+  const cargaError = getFormCargaHorariaError();
+  if (cargaError) {
+    setBatchStatus(cargaError, "error");
+    resetBatchPreview();
+    if (cargaHInput && typeof cargaHInput.reportValidity === "function") {
+      cargaHInput.reportValidity();
+    }
+    return;
+  }
+
   const file = planilhaInput.files && planilhaInput.files[0];
   if (!file) {
     setBatchStatus("Selecione uma planilha antes de pré-visualizar.", "error");
@@ -4449,6 +4476,16 @@ async function handleBatchGenerate() {
   if (isBatchRunning) return;
   if (!sessionState) {
     await handleUnauthorized();
+    return;
+  }
+
+  const cargaError = getFormCargaHorariaError();
+  if (cargaError) {
+    setBatchStatus(cargaError, "error");
+    resetBatchPreview();
+    if (cargaHInput && typeof cargaHInput.reportValidity === "function") {
+      cargaHInput.reportValidity();
+    }
     return;
   }
 
@@ -4512,7 +4549,15 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     const nome = nomeInput ? nomeInput.value.trim() : "";
     const curso = cursoInput ? cursoInput.value.trim() : "";
     const data = dataInput ? dataInput.value : "";
-    const cargaH = cargaHInput ? Math.max(0, parseInt(cargaHInput.value, 10) || 0) : 0;
+    const cargaResult = getFormCargaHorariaResult();
+    if (cargaResult.invalid) {
+      setBatchStatus(
+        `A carga horária deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`,
+        "error"
+      );
+      return;
+    }
+    const cargaH = cargaResult.value ?? 0;
 
     if (!nome || !curso || !data) return;
 
