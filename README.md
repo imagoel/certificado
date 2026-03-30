@@ -61,6 +61,7 @@ Resumo importante:
 - certificados ficam pendentes ate o PNG ser salvo
 - descarte automatico de certificados pendentes quando o PNG falha
 - alerta de possivel duplicidade antes da geracao individual
+- filtros rapidos em `Certificados` e `Auditoria`
 - reimpressao e visualizacao dos certificados ja emitidos
 - pagina publica de validacao por QR Code
 
@@ -80,6 +81,7 @@ Resumo importante:
 - molde temporario por tela de geracao
 - logo temporaria por tela de geracao
 - assinatura temporaria por tela de geracao
+- aba propria de auditoria visivel apenas para `admin_global`
 - auditoria de login, emissao, upload, exclusao e acoes administrativas
 
 ### Seguranca e Robustez
@@ -466,6 +468,17 @@ Compatibilidade:
 - o layout do certificado continua fixo; o molde so atua como fundo visual
 - ainda nao ha personalizacao avancada de posicoes de texto por secretaria
 - reimpressao e segunda via usam o certificado ja salvo; a prevencao de duplicidade trabalha por alerta e confirmacao, nao por bloqueio absoluto
+
+## Refinamentos de UX Recentes
+
+- o gerador foi reorganizado em:
+  - `Dados do certificado`
+  - `Textos customizaveis`
+- a tela de auditoria saiu da aba `Certificados` e ganhou aba propria
+- a tabela de certificados ficou mais compacta em telas pequenas, com detalhes secundarios embutidos na celula principal
+- `Molde`, `Logo` e `Assinatura` foram simplificados em tres blocos mais enxutos, com sobrescrita temporaria apenas quando necessario
+- `Ajustes avancados de logo e assinatura` ficam recolhidos por padrao
+- o foco visual de inputs, botoes e controles foi reforcado para melhorar navegacao por teclado
 
 ## Proximas Evolucoes Naturais
 
