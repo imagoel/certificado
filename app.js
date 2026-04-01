@@ -3919,6 +3919,76 @@ function parseCsvRows(text) {
   }));
 }
 
+function isSpreadsheetRowHidden(sheet, rowIndex) {
+  const rowMetadata = Array.isArray(sheet && sheet["!rows"]) ? sheet["!rows"] : null;
+  if (!rowMetadata || !rowMetadata[rowIndex]) return false;
+  return Boolean(rowMetadata[rowIndex].hidden);
+}
+
+function normalizeZipEntryPath(path) {
+  const normalized = String(path || "").replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!normalized) return "";
+  return normalized.startsWith("xl/") ? normalized : `xl/${normalized}`;
+}
+
+async function readHiddenXlsxRows(bytes, sheetIndex = 0) {
+  if (!window.JSZip || typeof DOMParser === "undefined") {
+    return new Set();
+  }
+
+  const zip = await window.JSZip.loadAsync(bytes);
+  const workbookEntry = zip.file("xl/workbook.xml");
+  const workbookRelsEntry = zip.file("xl/_rels/workbook.xml.rels");
+  if (!workbookEntry || !workbookRelsEntry) {
+    return new Set();
+  }
+
+  const parser = new DOMParser();
+  const workbookXml = await workbookEntry.async("string");
+  const workbookDoc = parser.parseFromString(workbookXml, "application/xml");
+  const sheetNodes = Array.from(workbookDoc.getElementsByTagName("sheet"));
+  const targetSheet = sheetNodes[sheetIndex];
+  if (!targetSheet) {
+    return new Set();
+  }
+
+  const relId =
+    targetSheet.getAttribute("r:id") ||
+    targetSheet.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+  if (!relId) {
+    return new Set();
+  }
+
+  const relsXml = await workbookRelsEntry.async("string");
+  const relsDoc = parser.parseFromString(relsXml, "application/xml");
+  const relationshipNodes = Array.from(relsDoc.getElementsByTagName("Relationship"));
+  const relationship = relationshipNodes.find((node) => node.getAttribute("Id") === relId);
+  if (!relationship) {
+    return new Set();
+  }
+
+  const sheetPath = normalizeZipEntryPath(relationship.getAttribute("Target"));
+  const sheetEntry = zip.file(sheetPath);
+  if (!sheetEntry) {
+    return new Set();
+  }
+
+  const sheetXml = await sheetEntry.async("string");
+  const sheetDoc = parser.parseFromString(sheetXml, "application/xml");
+  const rowNodes = Array.from(sheetDoc.getElementsByTagName("row"));
+  const hiddenRows = new Set();
+
+  rowNodes.forEach((rowNode) => {
+    const isHidden = rowNode.getAttribute("hidden");
+    const rowNumber = Number.parseInt(rowNode.getAttribute("r") || "", 10);
+    if ((isHidden === "1" || isHidden === "true") && Number.isFinite(rowNumber)) {
+      hiddenRows.add(rowNumber);
+    }
+  });
+
+  return hiddenRows;
+}
+
 async function readSpreadsheetRows(file) {
   const fileName = (file.name || "").toLowerCase();
   if (fileName.endsWith(".csv")) {
@@ -3931,7 +4001,11 @@ async function readSpreadsheetRows(file) {
   }
 
   const bytes = await file.arrayBuffer();
-  const workbook = window.XLSX.read(bytes, { type: "array", cellDates: true });
+  const workbook = window.XLSX.read(bytes, {
+    type: "array",
+    cellDates: true,
+    cellStyles: true,
+  });
   if (!workbook.SheetNames || !workbook.SheetNames.length) return [];
 
   const firstSheetName = workbook.SheetNames[0];
@@ -3940,9 +4014,21 @@ async function readSpreadsheetRows(file) {
   if (!rangeRef) return [];
 
   const range = window.XLSX.utils.decode_range(rangeRef);
+  let hiddenRows = new Set();
+  if (fileName.endsWith(".xlsx")) {
+    try {
+      hiddenRows = await readHiddenXlsxRows(bytes, 0);
+    } catch (error) {
+      console.warn("Nao foi possivel ler linhas ocultas da planilha.", error);
+    }
+  }
   const rows = [];
 
   for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+    if (hiddenRows.has(rowIndex + 1) || isSpreadsheetRowHidden(firstSheet, rowIndex)) {
+      continue;
+    }
+
     const values = [];
     let hasContent = false;
 
