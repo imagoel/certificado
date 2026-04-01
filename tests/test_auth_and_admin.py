@@ -207,3 +207,52 @@ def test_admin_global_nao_mantem_vinculos_de_secretaria(client, seed_data, login
     assert update_response.status_code == 200
     assert update_response.json()["papel"] == "admin_global"
     assert update_response.json()["secretarias"] == []
+
+
+def test_recriar_usuario_limpa_bloqueio_de_login(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+
+    create_response = client.post(
+        "/api/admin/usuarios",
+        json={
+            "nome": "Rafaella",
+            "username": "rafaella",
+            "password": "senha1234",
+            "papel": "operador",
+            "ativo": True,
+            "secretaria_ids": [seed_data["seafi_id"]],
+        },
+    )
+    assert create_response.status_code == 201
+    usuario_id = create_response.json()["id"]
+
+    client.post("/api/auth/logout")
+
+    for _ in range(4):
+        failed = login("rafaella", "senha-errada")
+        assert failed.status_code == 401
+
+    blocked = login("rafaella", "senha-errada")
+    assert blocked.status_code == 429
+
+    login("admin", seed_data["admin_password"])
+    delete_response = client.delete(f"/api/admin/usuarios/{usuario_id}", json={})
+    assert delete_response.status_code == 200
+
+    recreate_response = client.post(
+        "/api/admin/usuarios",
+        json={
+            "nome": "Rafaella",
+            "username": "rafaella",
+            "password": "senha1234",
+            "papel": "operador",
+            "ativo": True,
+            "secretaria_ids": [seed_data["seafi_id"]],
+        },
+    )
+    assert recreate_response.status_code == 201
+
+    client.post("/api/auth/logout")
+    success = login("rafaella", "senha1234")
+    assert success.status_code == 200
+    assert success.json()["autenticado"] is True

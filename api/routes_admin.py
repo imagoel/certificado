@@ -10,6 +10,7 @@ from common import (
     build_audit_response,
     build_secretaria_response,
     build_user_admin_response,
+    clear_all_login_attempts_for_username,
     get_secretarias_by_ids,
     normalize_secretaria_sigla,
     record_audit_event,
@@ -162,6 +163,7 @@ def admin_create_user(
     usuario.secretarias = secretarias
     db.add(usuario)
     db.flush()
+    clear_all_login_attempts_for_username(usuario.username)
     record_audit_event(
         db,
         evento="usuario_criado",
@@ -191,6 +193,7 @@ def admin_update_user(
         usuario.nome = payload.nome.strip()
     if payload.password is not None and payload.password.strip():
         usuario.senha_hash = hash_password(payload.password)
+        clear_all_login_attempts_for_username(usuario.username)
     if payload.ativo is not None:
         usuario.ativo = payload.ativo
 
@@ -239,6 +242,7 @@ def admin_delete_user(
     username = usuario.username
     user_id = usuario.id
     user_secretaria = usuario.secretarias[0] if usuario.secretarias else None
+    clear_all_login_attempts_for_username(username)
 
     db.query(Certificate).filter(Certificate.emitido_por_usuario_id == user_id).update(
         {Certificate.emitido_por_usuario_id: None},

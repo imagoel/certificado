@@ -198,6 +198,18 @@ def clear_login_attempts(username: str, request: Request) -> None:
         LOGIN_ATTEMPTS.pop(key, None)
 
 
+def clear_all_login_attempts_for_username(username: str) -> None:
+    normalized = (username or "").strip().lower()
+    if not normalized:
+        return
+
+    prefix = f"{normalized}|"
+    with LOGIN_ATTEMPTS_LOCK:
+        keys_to_remove = [key for key in LOGIN_ATTEMPTS if key.startswith(prefix)]
+        for key in keys_to_remove:
+            LOGIN_ATTEMPTS.pop(key, None)
+
+
 def run_startup_tasks() -> None:
     validate_security_config()
     ensure_database_schema()
