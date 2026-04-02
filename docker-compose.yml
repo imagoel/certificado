@@ -6,7 +6,7 @@ services:
     container_name: certificado-web
     restart: unless-stopped
     ports:
-      - "28754:80"
+      - "${WEB_PORT:-28754}:80"
     depends_on:
       - certificado-api
 
@@ -17,32 +17,37 @@ services:
     container_name: certificado-api
     restart: unless-stopped
     environment:
-      APP_ENV: ${APP_ENV:-development}
+      APP_ENV: ${APP_ENV:-production}
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       CODE_PREFIX: ${CODE_PREFIX:-ABC}
-      PUBLIC_VALIDATION_BASE_URL: ${PUBLIC_VALIDATION_BASE_URL:-http://localhost:29180/validar}
+      PUBLIC_VALIDATION_BASE_URL: ${PUBLIC_VALIDATION_BASE_URL}
       CERTIFICADOS_MEDIA_DIR: /app/data/certificados
       TEMPLATES_MEDIA_DIR: /app/data/templates
       CERTIFICADOS_MAX_UPLOAD_BYTES: ${CERTIFICADOS_MAX_UPLOAD_BYTES:-8388608}
       CERTIFICADOS_MAX_BATCH_ITEMS: ${CERTIFICADOS_MAX_BATCH_ITEMS:-500}
       TEMPLATES_MAX_UPLOAD_BYTES: ${TEMPLATES_MAX_UPLOAD_BYTES:-10485760}
-      SESSION_SECRET: ${SESSION_SECRET:-troque-esta-chave-de-sessao}
-      CERTIFICATE_HASH_SECRET: ${CERTIFICATE_HASH_SECRET:-troque-esta-chave-do-certificado}
+      SESSION_SECRET: ${SESSION_SECRET}
+      CERTIFICATE_HASH_SECRET: ${CERTIFICATE_HASH_SECRET}
       SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-certificado_session}
       SESSION_SAME_SITE: ${SESSION_SAME_SITE:-lax}
-      SESSION_HTTPS_ONLY: ${SESSION_HTTPS_ONLY:-false}
+      SESSION_HTTPS_ONLY: ${SESSION_HTTPS_ONLY:-true}
       SESSION_MAX_AGE_SECONDS: ${SESSION_MAX_AGE_SECONDS:-43200}
-      ENABLE_ADMIN_DOCS: ${ENABLE_ADMIN_DOCS:-true}
-      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
+      ENABLE_ADMIN_DOCS: ${ENABLE_ADMIN_DOCS:-false}
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-true}
       LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
       LOGIN_WINDOW_SECONDS: ${LOGIN_WINDOW_SECONDS:-900}
       LOGIN_BLOCK_SECONDS: ${LOGIN_BLOCK_SECONDS:-900}
-      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:28754,http://127.0.0.1:28754}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
+      AUTO_SEED_SECRETARIAS: ${AUTO_SEED_SECRETARIAS:-true}
+      AUTO_BOOTSTRAP_ADMIN: ${AUTO_BOOTSTRAP_ADMIN:-true}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Administrador}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "29180:8000"
+      - "${API_PORT:-29180}:8000"
     volumes:
       - certificados_media:/app/data/certificados
       - templates_media:/app/data/templates
@@ -55,8 +60,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "25432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

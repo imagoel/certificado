@@ -320,7 +320,7 @@ Volumes:
 
 Para producao:
 
-- use `docker-compose.portainer.yml`
+- use `docker-compose.yml`
 - mantenha o `.env` real fora do Git
 - deixe `AUTO_SEED_SECRETARIAS=true`
 - deixe `AUTO_BOOTSTRAP_ADMIN=true`
@@ -487,3 +487,23 @@ Compatibilidade:
 - personalizacao visual mais avancada por secretaria
 - testes automatizados adicionais no frontend
 - maior refinamento de UX mobile conforme uso real
+
+## Deploy no Portainer
+
+O repositorio agora trabalha com um unico arquivo de stack:
+
+- use `docker-compose.yml`
+
+Recomendacao:
+
+- preencha as variaveis de ambiente da producao diretamente no Portainer
+- mantenha o `.env` de producao fora do Git
+- para Cloudflare Tunnel, prefira usar o IP privado do host quando houver instabilidade no DNS interno do Docker
+
+Exemplo de rotas por IP:
+
+1. `^/api` -> `http://10.75.2.16:29180`
+2. `^/health$` -> `http://10.75.2.16:29180`
+3. `^/validar` -> `http://10.75.2.16:29180`
+4. `^/static` -> `http://10.75.2.16:29180`
+5. `*` -> `http://10.75.2.16:28754`
