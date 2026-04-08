@@ -3,8 +3,10 @@ const generateSubmitBtn = form ? form.querySelector('button[type="submit"]') : n
 const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
+const instituicaoInput = document.getElementById("instituicao");
 const logoRemoveBtn = document.getElementById("logo-remove");
 const assinaturaRemoveBtn = document.getElementById("assinatura-remove");
+const instituicaoRemoveBtn = document.getElementById("instituicao-remove");
 const templateInput = document.getElementById("template");
 const templateRemoveBtn = document.getElementById("template-remove");
 const templateLibraryWrap = document.getElementById("template-library-wrap");
@@ -15,6 +17,9 @@ const logoSelectStatus = document.getElementById("logo-select-status");
 const assinaturaLibraryWrap = document.getElementById("assinatura-library-wrap");
 const assinaturaSelect = document.getElementById("assinatura-select");
 const assinaturaSelectStatus = document.getElementById("assinatura-select-status");
+const instituicaoLibraryWrap = document.getElementById("instituicao-library-wrap");
+const instituicaoSelect = document.getElementById("instituicao-select");
+const instituicaoSelectStatus = document.getElementById("instituicao-select-status");
 const planilhaInput = document.getElementById("planilha");
 const batchPreviewBtn = document.getElementById("batch-preview");
 const batchGenerateBtn = document.getElementById("batch-generate");
@@ -160,6 +165,7 @@ const dataInput = document.getElementById("data");
 const cargaHInput = document.getElementById("carga_h");
 const logoStatus = document.getElementById("logo-status");
 const assinaturaStatus = document.getElementById("assinatura-status");
+const instituicaoStatus = document.getElementById("instituicao-status");
 const templateStatus = document.getElementById("template-status");
 const templateSelectStatus = document.getElementById("template-select-status");
 
@@ -176,6 +182,9 @@ const logoSizeInput = document.getElementById("logoSize");
 const assinaturaXInput = document.getElementById("assinaturaX");
 const assinaturaYInput = document.getElementById("assinaturaY");
 const assinaturaSizeInput = document.getElementById("assinaturaSize");
+const instituicaoXInput = document.getElementById("instituicaoX");
+const instituicaoYInput = document.getElementById("instituicaoY");
+const instituicaoSizeInput = document.getElementById("instituicaoSize");
 
 const textoLinha1Input = document.getElementById("textoLinha1");
 const textoLinha2Input = document.getElementById("textoLinha2");
@@ -186,20 +195,54 @@ const logoSizeVal = document.getElementById("logoSizeVal");
 const assinaturaXVal = document.getElementById("assinaturaXVal");
 const assinaturaYVal = document.getElementById("assinaturaYVal");
 const assinaturaSizeVal = document.getElementById("assinaturaSizeVal");
+const instituicaoXVal = document.getElementById("instituicaoXVal");
+const instituicaoYVal = document.getElementById("instituicaoYVal");
+const instituicaoSizeVal = document.getElementById("instituicaoSizeVal");
 
 const defaultTextoLinha1 = "Certificamos que";
 const defaultTextoLinha2 = "concluiu com êxito o curso";
 const MAX_CARGA_HORARIA = 2000;
+const CERTIFICATE_CANVAS_WIDTH = 1200;
+const DEFAULT_ASSINATURA_LAYOUT = Object.freeze({
+  x: 330,
+  y: 662,
+  maxW: 230,
+  maxH: 80,
+});
+const DEFAULT_INSTITUICAO_LAYOUT = Object.freeze({
+  x: CERTIFICATE_CANVAS_WIDTH - DEFAULT_ASSINATURA_LAYOUT.x,
+  y: DEFAULT_ASSINATURA_LAYOUT.y,
+  maxW: DEFAULT_ASSINATURA_LAYOUT.maxW,
+  maxH: DEFAULT_ASSINATURA_LAYOUT.maxH,
+});
+const ASSINATURA_CONTROL_LIMITS = Object.freeze({
+  xMin: 140,
+  xMax: 520,
+  yMin: 600,
+  yMax: 720,
+  sizeMin: 120,
+  sizeMax: 360,
+});
+const INSTITUICAO_CONTROL_LIMITS = Object.freeze({
+  xMin: CERTIFICATE_CANVAS_WIDTH - ASSINATURA_CONTROL_LIMITS.xMax,
+  xMax: CERTIFICATE_CANVAS_WIDTH - ASSINATURA_CONTROL_LIMITS.xMin,
+  yMin: ASSINATURA_CONTROL_LIMITS.yMin,
+  yMax: ASSINATURA_CONTROL_LIMITS.yMax,
+  sizeMin: ASSINATURA_CONTROL_LIMITS.sizeMin,
+  sizeMax: ASSINATURA_CONTROL_LIMITS.sizeMax,
+});
 
 const assets = {
   template: null,
   logo: null,
   assinatura: null,
+  instituicao: null,
 };
 
 const layout = {
   logo: { x: 600, y: 95, maxW: 150, maxH: 95 },
-  assinatura: { x: 330, y: 662, maxW: 230, maxH: 80 },
+  assinatura: { ...DEFAULT_ASSINATURA_LAYOUT },
+  instituicao: { ...DEFAULT_INSTITUICAO_LAYOUT },
   qr: { x: 160, y: 175, maxW: 120, maxH: 120 },
 };
 
@@ -229,6 +272,8 @@ let savedLogo = null;
 let savedLogoImage = null;
 let savedAssinatura = null;
 let savedAssinaturaImage = null;
+let savedInstituicao = null;
+let savedInstituicaoImage = null;
 
 const DEFAULT_CERTIFICATE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -262,6 +307,7 @@ const templateCatalogState = {
 const secretariaAssetCatalogState = {
   logo: { items: [], selectedId: "" },
   assinatura: { items: [], selectedId: "" },
+  instituicao: { items: [], selectedId: "" },
 };
 
 const auditState = {
@@ -282,6 +328,7 @@ const qrImageCache = new Map();
 const certificateAspectRatio = 1200 / 850;
 const logoAspectRatio = 95 / 150;
 const assinaturaAspectRatio = 80 / 230;
+const instituicaoAspectRatio = 80 / 230;
 const viewSections = {
   generator: generatorSection,
   certificates: certificatesSection,
@@ -532,7 +579,7 @@ function ensureCertificatePngWithinLimit(pngBlob, codigo = "") {
   const codeLabel = sanitizeText(codigo).toUpperCase();
   const certLabel = codeLabel ? ` do certificado ${codeLabel}` : "";
   const error = new Error(
-    `O PNG final${certLabel} ficou com ${formatFileSize(pngBlob.size)} e excede o limite configurado de ${formatFileSize(maxBytes)}. Isso costuma acontecer quando molde, logo ou assinatura estao muito pesados. Use imagens mais leves ou peca ao administrador para ajustar o limite do sistema.`
+    `O PNG final${certLabel} ficou com ${formatFileSize(pngBlob.size)} e excede o limite configurado de ${formatFileSize(maxBytes)}. Isso costuma acontecer quando molde, logo, assinatura ou instituicao estao muito pesados. Use imagens mais leves ou peca ao administrador para ajustar o limite do sistema.`
   );
   error.operation = "png_size";
   error.codigo = codeLabel;
@@ -653,6 +700,10 @@ function setAssinaturaSelectStatus(message, type = "info") {
   setStatusMessage(assinaturaSelectStatus, message, type);
 }
 
+function setInstituicaoSelectStatus(message, type = "info") {
+  setStatusMessage(instituicaoSelectStatus, message, type);
+}
+
 function setLogoStatus(message, type = "info") {
   setStatusMessage(logoStatus, message, type);
 }
@@ -661,8 +712,18 @@ function setAssinaturaStatus(message, type = "info") {
   setStatusMessage(assinaturaStatus, message, type);
 }
 
+function setInstituicaoStatus(message, type = "info") {
+  setStatusMessage(instituicaoStatus, message, type);
+}
+
 function setSecretariaAssetAdminStatus(message, type = "info") {
   setStatusMessage(secretariaAssetStatus, message, type);
+}
+
+function capitalizeLabel(label) {
+  const text = sanitizeText(label);
+  if (!text) return "";
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function getSecretariaAssetCatalog(type) {
@@ -670,11 +731,17 @@ function getSecretariaAssetCatalog(type) {
 }
 
 function getSavedSecretariaAsset(type) {
-  return type === "logo" ? savedLogo : savedAssinatura;
+  if (type === "logo") return savedLogo;
+  if (type === "assinatura") return savedAssinatura;
+  if (type === "instituicao") return savedInstituicao;
+  return null;
 }
 
 function getSavedSecretariaAssetImage(type) {
-  return type === "logo" ? savedLogoImage : savedAssinaturaImage;
+  if (type === "logo") return savedLogoImage;
+  if (type === "assinatura") return savedAssinaturaImage;
+  if (type === "instituicao") return savedInstituicaoImage;
+  return null;
 }
 
 function setSavedSecretariaAsset(type, asset, image) {
@@ -683,8 +750,15 @@ function setSavedSecretariaAsset(type, asset, image) {
     savedLogoImage = image;
     return;
   }
-  savedAssinatura = asset;
-  savedAssinaturaImage = image;
+  if (type === "assinatura") {
+    savedAssinatura = asset;
+    savedAssinaturaImage = image;
+    return;
+  }
+  if (type === "instituicao") {
+    savedInstituicao = asset;
+    savedInstituicaoImage = image;
+  }
 }
 
 function getSecretariaAssetUi(type) {
@@ -702,18 +776,40 @@ function getSecretariaAssetUi(type) {
         "O arquivo da logo cadastrada não foi encontrado no servidor. Reenvie a logo na administração.",
     };
   }
-  return {
-    label: "assinatura",
-    pluralLabel: "assinaturas",
-    wrap: assinaturaLibraryWrap,
-    select: assinaturaSelect,
-    removeBtn: assinaturaRemoveBtn,
-    setSelectStatus: setAssinaturaSelectStatus,
-    setManualStatus: setAssinaturaStatus,
-    blankLabel: "Não usar assinatura cadastrada",
-    missingFileMessage:
-      "O arquivo da assinatura cadastrada não foi encontrado no servidor. Reenvie a assinatura na administração.",
-  };
+  if (type === "assinatura") {
+    return {
+      label: "assinatura",
+      pluralLabel: "assinaturas",
+      wrap: assinaturaLibraryWrap,
+      select: assinaturaSelect,
+      removeBtn: assinaturaRemoveBtn,
+      setSelectStatus: setAssinaturaSelectStatus,
+      setManualStatus: setAssinaturaStatus,
+      blankLabel: "Não usar assinatura cadastrada",
+      missingFileMessage:
+        "O arquivo da assinatura cadastrada não foi encontrado no servidor. Reenvie a assinatura na administração.",
+    };
+  }
+  if (type === "instituicao") {
+    return {
+      label: "instituição",
+      pluralLabel: "instituições",
+      wrap: instituicaoLibraryWrap,
+      select: instituicaoSelect,
+      removeBtn: instituicaoRemoveBtn,
+      setSelectStatus: setInstituicaoSelectStatus,
+      setManualStatus: setInstituicaoStatus,
+      blankLabel: "Não usar instituição cadastrada",
+      missingFileMessage:
+        "O arquivo da instituição cadastrada não foi encontrado no servidor. Reenvie a instituição na administração.",
+    };
+  }
+  return getSecretariaAssetUi("logo");
+}
+
+function getSecretariaAssetDisplayLabel(type, capitalize = false) {
+  const label = getSecretariaAssetUi(type).label || "asset";
+  return capitalize ? capitalizeLabel(label) : label;
 }
 
 function getActiveTemplateImage() {
@@ -726,6 +822,10 @@ function getActiveLogoImage() {
 
 function getActiveAssinaturaImage() {
   return assets.assinatura || savedAssinaturaImage;
+}
+
+function getActiveInstituicaoImage() {
+  return assets.instituicao || savedInstituicaoImage;
 }
 
 function formatDateTime(dateStr) {
@@ -1097,18 +1197,24 @@ function clearSessionUi(message = "") {
   secretariaAssetCatalogState.logo.selectedId = "";
   secretariaAssetCatalogState.assinatura.items = [];
   secretariaAssetCatalogState.assinatura.selectedId = "";
+  secretariaAssetCatalogState.instituicao.items = [];
+  secretariaAssetCatalogState.instituicao.selectedId = "";
   assets.template = null;
   assets.logo = null;
   assets.assinatura = null;
+  assets.instituicao = null;
   savedTemplate = null;
   savedTemplateImage = null;
   savedLogo = null;
   savedLogoImage = null;
   savedAssinatura = null;
   savedAssinaturaImage = null;
+  savedInstituicao = null;
+  savedInstituicaoImage = null;
   if (templateInput) templateInput.value = "";
   if (logoInput) logoInput.value = "";
   if (assinaturaInput) assinaturaInput.value = "";
+  if (instituicaoInput) instituicaoInput.value = "";
   syncTemplateControls();
   setTemplateStatus("", "info");
   if (templateSelect) {
@@ -1118,12 +1224,16 @@ function clearSessionUi(message = "") {
   setTemplateSelectStatus("", "info");
   populateSecretariaAssetOptions("logo", [], "", true);
   populateSecretariaAssetOptions("assinatura", [], "", true);
+  populateSecretariaAssetOptions("instituicao", [], "", true);
   if (logoLibraryWrap) logoLibraryWrap.hidden = false;
   if (assinaturaLibraryWrap) assinaturaLibraryWrap.hidden = false;
+  if (instituicaoLibraryWrap) instituicaoLibraryWrap.hidden = false;
   setLogoSelectStatus("", "info");
   setAssinaturaSelectStatus("", "info");
+  setInstituicaoSelectStatus("", "info");
   setLogoStatus("", "info");
   setAssinaturaStatus("", "info");
+  setInstituicaoStatus("", "info");
   resetUserForm();
   resetSecretariaForm();
   resetTemplateAdminForm();
@@ -1448,16 +1558,20 @@ function syncSecretariaAssetTypeUi() {
   const tipo = sanitizeText(
     secretariaAssetTypeSelect ? secretariaAssetTypeSelect.value : "logo"
   ).toLowerCase();
-  const isAssinatura = tipo === "assinatura";
+  let nameLabel = "Nome da logo";
+  let placeholder = "Ex.: Logo institucional principal";
+  if (tipo === "assinatura") {
+    nameLabel = "Nome da assinatura";
+    placeholder = "Ex.: Assinatura oficial da secretaria";
+  } else if (tipo === "instituicao") {
+    nameLabel = "Nome da instituição";
+    placeholder = "Ex.: Instituição oficial ou marca institucional";
+  }
   if (secretariaAssetNameLabel) {
-    secretariaAssetNameLabel.textContent = isAssinatura
-      ? "Nome da assinatura"
-      : "Nome da logo";
+    secretariaAssetNameLabel.textContent = nameLabel;
   }
   if (secretariaAssetNameInput) {
-    secretariaAssetNameInput.placeholder = isAssinatura
-      ? "Ex.: Assinatura oficial da secretaria"
-      : "Ex.: Logo institucional principal";
+    secretariaAssetNameInput.placeholder = placeholder;
   }
 }
 
@@ -1547,7 +1661,7 @@ function fillSecretariaAssetForm(asset) {
   if (secretariaAssetFileInput) secretariaAssetFileInput.value = "";
   syncSecretariaAssetFormState();
   setSecretariaAssetAdminStatus(
-    `Editando ${asset.tipo} ${asset.nome}. Envie um novo arquivo somente se quiser substituí-lo.`,
+    `Editando ${getSecretariaAssetDisplayLabel(asset.tipo)} ${asset.nome}. Envie um novo arquivo somente se quiser substituí-lo.`,
     "info"
   );
   scrollAdminFormIntoView(secretariaAssetForm);
@@ -1881,7 +1995,7 @@ function renderSecretariaAssetsTable() {
   if (!adminState.secretariaAssets.length) {
     secretariaAssetListBody.innerHTML = `
       <tr>
-        <td colspan="7" class="empty-state">Nenhuma logo ou assinatura cadastrada até o momento.</td>
+        <td colspan="7" class="empty-state">Nenhuma logo, assinatura ou instituição cadastrada até o momento.</td>
       </tr>
     `;
     return;
@@ -1898,7 +2012,7 @@ function renderSecretariaAssetsTable() {
     const tipoCell = document.createElement("td");
     const tipoPill = document.createElement("span");
     tipoPill.className = "asset-type-pill";
-    tipoPill.textContent = asset.tipo || "-";
+    tipoPill.textContent = getSecretariaAssetDisplayLabel(asset.tipo, true) || "-";
     tipoCell.appendChild(tipoPill);
 
     const nomeCell = document.createElement("td");
@@ -1932,7 +2046,7 @@ function renderSecretariaAssetsTable() {
         "Excluir",
         async () => {
           const confirmado = window.confirm(
-            `Excluir ${asset.tipo} ${asset.nome} da secretaria ${asset.secretaria_sigla}?`
+            `Excluir ${getSecretariaAssetDisplayLabel(asset.tipo)} ${asset.nome} da secretaria ${asset.secretaria_sigla}?`
           );
           if (!confirmado) return;
           await deleteSecretariaAsset(asset);
@@ -2213,7 +2327,7 @@ async function loadAdminData() {
       "error"
     );
     setSecretariaAssetAdminStatus(
-      (error && error.message) || "Nao foi possivel carregar logos e assinaturas.",
+      (error && error.message) || "Nao foi possivel carregar logos, assinaturas e instituicoes.",
       "error"
     );
   }
@@ -2490,6 +2604,7 @@ async function loadAvailableSecretariaAssetType(type) {
 async function loadAvailableSecretariaAssets() {
   await loadAvailableSecretariaAssetType("logo");
   await loadAvailableSecretariaAssetType("assinatura");
+  await loadAvailableSecretariaAssetType("instituicao");
 }
 
 async function deleteTemplate(template) {
@@ -2528,7 +2643,8 @@ async function deleteSecretariaAsset(asset) {
       body: "{}",
     });
     setSecretariaAssetAdminStatus(
-      (payload && payload.message) || `${asset.tipo} ${asset.nome} excluída com sucesso.`,
+      (payload && payload.message)
+        || `${capitalizeLabel(getSecretariaAssetDisplayLabel(asset.tipo))} ${asset.nome} excluída com sucesso.`,
       "success"
     );
     await loadAdminData();
@@ -3045,6 +3161,52 @@ function scaleHeightByWidth(width, ratio) {
   return Math.max(1, Math.round(width * ratio));
 }
 
+function configureRangeInput(input, min, max, value) {
+  if (!input) return;
+  input.min = String(min);
+  input.max = String(max);
+  input.value = String(value);
+}
+
+function syncAdvancedAssetControls() {
+  configureRangeInput(
+    assinaturaXInput,
+    ASSINATURA_CONTROL_LIMITS.xMin,
+    ASSINATURA_CONTROL_LIMITS.xMax,
+    layout.assinatura.x
+  );
+  configureRangeInput(
+    assinaturaYInput,
+    ASSINATURA_CONTROL_LIMITS.yMin,
+    ASSINATURA_CONTROL_LIMITS.yMax,
+    layout.assinatura.y
+  );
+  configureRangeInput(
+    assinaturaSizeInput,
+    ASSINATURA_CONTROL_LIMITS.sizeMin,
+    ASSINATURA_CONTROL_LIMITS.sizeMax,
+    layout.assinatura.maxW
+  );
+  configureRangeInput(
+    instituicaoXInput,
+    INSTITUICAO_CONTROL_LIMITS.xMin,
+    INSTITUICAO_CONTROL_LIMITS.xMax,
+    layout.instituicao.x
+  );
+  configureRangeInput(
+    instituicaoYInput,
+    INSTITUICAO_CONTROL_LIMITS.yMin,
+    INSTITUICAO_CONTROL_LIMITS.yMax,
+    layout.instituicao.y
+  );
+  configureRangeInput(
+    instituicaoSizeInput,
+    INSTITUICAO_CONTROL_LIMITS.sizeMin,
+    INSTITUICAO_CONTROL_LIMITS.sizeMax,
+    layout.instituicao.maxW
+  );
+}
+
 function updateControlLabels() {
   if (logoXVal) logoXVal.textContent = `${layout.logo.x} px`;
   if (logoYVal) logoYVal.textContent = `${layout.logo.y} px`;
@@ -3052,6 +3214,9 @@ function updateControlLabels() {
   if (assinaturaXVal) assinaturaXVal.textContent = `${layout.assinatura.x} px`;
   if (assinaturaYVal) assinaturaYVal.textContent = `${layout.assinatura.y} px`;
   if (assinaturaSizeVal) assinaturaSizeVal.textContent = `${layout.assinatura.maxW} px`;
+  if (instituicaoXVal) instituicaoXVal.textContent = `${layout.instituicao.x} px`;
+  if (instituicaoYVal) instituicaoYVal.textContent = `${layout.instituicao.y} px`;
+  if (instituicaoSizeVal) instituicaoSizeVal.textContent = `${layout.instituicao.maxW} px`;
 }
 
 function applyLayoutFromControls() {
@@ -3069,6 +3234,15 @@ function applyLayoutFromControls() {
     layout.assinatura.maxH = scaleHeightByWidth(
       layout.assinatura.maxW,
       assinaturaAspectRatio
+    );
+  }
+  if (instituicaoXInput) layout.instituicao.x = Number(instituicaoXInput.value);
+  if (instituicaoYInput) layout.instituicao.y = Number(instituicaoYInput.value);
+  if (instituicaoSizeInput) {
+    layout.instituicao.maxW = Number(instituicaoSizeInput.value);
+    layout.instituicao.maxH = scaleHeightByWidth(
+      layout.instituicao.maxW,
+      instituicaoAspectRatio
     );
   }
 
@@ -3101,6 +3275,10 @@ function syncTemplateControls() {
   if (assinaturaRemoveBtn) {
     assinaturaRemoveBtn.disabled = !assets.assinatura;
     assinaturaRemoveBtn.hidden = !assets.assinatura;
+  }
+  if (instituicaoRemoveBtn) {
+    instituicaoRemoveBtn.disabled = !assets.instituicao;
+    instituicaoRemoveBtn.hidden = !assets.instituicao;
   }
 }
 
@@ -3314,6 +3492,7 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   const activeTemplateImage = getActiveTemplateImage();
   const activeLogoImage = getActiveLogoImage();
   const activeAssinaturaImage = getActiveAssinaturaImage();
+  const activeInstituicaoImage = getActiveInstituicaoImage();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -3425,6 +3604,16 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
     );
   }
 
+  if (activeInstituicaoImage) {
+    drawCenteredImage(
+      activeInstituicaoImage,
+      layout.instituicao.x,
+      layout.instituicao.y,
+      layout.instituicao.maxW,
+      layout.instituicao.maxH
+    );
+  }
+
   const qrValue = sanitizeText(qrText);
   if (qrValue) {
     const qrImage = await buildQrImage(qrValue);
@@ -3485,6 +3674,11 @@ async function handleAssetChange(input, key, options = {}) {
         ? `Assinatura temporária removida. A prévia voltou a usar a assinatura ${savedAssinatura.nome}.`
         : "";
       setAssinaturaStatus(message, "info");
+    } else if (key === "instituicao") {
+      const message = savedInstituicao
+        ? `Instituição temporária removida. A prévia voltou a usar a instituição ${savedInstituicao.nome}.`
+        : "";
+      setInstituicaoStatus(message, "info");
     }
     void renderLastCertificate();
     return;
@@ -3494,7 +3688,7 @@ async function handleAssetChange(input, key, options = {}) {
     if (key === "template") {
       validateTemplateFile(file);
     } else {
-      validateVisualAssetFile(file, key);
+      validateVisualAssetFile(file, getSecretariaAssetDisplayLabel(key));
     }
     assets[key] = await loadImage(file, options);
     syncTemplateControls();
@@ -3516,6 +3710,11 @@ async function handleAssetChange(input, key, options = {}) {
         "Assinatura temporária pronta para uso. Ela sobrescreve a assinatura cadastrada selecionada somente nesta emissão.",
         "success"
       );
+    } else if (key === "instituicao") {
+      setInstituicaoStatus(
+        "Instituição temporária pronta para uso. Ela sobrescreve a instituição cadastrada selecionada somente nesta emissão.",
+        "success"
+      );
     }
     void renderLastCertificate();
   } catch (error) {
@@ -3529,6 +3728,8 @@ async function handleAssetChange(input, key, options = {}) {
       setLogoStatus("Não foi possível carregar a logo informada.", "error");
     } else if (key === "assinatura") {
       setAssinaturaStatus("Não foi possível carregar a assinatura informada.", "error");
+    } else if (key === "instituicao") {
+      setInstituicaoStatus("Não foi possível carregar a instituição informada.", "error");
     }
   }
 }
@@ -4759,12 +4960,40 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     });
   }
 
+  if (instituicaoInput) {
+    instituicaoInput.addEventListener("change", () => {
+      void handleAssetChange(instituicaoInput, "instituicao");
+    });
+  }
+
+  if (instituicaoSelect) {
+    instituicaoSelect.addEventListener("change", () => {
+      void applySavedSecretariaAssetSelection("instituicao", instituicaoSelect.value);
+    });
+  }
+
+  if (instituicaoRemoveBtn) {
+    instituicaoRemoveBtn.addEventListener("click", () => {
+      assets.instituicao = null;
+      if (instituicaoInput) instituicaoInput.value = "";
+      syncTemplateControls();
+      const message = savedInstituicao
+        ? `Instituição temporária removida. O preview voltou a usar a instituição ${savedInstituicao.nome}.`
+        : "Instituição temporária removida. O preview voltou a usar a configuração padrão da tela.";
+      setInstituicaoStatus(message, "info");
+      void renderLastCertificate();
+    });
+  }
+
   if (logoXInput) logoXInput.addEventListener("input", applyLayoutFromControls);
   if (logoYInput) logoYInput.addEventListener("input", applyLayoutFromControls);
   if (logoSizeInput) logoSizeInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaXInput) assinaturaXInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaYInput) assinaturaYInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaSizeInput) assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
+  if (instituicaoXInput) instituicaoXInput.addEventListener("input", applyLayoutFromControls);
+  if (instituicaoYInput) instituicaoYInput.addEventListener("input", applyLayoutFromControls);
+  if (instituicaoSizeInput) instituicaoSizeInput.addEventListener("input", applyLayoutFromControls);
 
   if (textoLinha1Input) {
     textoLinha1Input.addEventListener("input", () => {
@@ -5258,7 +5487,7 @@ if (secretariaAssetForm) {
     }
     if (!editingId && !file) {
       setSecretariaAssetAdminStatus(
-        "Envie o arquivo da logo ou assinatura para o cadastro inicial.",
+        "Envie o arquivo da logo, assinatura ou instituição para o cadastro inicial.",
         "error"
       );
       return;
@@ -5274,7 +5503,10 @@ if (secretariaAssetForm) {
     }
 
     try {
-      setSecretariaAssetAdminStatus(`Salvando ${payload.tipo}...`, "info");
+      setSecretariaAssetAdminStatus(
+        `Salvando ${getSecretariaAssetDisplayLabel(payload.tipo)}...`,
+        "info"
+      );
       if (editingId) {
         await apiFormRequest(`/api/admin/secretaria-assets/${editingId}`, formData, {
           method: "PATCH",
@@ -5523,10 +5755,12 @@ syncSecretariaFormState();
 syncTemplateAdminFormState();
 syncSecretariaAssetFormState();
 syncGenerateSubmitButton();
+syncAdvancedAssetControls();
 updateControlLabels();
 syncTemplateControls();
 setTemplateStatus("", "info");
 setLogoStatus("", "info");
 setAssinaturaStatus("", "info");
+setInstituicaoStatus("", "info");
 void renderLastCertificate();
 void refreshSession();

@@ -274,8 +274,11 @@ def build_template_relative_path(secretaria_sigla: str, template_name: str, file
 
 def normalize_secretaria_asset_type(value: str | None) -> str:
     normalized = (value or "").strip().lower()
-    if normalized not in {"logo", "assinatura"}:
-        raise HTTPException(status_code=422, detail="Tipo de asset invalido. Use logo ou assinatura.")
+    if normalized not in {"logo", "assinatura", "instituicao"}:
+        raise HTTPException(
+            status_code=422,
+            detail="Tipo de asset invalido. Use logo, assinatura ou instituicao.",
+        )
     return normalized
 
 

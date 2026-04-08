@@ -165,9 +165,27 @@
               </div>
             </section>
 
+            <section id="instituicao-library-wrap" class="batch-controls generator-asset-block">
+              <h2>Instituição</h2>
+              <label for="instituicao-select">Instituição cadastrada</label>
+              <select id="instituicao-select">
+                <option value="">Não usar instituição cadastrada</option>
+              </select>
+              <p id="instituicao-select-status" class="status" aria-live="polite"></p>
+
+              <div class="asset-upload-group">
+                <label for="instituicao" class="sr-only">Arquivo temporário da instituição</label>
+                <input id="instituicao" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="instituicao-select-status instituicao-status" />
+                <div class="actions asset-inline-actions">
+                  <button id="instituicao-remove" type="button" class="secondary-btn" disabled hidden>Remover instituição temporária</button>
+                </div>
+                <p id="instituicao-status" class="status" aria-live="polite"></p>
+              </div>
+            </section>
+
             <details class="asset-controls asset-controls-details">
-              <summary>Ajustes avançados de logo e assinatura</summary>
-              <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo ou a assinatura na prévia.</p>
+              <summary>Ajustes avançados de logo, assinatura e instituição</summary>
+              <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo, a assinatura ou a instituição na prévia.</p>
 
               <div class="asset-controls-body">
                 <fieldset class="slider-fieldset">
@@ -196,6 +214,20 @@
 
                   <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230 px</span></label>
                   <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
+                </fieldset>
+
+                <fieldset class="slider-fieldset">
+                  <legend>Ajuste da instituição</legend>
+                  <p class="slider-hint">Use este bloco para posicionar a marca da instituição acima da legenda no rodapé direito.</p>
+
+                  <label for="instituicaoX">Posição X: <span id="instituicaoXVal">870 px</span></label>
+                  <input id="instituicaoX" type="range" min="680" max="1060" step="1" value="870" />
+
+                  <label for="instituicaoY">Posição Y: <span id="instituicaoYVal">662 px</span></label>
+                  <input id="instituicaoY" type="range" min="600" max="720" step="1" value="662" />
+
+                  <label for="instituicaoSize">Tamanho: <span id="instituicaoSizeVal">230 px</span></label>
+                  <input id="instituicaoSize" type="range" min="120" max="360" step="1" value="230" />
                 </fieldset>
               </div>
             </details>
@@ -415,6 +447,9 @@
                   <option value="secretaria_asset_assinatura_criado">Assinatura criada</option>
                   <option value="secretaria_asset_assinatura_atualizado">Assinatura atualizada</option>
                   <option value="secretaria_asset_assinatura_excluido">Assinatura excluída</option>
+                  <option value="secretaria_asset_instituicao_criado">Instituição criada</option>
+                  <option value="secretaria_asset_instituicao_atualizado">Instituição atualizada</option>
+                  <option value="secretaria_asset_instituicao_excluido">Instituição excluída</option>
                 </optgroup>
               </select>
             </div>
@@ -696,8 +731,8 @@
         <section class="panel">
           <div class="panel-header">
             <div>
-              <h2>Logos e Assinaturas</h2>
-              <p class="subtitle">Cadastre logos e assinaturas por secretaria. O operador pode escolher entre os itens aprovados no gerador.</p>
+              <h2>Logos, Assinaturas e Instituições</h2>
+              <p class="subtitle">Cadastre logos, assinaturas e instituições por secretaria. O operador pode escolher entre os itens aprovados no gerador.</p>
             </div>
           </div>
 
@@ -715,6 +750,7 @@
                 <select id="secretaria-asset-type" required>
                   <option value="logo">Logo</option>
                   <option value="assinatura">Assinatura</option>
+                  <option value="instituicao">Instituição</option>
                 </select>
               </div>
 
@@ -777,7 +813,7 @@
               </thead>
               <tbody id="secretaria-asset-list-body">
                 <tr>
-                  <td colspan="7" class="empty-state">Carregando logos e assinaturas...</td>
+                  <td colspan="7" class="empty-state">Carregando logos, assinaturas e instituições...</td>
                 </tr>
               </tbody>
             </table>

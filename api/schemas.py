@@ -9,7 +9,7 @@ MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500")))
 MAX_CERTIFICATE_UPLOAD_BYTES = max(1, int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "8388608")))
 MAX_TEMPLATE_UPLOAD_BYTES = max(1, int(os.getenv("TEMPLATES_MAX_UPLOAD_BYTES", "10485760")))
 UserRole = Literal["admin_global", "operador"]
-SecretariaAssetType = Literal["logo", "assinatura"]
+SecretariaAssetType = Literal["logo", "assinatura", "instituicao"]
 
 
 class CertificateCreate(BaseModel):
