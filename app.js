@@ -25,6 +25,7 @@ const batchPreviewBtn = document.getElementById("batch-preview");
 const batchGenerateBtn = document.getElementById("batch-generate");
 const loginForm = document.getElementById("login-form");
 const loginShell = document.getElementById("login-shell");
+const appContainer = document.getElementById("app-container");
 const appShell = document.getElementById("app-shell");
 const loginStatus = document.getElementById("login-status");
 const logoutBtn = document.getElementById("logout-btn");
@@ -1037,10 +1038,8 @@ function createInlineButton(label, onClick, className = "secondary-btn") {
 
 function setAuthenticatedView(authenticated) {
   if (loginShell) loginShell.hidden = authenticated;
+  if (appContainer) appContainer.hidden = !authenticated;
   if (appShell) appShell.hidden = !authenticated;
-  if (document.body) {
-    document.body.classList.toggle("login-view", !authenticated);
-  }
 }
 
 function renderSession(session) {

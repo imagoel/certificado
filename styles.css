@@ -34,11 +34,6 @@ body {
   position: relative;
 }
 
-body.login-view .container {
-  max-width: none;
-  padding: 0;
-}
-
 h1 {
   margin-bottom: 6px;
 }
