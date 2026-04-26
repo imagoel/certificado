@@ -1038,6 +1038,9 @@ function createInlineButton(label, onClick, className = "secondary-btn") {
 function setAuthenticatedView(authenticated) {
   if (loginShell) loginShell.hidden = authenticated;
   if (appShell) appShell.hidden = !authenticated;
+  if (document.body) {
+    document.body.classList.toggle("login-view", !authenticated);
+  }
 }
 
 function renderSession(session) {
