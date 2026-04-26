@@ -5,34 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="styles.css?v=20260329-9" />
+  <link rel="stylesheet" href="styles.css?v=20260426-1" />
 </head>
 <body>
   <main class="container">
-    <section id="login-shell" class="panel auth-panel">
-      <div class="login-brand">
+    <section id="login-shell" class="login-page">
+      <div class="login-stack">
         <img
-          class="login-brand-logo"
-          src="assets/minha-logo.png"
-          alt="Immanuel Vicente"
+          class="login-logo"
+          src="assets/logo-prefeitura-amargosa.png"
+          alt="Prefeitura de Amargosa"
         />
-        <p class="login-kicker">Painel interno</p>
+
+        <form id="login-form" class="panel login-card form">
+          <h1>Gerador de Certificados</h1>
+          <p class="subtitle">Entre com seu usuário e senha para acessar o sistema.</p>
+
+          <div class="field-stack">
+            <label for="login-username">Usuário</label>
+            <input id="login-username" type="text" autocomplete="username" required />
+          </div>
+
+          <div class="field-stack">
+            <label for="login-password">Senha</label>
+            <input id="login-password" type="password" autocomplete="current-password" required />
+          </div>
+
+          <p id="login-status" class="status" aria-live="polite"></p>
+
+          <div class="actions">
+            <button type="submit">Entrar</button>
+          </div>
+        </form>
       </div>
-      <h1>Acesso ao Sistema</h1>
-      <p class="subtitle">Entre com seu usuário e senha para gerar certificados.</p>
 
-      <form id="login-form" class="form">
-        <label for="login-username">Usuário</label>
-        <input id="login-username" type="text" autocomplete="username" required />
-
-        <label for="login-password">Senha</label>
-        <input id="login-password" type="password" autocomplete="current-password" required />
-
-        <div class="actions">
-          <button type="submit">Entrar</button>
+      <footer class="login-footer" aria-label="Marcas institucionais">
+        <div class="login-footer-logos">
+          <img
+            alt="GTI"
+            class="login-footer-logo login-footer-logo-gti"
+            src="assets/logo-gti.png"
+          />
+          <span aria-hidden="true" class="login-footer-divider"></span>
+          <img
+            alt="Immanuel Vicente"
+            class="login-footer-logo login-footer-logo-immanuel"
+            src="assets/logo-immanuel-login.png"
+          />
         </div>
-        <p id="login-status" class="status" aria-live="polite"></p>
-      </form>
+      </footer>
     </section>
 
     <section id="app-shell" hidden>
