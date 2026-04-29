@@ -600,6 +600,14 @@ button[disabled] {
   margin-bottom: 10px;
 }
 
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .summary-pill {
   margin: 0;
   padding: 6px 10px;
@@ -949,6 +957,11 @@ button[disabled] {
 
   .panel-header {
     flex-direction: column;
+  }
+
+  .panel-header-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .filter-grid {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="styles.css?v=20260426-3" />
+  <link rel="stylesheet" href="styles.css?v=20260429-1" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -416,7 +416,11 @@
               <h2>Auditoria</h2>
               <p class="subtitle">Acompanhe logins, emissões, uploads e ações administrativas recentes.</p>
             </div>
-            <p id="audit-summary" class="summary-pill"></p>
+            <div class="panel-header-actions">
+              <p id="audit-summary" class="summary-pill"></p>
+              <button id="audit-export-csv" type="button" class="secondary-btn">Exportar CSV</button>
+              <button id="audit-print-report" type="button" class="secondary-btn">Imprimir/PDF</button>
+            </div>
           </div>
 
           <div class="quick-filter-bar" aria-label="Filtros rápidos de auditoria">
@@ -956,6 +960,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260426-1"></script>
+  <script src="app.js?v=20260429-1"></script>
 </body>
 </html>
