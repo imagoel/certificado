@@ -72,6 +72,85 @@ def test_operador_nao_acessa_moldes_de_outra_secretaria(client, seed_data, login
     assert file_denied_response.status_code == 403
 
 
+def test_operador_gerencia_moldes_da_secretaria_vinculada(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    create_response = client.post(
+        "/api/admin/templates",
+        data={
+            "secretaria_id": str(seed_data["seafi_id"]),
+            "nome": "Molde Operador",
+            "ativo": "true",
+            "padrao": "true",
+            "ordem": "0",
+        },
+        files={"arquivo": ("molde.png", PNG_BYTES, "image/png")},
+    )
+
+    assert create_response.status_code == 201
+    template_payload = create_response.json()
+    assert template_payload["secretaria_id"] == seed_data["seafi_id"]
+
+    list_response = client.get("/api/admin/templates")
+    assert list_response.status_code == 200
+    assert [item["nome"] for item in list_response.json()] == ["Molde Operador"]
+
+    update_response = client.patch(
+        f"/api/admin/templates/{template_payload['id']}",
+        data={
+            "nome": "Molde Operador Atualizado",
+            "ativo": "true",
+            "padrao": "false",
+            "ordem": "2",
+        },
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["nome"] == "Molde Operador Atualizado"
+
+    delete_response = client.delete(f"/api/admin/templates/{template_payload['id']}")
+    assert delete_response.status_code == 200
+
+
+def test_operador_nao_gerencia_molde_de_outra_secretaria(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+    create_response = client.post(
+        "/api/admin/templates",
+        data={
+            "secretaria_id": str(seed_data["semed_id"]),
+            "nome": "Molde Restrito",
+            "ativo": "true",
+            "padrao": "false",
+            "ordem": "0",
+        },
+        files={"arquivo": ("molde.png", PNG_BYTES, "image/png")},
+    )
+    template_id = create_response.json()["id"]
+
+    client.post("/api/auth/logout")
+    login("operador", seed_data["operador_password"])
+
+    create_denied = client.post(
+        "/api/admin/templates",
+        data={
+            "secretaria_id": str(seed_data["semed_id"]),
+            "nome": "Molde Indevido",
+            "ativo": "true",
+            "padrao": "false",
+            "ordem": "0",
+        },
+        files={"arquivo": ("molde.png", PNG_BYTES, "image/png")},
+    )
+    update_denied = client.patch(
+        f"/api/admin/templates/{template_id}",
+        data={"nome": "Tentativa Indevida"},
+    )
+    delete_denied = client.delete(f"/api/admin/templates/{template_id}")
+
+    assert create_denied.status_code == 403
+    assert update_denied.status_code == 403
+    assert delete_denied.status_code == 403
+
+
 def test_admin_nao_pode_cadastrar_molde_svg(client, seed_data, login):
     login("admin", seed_data["admin_password"])
 

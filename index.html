@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="styles.css?v=20260429-1" />
+  <link rel="stylesheet" href="styles.css?v=20260429-2" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -533,7 +533,7 @@
       </section>
 
       <section id="admin-section" class="stack-section" hidden>
-        <section class="panel">
+        <section id="user-admin-panel" class="panel">
           <div class="panel-header">
             <div>
               <h2>Usuários</h2>
@@ -622,7 +622,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section id="secretaria-admin-panel" class="panel">
           <div class="panel-header">
             <div>
               <h2>Secretarias</h2>
@@ -676,7 +676,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section id="template-management-panel" class="panel">
           <div class="panel-header">
             <div>
               <h2>Moldes</h2>
@@ -753,7 +753,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section id="visual-asset-management-panel" class="panel">
           <div class="panel-header">
             <div>
               <h2>Logos, Assinaturas e Instituições</h2>
@@ -960,6 +960,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260429-1"></script>
+  <script src="app.js?v=20260429-2"></script>
 </body>
 </html>

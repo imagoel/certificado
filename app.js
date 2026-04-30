@@ -37,6 +37,10 @@ const generatorSection = document.getElementById("generator-section");
 const certificatesSection = document.getElementById("certificates-section");
 const auditSection = document.getElementById("audit-section");
 const adminSection = document.getElementById("admin-section");
+const userAdminPanel = document.getElementById("user-admin-panel");
+const secretariaAdminPanel = document.getElementById("secretaria-admin-panel");
+const templateManagementPanel = document.getElementById("template-management-panel");
+const visualAssetManagementPanel = document.getElementById("visual-asset-management-panel");
 const sectionTabs = Array.from(document.querySelectorAll("[data-section]"));
 const auditTab = document.getElementById("tab-audit");
 const adminTab = document.getElementById("tab-admin");
@@ -859,8 +863,25 @@ function isAdminSession(session = sessionState) {
   return Boolean(session && session.usuario && session.usuario.papel === "admin_global");
 }
 
+function canManageVisualAssets(session = sessionState) {
+  return Boolean(session && Array.isArray(session.secretarias) && session.secretarias.length > 0);
+}
+
 function isAdminOnlySection(sectionName) {
-  return sectionName === "admin" || sectionName === "audit";
+  return sectionName === "audit";
+}
+
+function syncAdminSectionVisibility(session = sessionState) {
+  const admin = isAdminSession(session);
+  const canManageAssets = canManageVisualAssets(session);
+  if (userAdminPanel) userAdminPanel.hidden = !admin;
+  if (secretariaAdminPanel) secretariaAdminPanel.hidden = !admin;
+  if (templateManagementPanel) templateManagementPanel.hidden = !canManageAssets;
+  if (visualAssetManagementPanel) visualAssetManagementPanel.hidden = !canManageAssets;
+  if (adminTab) {
+    adminTab.hidden = !canManageAssets;
+    adminTab.textContent = admin ? "Administração" : "Moldes e marcas";
+  }
 }
 
 function switchSection(sectionName) {
@@ -1093,13 +1114,14 @@ function renderSession(session) {
     certFilterSecretariaSelect.value = "";
   }
 
-  if (adminTab) {
-    adminTab.hidden = !isAdminSession(session);
-  }
+  syncAdminSectionVisibility(session);
   if (auditTab) {
     auditTab.hidden = !isAdminSession(session);
   }
-  if (!isAdminSession(session) && isAdminOnlySection(currentSection)) {
+  if (
+    (!isAdminSession(session) && isAdminOnlySection(currentSection)) ||
+    (currentSection === "admin" && !canManageVisualAssets(session))
+  ) {
     switchSection("generator");
   }
 
@@ -2475,9 +2497,11 @@ async function loadAuditEvents(page = auditState.page) {
 }
 
 async function loadAdminData() {
-  if (!sessionState || !isAdminSession()) return;
+  if (!sessionState || !canManageVisualAssets()) return;
 
   try {
+    syncAdminSectionVisibility();
+    const admin = isAdminSession();
     const editingUserId = sanitizeText(userEditIdInput ? userEditIdInput.value : "");
     const editingSecretariaId = sanitizeText(
       secretariaEditIdInput ? secretariaEditIdInput.value : ""
@@ -2488,23 +2512,30 @@ async function loadAdminData() {
     const editingSecretariaAssetId = sanitizeText(
       secretariaAssetEditIdInput ? secretariaAssetEditIdInput.value : ""
     );
-    const [secretarias, usuarios, templates, secretariaAssets] = await Promise.all([
-      apiJsonRequest("/api/admin/secretarias"),
-      apiJsonRequest("/api/admin/usuarios"),
+    const requests = [
       apiJsonRequest("/api/admin/templates"),
       apiJsonRequest("/api/admin/secretaria-assets"),
-    ]);
+    ];
+    if (admin) {
+      requests.unshift(apiJsonRequest("/api/admin/secretarias"), apiJsonRequest("/api/admin/usuarios"));
+    }
+    const payloads = await Promise.all(requests);
+    const manageableSecretarias = admin ? payloads[0] : (sessionState.secretarias || []);
+    const templates = admin ? payloads[2] : payloads[0];
+    const secretariaAssets = admin ? payloads[3] : payloads[1];
 
-    adminState.secretarias = Array.isArray(secretarias) ? secretarias : [];
-    adminState.users = Array.isArray(usuarios) ? usuarios : [];
+    adminState.secretarias = Array.isArray(manageableSecretarias) ? manageableSecretarias : [];
+    adminState.users = admin && Array.isArray(payloads[1]) ? payloads[1] : [];
     adminState.templates = Array.isArray(templates) ? templates : [];
     adminState.secretariaAssets = Array.isArray(secretariaAssets) ? secretariaAssets : [];
-    populateSecretariaOptions(
-      userSecretariasSelect,
-      adminState.secretarias.filter((secretaria) => secretaria.ativa),
-      "",
-      false
-    );
+    if (admin) {
+      populateSecretariaOptions(
+        userSecretariasSelect,
+        adminState.secretarias.filter((secretaria) => secretaria.ativa),
+        "",
+        false
+      );
+    }
     populateSecretariaOptions(
       templateAdminSecretariaSelect,
       adminState.secretarias,
@@ -2517,26 +2548,28 @@ async function loadAdminData() {
       secretariaAssetSecretariaSelect ? secretariaAssetSecretariaSelect.value : "",
       false
     );
-    populateSecretariaOptions(
-      auditSecretariaSelect,
-      adminState.secretarias,
-      auditState.filters.secretariaId,
-      true
-    );
-    renderUserSecretariasChecklist();
-    renderSecretariasTable();
-    renderUsersTable();
+    if (admin) {
+      populateSecretariaOptions(
+        auditSecretariaSelect,
+        adminState.secretarias,
+        auditState.filters.secretariaId,
+        true
+      );
+      renderUserSecretariasChecklist();
+      renderSecretariasTable();
+      renderUsersTable();
+    }
     renderTemplatesTable();
     renderSecretariaAssetsTable();
 
-    if (editingUserId) {
+    if (admin && editingUserId) {
       const currentUser = adminState.users.find((usuario) => String(usuario.id) === editingUserId);
       if (currentUser) {
         fillUserForm(currentUser);
       }
     }
 
-    if (editingSecretariaId) {
+    if (admin && editingSecretariaId) {
       const currentSecretaria = adminState.secretarias.find(
         (secretaria) => String(secretaria.id) === editingSecretariaId
       );
@@ -2563,7 +2596,9 @@ async function loadAdminData() {
       }
     }
 
-    await loadAuditEvents(auditState.page || 1);
+    if (admin) {
+      await loadAuditEvents(auditState.page || 1);
+    }
   } catch (error) {
     console.error(error);
     if (error && error.status === 401) {
@@ -2571,8 +2606,10 @@ async function loadAdminData() {
       return;
     }
     if (error && error.status === 403) {
-      if (adminTab) adminTab.hidden = true;
-      if (auditTab) auditTab.hidden = true;
+      if (!canManageVisualAssets()) {
+        if (adminTab) adminTab.hidden = true;
+      }
+      if (!isAdminSession() && auditTab) auditTab.hidden = true;
       if (isAdminOnlySection(currentSection)) switchSection("generator");
       return;
     }
@@ -3007,7 +3044,7 @@ async function refreshProtectedData(options = {}) {
   await loadAvailableTemplates();
   await loadAvailableSecretariaAssets();
   await loadCertificates(options.page || certListState.page || 1);
-  if (isAdminSession()) {
+  if (canManageVisualAssets()) {
     await loadAdminData();
   }
 }
@@ -5352,6 +5389,7 @@ sectionTabs.forEach((button) => {
   button.addEventListener("click", () => {
     const { section } = button.dataset;
     if (isAdminOnlySection(section) && !isAdminSession()) return;
+    if (section === "admin" && !canManageVisualAssets()) return;
     switchSection(section || "generator");
     if (section === "certificates" && sessionState) {
       void loadCertificates(certListState.page || 1);
@@ -5359,7 +5397,7 @@ sectionTabs.forEach((button) => {
     if (section === "audit" && sessionState && isAdminSession()) {
       void loadAuditEvents(auditState.page || 1);
     }
-    if (section === "admin" && sessionState && isAdminSession()) {
+    if (section === "admin" && sessionState && canManageVisualAssets()) {
       void loadAdminData();
     }
   });
@@ -5663,7 +5701,7 @@ if (templateAdminResetBtn) {
 if (templateAdminForm) {
   templateAdminForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!isAdminSession()) return;
+    if (!canManageVisualAssets()) return;
 
     const editingId = sanitizeText(templateAdminEditIdInput ? templateAdminEditIdInput.value : "");
     const file = templateAdminFileInput && templateAdminFileInput.files
@@ -5741,7 +5779,7 @@ if (secretariaAssetTypeSelect) {
 if (secretariaAssetForm) {
   secretariaAssetForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!isAdminSession()) return;
+    if (!canManageVisualAssets()) return;
 
     const editingId = sanitizeText(
       secretariaAssetEditIdInput ? secretariaAssetEditIdInput.value : ""

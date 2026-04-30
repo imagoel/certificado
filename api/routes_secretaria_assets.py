@@ -7,12 +7,12 @@ from common import (
     build_secretaria_asset_relative_path,
     build_secretaria_asset_response,
     ensure_secretaria_asset_access,
+    get_accessible_secretarias,
     get_current_user,
     is_admin,
     normalize_secretaria_asset_type,
     record_audit_event,
     require_active_secretaria,
-    require_admin_user,
     resolve_template_media_path,
     validate_template_upload,
 )
@@ -63,6 +63,29 @@ def secretaria_asset_query(db: Session):
         Secretaria,
         SecretariaAsset.secretaria_id == Secretaria.id,
     )
+
+
+def get_manageable_secretaria_ids(db: Session, usuario: Usuario) -> set[int] | None:
+    if is_admin(usuario):
+        return None
+    return {secretaria.id for secretaria in get_accessible_secretarias(db, usuario)}
+
+
+def require_asset_manage_secretaria(db: Session, usuario: Usuario, secretaria_id: int) -> Secretaria:
+    secretaria = db.query(Secretaria).filter(Secretaria.id == secretaria_id).first()
+    if not secretaria:
+        raise HTTPException(status_code=404, detail="Secretaria nao encontrada.")
+
+    allowed_ids = get_manageable_secretaria_ids(db, usuario)
+    if allowed_ids is not None and secretaria.id not in allowed_ids:
+        raise HTTPException(status_code=403, detail="Secretaria nao permitida para este usuario.")
+    return secretaria
+
+
+def require_asset_manage_access(db: Session, usuario: Usuario, asset: SecretariaAsset) -> None:
+    allowed_ids = get_manageable_secretaria_ids(db, usuario)
+    if allowed_ids is not None and asset.secretaria_id not in allowed_ids:
+        raise HTTPException(status_code=403, detail="Acesso negado a este asset da secretaria.")
 
 
 @router.get("/api/secretaria-assets", response_model=list[SecretariaAssetResponse])
@@ -120,9 +143,14 @@ def admin_list_secretaria_assets(
     tipo: str | None = Query(default=None),
     secretaria_id: int | None = Query(default=None, ge=1),
     db: Session = Depends(get_db),
-    _usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> list[SecretariaAssetResponse]:
     query = secretaria_asset_query(db)
+    allowed_ids = get_manageable_secretaria_ids(db, usuario)
+    if allowed_ids is not None:
+        if secretaria_id and secretaria_id not in allowed_ids:
+            raise HTTPException(status_code=403, detail="Secretaria nao permitida para este usuario.")
+        query = query.filter(SecretariaAsset.secretaria_id.in_(allowed_ids))
     if tipo:
         query = query.filter(SecretariaAsset.tipo == normalize_secretaria_asset_type(tipo))
     if secretaria_id:
@@ -152,11 +180,9 @@ async def admin_create_secretaria_asset(
     ordem: int = Form(0),
     arquivo: UploadFile = File(...),
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> SecretariaAssetResponse:
-    secretaria = db.query(Secretaria).filter(Secretaria.id == secretaria_id).first()
-    if not secretaria:
-        raise HTTPException(status_code=404, detail="Secretaria nao encontrada.")
+    secretaria = require_asset_manage_secretaria(db, usuario, secretaria_id)
 
     normalized_type, normalized_name, normalized_active, normalized_default, normalized_order = (
         normalize_secretaria_asset_payload(
@@ -223,11 +249,12 @@ async def admin_update_secretaria_asset(
     ordem: int | None = Form(default=None),
     arquivo: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> SecretariaAssetResponse:
     asset = db.query(SecretariaAsset).filter(SecretariaAsset.id == asset_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset da secretaria nao encontrado.")
+    require_asset_manage_access(db, usuario, asset)
 
     updated_name = asset.nome if nome is None else nome
     updated_active = asset.ativo if ativo is None else ativo
@@ -292,11 +319,12 @@ async def admin_update_secretaria_asset(
 def admin_delete_secretaria_asset(
     asset_id: int,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> ActionResponse:
     asset = db.query(SecretariaAsset).filter(SecretariaAsset.id == asset_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset da secretaria nao encontrado.")
+    require_asset_manage_access(db, usuario, asset)
 
     relative_path = asset.arquivo_relpath
     nome = asset.nome

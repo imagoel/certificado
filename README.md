@@ -70,14 +70,14 @@ Resumo importante:
 - cadastro e edicao de usuarios
 - vinculo de operador a uma ou mais secretarias
 - `admin_global` acessa todas as secretarias e nao mantem vinculos salvos
+- `admin_global` deve ser reservado para a equipe de TI e funcoes globais
 - secretarias inativas deixam de aparecer para vinculo de operadores
 - cadastro, edicao, ativacao e desativacao de secretarias
 - exclusao administrativa de usuarios
 - exclusao administrativa de secretarias sem certificados emitidos
 - exclusao administrativa de certificados com confirmacao por codigo e senha do admin
-- moldes por secretaria
-- logos por secretaria
-- assinaturas por secretaria
+- operadores podem gerenciar moldes, logos, assinaturas e instituicoes apenas das secretarias vinculadas
+- operadores nao acessam cadastro de usuarios, cadastro de secretarias nem auditoria
 - molde temporario por tela de geracao
 - logo temporaria por tela de geracao
 - assinatura temporaria por tela de geracao
@@ -129,7 +129,8 @@ O sistema ja esta preparado para:
 - gravar em cada certificado qual secretaria emitiu
 - gravar qual usuario emitiu o certificado
 - manter moldes por secretaria
-- manter logos e assinaturas por secretaria
+- manter logos, assinaturas e instituicoes por secretaria
+- permitir que operadores cuidem dos assets visuais das suas proprias secretarias sem permissao global
 
 Secretarias padrao do seed:
 
@@ -144,7 +145,7 @@ Secretarias padrao do seed:
 
 O sistema trabalha com dois tipos de molde:
 
-- **molde cadastrado da secretaria**: salvo no backend e administrado pelo `admin_global`
+- **molde cadastrado da secretaria**: salvo no backend e administrado pelo `admin_global` ou por operador vinculado a secretaria
 - **molde temporario**: carregado localmente pelo operador apenas para a geracao atual
 
 Regra importante:
@@ -162,18 +163,20 @@ Formatos aceitos para moldes:
 
 `svg` foi removido para evitar risco de XSS em arquivos servidos no mesmo dominio da aplicacao.
 
-## Logos e Assinaturas por Secretaria
+## Assets Visuais por Secretaria
 
 O sistema tambem permite catalogos persistidos de:
 
 - **logos por secretaria**
 - **assinaturas por secretaria**
+- **instituicoes por secretaria**
 
 Funcionamento:
 
-- o `admin_global` cadastra os arquivos aprovados da secretaria
+- o `admin_global` pode cadastrar arquivos aprovados de qualquer secretaria
+- o operador pode cadastrar, editar e excluir arquivos apenas das secretarias vinculadas ao seu usuario
 - cada secretaria pode ter um item padrao
-- ao selecionar a secretaria ativa, o gerador carrega automaticamente o molde, a logo e a assinatura padrao
+- ao selecionar a secretaria ativa, o gerador carrega automaticamente o molde, a logo, a assinatura e a instituicao padrao
 - o operador pode trocar para outro item aprovado da mesma secretaria
 - uploads manuais na tela continuam valendo como sobrescrita temporaria apenas para aquela geracao
 
@@ -220,7 +223,7 @@ Eventos auditados incluem:
 - PNG enviado
 - PNG acessado
 - certificado excluido
-- acoes administrativas de usuarios, secretarias, moldes, logos e assinaturas
+- acoes administrativas de usuarios, secretarias, moldes, logos, assinaturas e instituicoes
 
 Observacoes:
 
@@ -253,7 +256,20 @@ Observacoes:
 - `GET /api/secretaria-assets`
 - `GET /api/secretaria-assets/{id}/arquivo`
 
-### Administrativos (`admin_global`)
+### Gestao Visual da Secretaria (`admin_global` ou operador vinculado)
+
+- `GET /api/admin/templates`
+- `POST /api/admin/templates`
+- `PATCH /api/admin/templates/{id}`
+- `DELETE /api/admin/templates/{id}`
+- `GET /api/admin/secretaria-assets`
+- `POST /api/admin/secretaria-assets`
+- `PATCH /api/admin/secretaria-assets/{id}`
+- `DELETE /api/admin/secretaria-assets/{id}`
+
+Observacao: para operadores, esses endpoints retornam e aceitam somente secretarias vinculadas ao usuario.
+
+### Administrativos Globais (`admin_global`)
 
 - `GET /api/admin/secretarias`
 - `POST /api/admin/secretarias`
@@ -264,14 +280,6 @@ Observacoes:
 - `PATCH /api/admin/usuarios/{id}`
 - `DELETE /api/admin/usuarios/{id}`
 - `GET /api/admin/auditoria`
-- `GET /api/admin/templates`
-- `POST /api/admin/templates`
-- `PATCH /api/admin/templates/{id}`
-- `DELETE /api/admin/templates/{id}`
-- `GET /api/admin/secretaria-assets`
-- `POST /api/admin/secretaria-assets`
-- `PATCH /api/admin/secretaria-assets/{id}`
-- `DELETE /api/admin/secretaria-assets/{id}`
 - `GET /docs` (somente admin autenticado, se habilitado)
 - `GET /openapi.json` (somente admin autenticado, se habilitado)
 
@@ -285,7 +293,7 @@ Observacoes:
 - `api/routes_certificates.py`: emissao, listagem e arquivos dos certificados
 - `api/routes_public.py`: `health`, QR Code e validacao publica
 - `api/routes_templates.py`: moldes por secretaria
-- `api/routes_secretaria_assets.py`: logos e assinaturas por secretaria
+- `api/routes_secretaria_assets.py`: logos, assinaturas e instituicoes por secretaria
 - `api/certificate_sequences.py`: reserva atomica de codigos
 - `api/models.py`: modelos SQLAlchemy
 - `api/schemas.py`: contratos da API
@@ -434,7 +442,8 @@ Cobertura atual:
 - lotes
 - auditoria
 - templates
-- logos e assinaturas por secretaria
+- logos, assinaturas e instituicoes por secretaria
+- permissao de operador para gerenciar assets visuais apenas das secretarias vinculadas
 - migracoes Alembic
 - compatibilidade entre hash legado e HMAC
 

@@ -7,11 +7,11 @@ from common import (
     build_template_relative_path,
     build_template_response,
     ensure_template_access,
+    get_accessible_secretarias,
     get_current_user,
     is_admin,
     record_audit_event,
     require_active_secretaria,
-    require_admin_user,
     resolve_template_media_path,
     validate_template_upload,
 )
@@ -53,6 +53,29 @@ def clear_other_default_templates(
 
 def template_query(db: Session):
     return db.query(CertificateTemplate).join(Secretaria, CertificateTemplate.secretaria_id == Secretaria.id)
+
+
+def get_manageable_secretaria_ids(db: Session, usuario: Usuario) -> set[int] | None:
+    if is_admin(usuario):
+        return None
+    return {secretaria.id for secretaria in get_accessible_secretarias(db, usuario)}
+
+
+def require_template_manage_secretaria(db: Session, usuario: Usuario, secretaria_id: int) -> Secretaria:
+    secretaria = db.query(Secretaria).filter(Secretaria.id == secretaria_id).first()
+    if not secretaria:
+        raise HTTPException(status_code=404, detail="Secretaria nao encontrada.")
+
+    allowed_ids = get_manageable_secretaria_ids(db, usuario)
+    if allowed_ids is not None and secretaria.id not in allowed_ids:
+        raise HTTPException(status_code=403, detail="Secretaria nao permitida para este usuario.")
+    return secretaria
+
+
+def require_template_manage_access(db: Session, usuario: Usuario, template: CertificateTemplate) -> None:
+    allowed_ids = get_manageable_secretaria_ids(db, usuario)
+    if allowed_ids is not None and template.secretaria_id not in allowed_ids:
+        raise HTTPException(status_code=403, detail="Acesso negado a este molde.")
 
 
 @router.get("/api/templates", response_model=list[CertificateTemplateResponse])
@@ -106,9 +129,14 @@ def admin_list_templates(
     request: Request,
     secretaria_id: int | None = Query(default=None, ge=1),
     db: Session = Depends(get_db),
-    _usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> list[CertificateTemplateResponse]:
     query = template_query(db)
+    allowed_ids = get_manageable_secretaria_ids(db, usuario)
+    if allowed_ids is not None:
+        if secretaria_id and secretaria_id not in allowed_ids:
+            raise HTTPException(status_code=403, detail="Secretaria nao permitida para este usuario.")
+        query = query.filter(CertificateTemplate.secretaria_id.in_(allowed_ids))
     if secretaria_id:
         query = query.filter(CertificateTemplate.secretaria_id == secretaria_id)
 
@@ -134,11 +162,9 @@ async def admin_create_template(
     ordem: int = Form(0),
     arquivo: UploadFile = File(...),
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> CertificateTemplateResponse:
-    secretaria = db.query(Secretaria).filter(Secretaria.id == secretaria_id).first()
-    if not secretaria:
-        raise HTTPException(status_code=404, detail="Secretaria nao encontrada.")
+    secretaria = require_template_manage_secretaria(db, usuario, secretaria_id)
 
     normalized_name, normalized_active, normalized_default, normalized_order = (
         normalize_template_payload(nome=nome, ativo=ativo, padrao=padrao, ordem=ordem)
@@ -193,11 +219,12 @@ async def admin_update_template(
     ordem: int | None = Form(default=None),
     arquivo: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> CertificateTemplateResponse:
     template = db.query(CertificateTemplate).filter(CertificateTemplate.id == template_id).first()
     if not template:
         raise HTTPException(status_code=404, detail="Molde nao encontrado.")
+    require_template_manage_access(db, usuario, template)
 
     updated_name = template.nome if nome is None else nome
     updated_active = template.ativo if ativo is None else ativo
@@ -260,11 +287,12 @@ async def admin_update_template(
 def admin_delete_template(
     template_id: int,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_admin_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> ActionResponse:
     template = db.query(CertificateTemplate).filter(CertificateTemplate.id == template_id).first()
     if not template:
         raise HTTPException(status_code=404, detail="Molde nao encontrado.")
+    require_template_manage_access(db, usuario, template)
 
     relative_path = template.arquivo_relpath
     nome = template.nome
