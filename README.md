@@ -172,6 +172,7 @@ O sistema tambem permite catalogos persistidos de:
 - **logos por secretaria**
 - **assinaturas por secretaria**
 - **instituicoes por secretaria**
+- **selos e marcas extras por secretaria**
 
 Funcionamento:
 
@@ -183,6 +184,8 @@ Funcionamento:
 - uploads manuais na tela continuam valendo como sobrescrita temporaria apenas para aquela geracao
 - no gerador, assinatura 2 e assinatura 3 reutilizam o catalogo de assinaturas da secretaria e podem ser posicionadas livremente
 - cada assinatura extra e desenhada como bloco completo, com imagem, linha e texto abaixo
+- o gerador oferece quatro slots de selos extras para logos de programas, parceiros ou marcas adicionais no rodape
+- quando assinatura 2 ou assinatura 3 estiver ativa, a instituicao e ocultada automaticamente para evitar sobreposicao no rodape
 
 Formatos aceitos:
 
@@ -490,8 +493,8 @@ Compatibilidade:
 - a tela de auditoria saiu da aba `Certificados` e ganhou aba propria
 - a tabela de certificados ficou mais compacta em telas pequenas, com detalhes secundarios embutidos na celula principal
 - `Molde`, `Logo` e `Assinatura` foram simplificados em tres blocos mais enxutos, com sobrescrita temporaria apenas quando necessario
-- `Ajustes avancados de logo, assinatura e instituicao` ficam recolhidos por padrao
-- `Itens extras` permitem usar assinatura 2 e assinatura 3 com linha, texto e posicionamento independente
+- `Ajustes avancados de logo, assinatura, selos e instituicao` ficam recolhidos por padrao
+- `Itens extras` permitem usar assinatura 2, assinatura 3 e ate quatro selos com posicionamento independente
 - o foco visual de inputs, botoes e controles foi reforcado para melhorar navegacao por teclado
 
 ## Proximas Evolucoes Naturais

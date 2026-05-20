@@ -234,6 +234,85 @@
               </div>
             </section>
 
+            <section id="selos-extras-wrap" class="batch-controls generator-asset-block signature-extras-block">
+              <h2>Selos / Icones extras</h2>
+              <p class="hint">Use estes slots para marcas, selos e icones do rodape. Cada selo pode ser escolhido do cadastro da secretaria ou enviado temporariamente nesta emissao.</p>
+
+              <div class="signature-extra-grid">
+                <div class="signature-extra-card">
+                  <h3>Selo 1</h3>
+                  <label for="selo1-select">Selo cadastrado</label>
+                  <select id="selo1-select">
+                    <option value="">Nao usar selo 1</option>
+                  </select>
+                  <p id="selo1-select-status" class="status" aria-live="polite"></p>
+
+                  <div class="asset-upload-group">
+                    <label for="selo1" class="sr-only">Arquivo temporario do selo 1</label>
+                    <input id="selo1" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo1-select-status selo1-status" />
+                    <div class="actions asset-inline-actions">
+                      <button id="selo1-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 1 temporario</button>
+                    </div>
+                    <p id="selo1-status" class="status" aria-live="polite"></p>
+                  </div>
+                </div>
+
+                <div class="signature-extra-card">
+                  <h3>Selo 2</h3>
+                  <label for="selo2-select">Selo cadastrado</label>
+                  <select id="selo2-select">
+                    <option value="">Nao usar selo 2</option>
+                  </select>
+                  <p id="selo2-select-status" class="status" aria-live="polite"></p>
+
+                  <div class="asset-upload-group">
+                    <label for="selo2" class="sr-only">Arquivo temporario do selo 2</label>
+                    <input id="selo2" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo2-select-status selo2-status" />
+                    <div class="actions asset-inline-actions">
+                      <button id="selo2-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 2 temporario</button>
+                    </div>
+                    <p id="selo2-status" class="status" aria-live="polite"></p>
+                  </div>
+                </div>
+
+                <div class="signature-extra-card">
+                  <h3>Selo 3</h3>
+                  <label for="selo3-select">Selo cadastrado</label>
+                  <select id="selo3-select">
+                    <option value="">Nao usar selo 3</option>
+                  </select>
+                  <p id="selo3-select-status" class="status" aria-live="polite"></p>
+
+                  <div class="asset-upload-group">
+                    <label for="selo3" class="sr-only">Arquivo temporario do selo 3</label>
+                    <input id="selo3" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo3-select-status selo3-status" />
+                    <div class="actions asset-inline-actions">
+                      <button id="selo3-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 3 temporario</button>
+                    </div>
+                    <p id="selo3-status" class="status" aria-live="polite"></p>
+                  </div>
+                </div>
+
+                <div class="signature-extra-card">
+                  <h3>Selo 4</h3>
+                  <label for="selo4-select">Selo cadastrado</label>
+                  <select id="selo4-select">
+                    <option value="">Nao usar selo 4</option>
+                  </select>
+                  <p id="selo4-select-status" class="status" aria-live="polite"></p>
+
+                  <div class="asset-upload-group">
+                    <label for="selo4" class="sr-only">Arquivo temporario do selo 4</label>
+                    <input id="selo4" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo4-select-status selo4-status" />
+                    <div class="actions asset-inline-actions">
+                      <button id="selo4-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 4 temporario</button>
+                    </div>
+                    <p id="selo4-status" class="status" aria-live="polite"></p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section id="instituicao-library-wrap" class="batch-controls generator-asset-block">
               <h2>Instituição</h2>
               <label for="instituicao-select">Instituição cadastrada</label>
@@ -320,6 +399,39 @@
 
                   <label for="assinatura3Size">Tamanho: <span id="assinatura3SizeVal">230 px</span></label>
                   <input id="assinatura3Size" type="range" min="120" max="360" step="1" value="230" />
+                </fieldset>
+
+                <fieldset class="slider-fieldset">
+                  <legend>Ajuste dos selos</legend>
+                  <p class="slider-hint">Posicione marcas e icones extras no rodape. Eles nao desenham linha nem texto.</p>
+
+                  <label for="selo1X">Selo 1 X: <span id="selo1XVal">410 px</span></label>
+                  <input id="selo1X" type="range" min="80" max="1120" step="1" value="410" />
+                  <label for="selo1Y">Selo 1 Y: <span id="selo1YVal">745 px</span></label>
+                  <input id="selo1Y" type="range" min="620" max="805" step="1" value="745" />
+                  <label for="selo1Size">Selo 1 tamanho: <span id="selo1SizeVal">80 px</span></label>
+                  <input id="selo1Size" type="range" min="35" max="180" step="1" value="80" />
+
+                  <label for="selo2X">Selo 2 X: <span id="selo2XVal">520 px</span></label>
+                  <input id="selo2X" type="range" min="80" max="1120" step="1" value="520" />
+                  <label for="selo2Y">Selo 2 Y: <span id="selo2YVal">745 px</span></label>
+                  <input id="selo2Y" type="range" min="620" max="805" step="1" value="745" />
+                  <label for="selo2Size">Selo 2 tamanho: <span id="selo2SizeVal">80 px</span></label>
+                  <input id="selo2Size" type="range" min="35" max="180" step="1" value="80" />
+
+                  <label for="selo3X">Selo 3 X: <span id="selo3XVal">640 px</span></label>
+                  <input id="selo3X" type="range" min="80" max="1120" step="1" value="640" />
+                  <label for="selo3Y">Selo 3 Y: <span id="selo3YVal">745 px</span></label>
+                  <input id="selo3Y" type="range" min="620" max="805" step="1" value="745" />
+                  <label for="selo3Size">Selo 3 tamanho: <span id="selo3SizeVal">80 px</span></label>
+                  <input id="selo3Size" type="range" min="35" max="180" step="1" value="80" />
+
+                  <label for="selo4X">Selo 4 X: <span id="selo4XVal">760 px</span></label>
+                  <input id="selo4X" type="range" min="80" max="1120" step="1" value="760" />
+                  <label for="selo4Y">Selo 4 Y: <span id="selo4YVal">745 px</span></label>
+                  <input id="selo4Y" type="range" min="620" max="805" step="1" value="745" />
+                  <label for="selo4Size">Selo 4 tamanho: <span id="selo4SizeVal">80 px</span></label>
+                  <input id="selo4Size" type="range" min="35" max="180" step="1" value="80" />
                 </fieldset>
 
                 <fieldset class="slider-fieldset">
@@ -560,6 +672,9 @@
                   <option value="secretaria_asset_instituicao_criado">Instituição criada</option>
                   <option value="secretaria_asset_instituicao_atualizado">Instituição atualizada</option>
                   <option value="secretaria_asset_instituicao_excluido">Instituição excluída</option>
+                  <option value="secretaria_asset_selo_criado">Selo criado</option>
+                  <option value="secretaria_asset_selo_atualizado">Selo atualizado</option>
+                  <option value="secretaria_asset_selo_excluido">Selo excluído</option>
                 </optgroup>
               </select>
             </div>
@@ -848,8 +963,8 @@
         <section id="visual-asset-management-panel" class="panel">
           <div class="panel-header">
             <div>
-              <h2>Logos, Assinaturas e Instituições</h2>
-              <p class="subtitle">Cadastre logos, assinaturas e instituições por secretaria. O operador pode escolher entre os itens aprovados no gerador.</p>
+              <h2>Logos, Assinaturas, Instituições e Selos</h2>
+              <p class="subtitle">Cadastre logos, assinaturas, instituições e selos por secretaria. O operador pode escolher entre os itens aprovados no gerador.</p>
             </div>
           </div>
 
@@ -868,6 +983,7 @@
                   <option value="logo">Logo</option>
                   <option value="assinatura">Assinatura</option>
                   <option value="instituicao">Instituição</option>
+                  <option value="selo">Selo / Ícone</option>
                 </select>
               </div>
 

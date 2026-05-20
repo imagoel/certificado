@@ -81,6 +81,42 @@ def test_admin_cadastra_instituicao_e_operador_pode_listar_na_secretaria_ativa(
     assert file_response.headers["content-type"].startswith("image/")
 
 
+def test_admin_cadastra_selo_e_operador_pode_listar_na_secretaria_ativa(
+    client, seed_data, login
+):
+    login("admin", seed_data["admin_password"])
+
+    create_response = client.post(
+        "/api/admin/secretaria-assets",
+        data={
+            "secretaria_id": str(seed_data["seafi_id"]),
+            "tipo": "selo",
+            "nome": "Selo SESAU",
+            "ativo": "true",
+            "padrao": "false",
+            "ordem": "1",
+        },
+        files={"arquivo": ("selo.png", PNG_BYTES, "image/png")},
+    )
+
+    assert create_response.status_code == 201
+    payload = create_response.json()
+    assert payload["tipo"] == "selo"
+    assert payload["nome"] == "Selo SESAU"
+
+    client.post("/api/auth/logout")
+    login("operador", seed_data["operador_password"])
+
+    list_response = client.get("/api/secretaria-assets?tipo=selo")
+    assert list_response.status_code == 200
+    assert len(list_response.json()) == 1
+    assert list_response.json()[0]["nome"] == "Selo SESAU"
+
+    file_response = client.get(list_response.json()[0]["arquivo_url"])
+    assert file_response.status_code == 200
+    assert file_response.headers["content-type"].startswith("image/")
+
+
 def test_operador_nao_acessa_assets_de_outra_secretaria(client, seed_data, login):
     login("admin", seed_data["admin_password"])
 

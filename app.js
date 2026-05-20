@@ -27,6 +27,23 @@ const assinatura2Select = document.getElementById("assinatura2-select");
 const assinatura2SelectStatus = document.getElementById("assinatura2-select-status");
 const assinatura3Select = document.getElementById("assinatura3-select");
 const assinatura3SelectStatus = document.getElementById("assinatura3-select-status");
+const selosExtrasWrap = document.getElementById("selos-extras-wrap");
+const selo1Input = document.getElementById("selo1");
+const selo2Input = document.getElementById("selo2");
+const selo3Input = document.getElementById("selo3");
+const selo4Input = document.getElementById("selo4");
+const selo1RemoveBtn = document.getElementById("selo1-remove");
+const selo2RemoveBtn = document.getElementById("selo2-remove");
+const selo3RemoveBtn = document.getElementById("selo3-remove");
+const selo4RemoveBtn = document.getElementById("selo4-remove");
+const selo1Select = document.getElementById("selo1-select");
+const selo2Select = document.getElementById("selo2-select");
+const selo3Select = document.getElementById("selo3-select");
+const selo4Select = document.getElementById("selo4-select");
+const selo1SelectStatus = document.getElementById("selo1-select-status");
+const selo2SelectStatus = document.getElementById("selo2-select-status");
+const selo3SelectStatus = document.getElementById("selo3-select-status");
+const selo4SelectStatus = document.getElementById("selo4-select-status");
 const instituicaoLibraryWrap = document.getElementById("instituicao-library-wrap");
 const instituicaoSelect = document.getElementById("instituicao-select");
 const instituicaoSelectStatus = document.getElementById("instituicao-select-status");
@@ -185,6 +202,10 @@ const logoStatus = document.getElementById("logo-status");
 const assinaturaStatus = document.getElementById("assinatura-status");
 const assinatura2Status = document.getElementById("assinatura2-status");
 const assinatura3Status = document.getElementById("assinatura3-status");
+const selo1Status = document.getElementById("selo1-status");
+const selo2Status = document.getElementById("selo2-status");
+const selo3Status = document.getElementById("selo3-status");
+const selo4Status = document.getElementById("selo4-status");
 const instituicaoStatus = document.getElementById("instituicao-status");
 const templateStatus = document.getElementById("template-status");
 const templateSelectStatus = document.getElementById("template-select-status");
@@ -211,6 +232,18 @@ const assinatura3XInput = document.getElementById("assinatura3X");
 const assinatura3YInput = document.getElementById("assinatura3Y");
 const assinatura3SizeInput = document.getElementById("assinatura3Size");
 const assinatura3LabelInput = document.getElementById("assinatura3Label");
+const selo1XInput = document.getElementById("selo1X");
+const selo1YInput = document.getElementById("selo1Y");
+const selo1SizeInput = document.getElementById("selo1Size");
+const selo2XInput = document.getElementById("selo2X");
+const selo2YInput = document.getElementById("selo2Y");
+const selo2SizeInput = document.getElementById("selo2Size");
+const selo3XInput = document.getElementById("selo3X");
+const selo3YInput = document.getElementById("selo3Y");
+const selo3SizeInput = document.getElementById("selo3Size");
+const selo4XInput = document.getElementById("selo4X");
+const selo4YInput = document.getElementById("selo4Y");
+const selo4SizeInput = document.getElementById("selo4Size");
 const instituicaoXInput = document.getElementById("instituicaoX");
 const instituicaoYInput = document.getElementById("instituicaoY");
 const instituicaoSizeInput = document.getElementById("instituicaoSize");
@@ -230,6 +263,18 @@ const assinatura2SizeVal = document.getElementById("assinatura2SizeVal");
 const assinatura3XVal = document.getElementById("assinatura3XVal");
 const assinatura3YVal = document.getElementById("assinatura3YVal");
 const assinatura3SizeVal = document.getElementById("assinatura3SizeVal");
+const selo1XVal = document.getElementById("selo1XVal");
+const selo1YVal = document.getElementById("selo1YVal");
+const selo1SizeVal = document.getElementById("selo1SizeVal");
+const selo2XVal = document.getElementById("selo2XVal");
+const selo2YVal = document.getElementById("selo2YVal");
+const selo2SizeVal = document.getElementById("selo2SizeVal");
+const selo3XVal = document.getElementById("selo3XVal");
+const selo3YVal = document.getElementById("selo3YVal");
+const selo3SizeVal = document.getElementById("selo3SizeVal");
+const selo4XVal = document.getElementById("selo4XVal");
+const selo4YVal = document.getElementById("selo4YVal");
+const selo4SizeVal = document.getElementById("selo4SizeVal");
 const instituicaoXVal = document.getElementById("instituicaoXVal");
 const instituicaoYVal = document.getElementById("instituicaoYVal");
 const instituicaoSizeVal = document.getElementById("instituicaoSizeVal");
@@ -262,6 +307,12 @@ const DEFAULT_INSTITUICAO_LAYOUT = Object.freeze({
   maxW: DEFAULT_ASSINATURA_LAYOUT.maxW,
   maxH: DEFAULT_ASSINATURA_LAYOUT.maxH,
 });
+const DEFAULT_SELO_LAYOUTS = Object.freeze({
+  selo1: Object.freeze({ x: 410, y: 745, maxW: 80, maxH: 55 }),
+  selo2: Object.freeze({ x: 520, y: 745, maxW: 80, maxH: 55 }),
+  selo3: Object.freeze({ x: 640, y: 745, maxW: 80, maxH: 55 }),
+  selo4: Object.freeze({ x: 760, y: 745, maxW: 80, maxH: 55 }),
+});
 const ASSINATURA_CONTROL_LIMITS = Object.freeze({
   xMin: 140,
   xMax: 520,
@@ -286,7 +337,16 @@ const EXTRA_ASSINATURA_CONTROL_LIMITS = Object.freeze({
   sizeMin: ASSINATURA_CONTROL_LIMITS.sizeMin,
   sizeMax: ASSINATURA_CONTROL_LIMITS.sizeMax,
 });
+const SELO_CONTROL_LIMITS = Object.freeze({
+  xMin: 80,
+  xMax: 1120,
+  yMin: 620,
+  yMax: 805,
+  sizeMin: 35,
+  sizeMax: 180,
+});
 const DEFAULT_ASSINATURA_LABEL = "Assinatura do Responsável";
+const SELO_SLOT_KEYS = ["selo1", "selo2", "selo3", "selo4"];
 
 const assets = {
   template: null,
@@ -295,6 +355,10 @@ const assets = {
   assinatura2: null,
   assinatura3: null,
   instituicao: null,
+  selo1: null,
+  selo2: null,
+  selo3: null,
+  selo4: null,
 };
 
 const layout = {
@@ -303,6 +367,10 @@ const layout = {
   assinatura2: { ...DEFAULT_ASSINATURA2_LAYOUT },
   assinatura3: { ...DEFAULT_ASSINATURA3_LAYOUT },
   instituicao: { ...DEFAULT_INSTITUICAO_LAYOUT },
+  selo1: { ...DEFAULT_SELO_LAYOUTS.selo1 },
+  selo2: { ...DEFAULT_SELO_LAYOUTS.selo2 },
+  selo3: { ...DEFAULT_SELO_LAYOUTS.selo3 },
+  selo4: { ...DEFAULT_SELO_LAYOUTS.selo4 },
   qr: { x: 160, y: 175, maxW: 120, maxH: 120 },
 };
 
@@ -338,6 +406,14 @@ let savedAssinatura3 = null;
 let savedAssinatura3Image = null;
 let savedInstituicao = null;
 let savedInstituicaoImage = null;
+let savedSelo1 = null;
+let savedSelo1Image = null;
+let savedSelo2 = null;
+let savedSelo2Image = null;
+let savedSelo3 = null;
+let savedSelo3Image = null;
+let savedSelo4 = null;
+let savedSelo4Image = null;
 
 const DEFAULT_CERTIFICATE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -374,6 +450,11 @@ const secretariaAssetCatalogState = {
   assinatura2: { items: [], selectedId: "" },
   assinatura3: { items: [], selectedId: "" },
   instituicao: { items: [], selectedId: "" },
+  selo: { items: [], selectedId: "" },
+  selo1: { items: [], selectedId: "" },
+  selo2: { items: [], selectedId: "" },
+  selo3: { items: [], selectedId: "" },
+  selo4: { items: [], selectedId: "" },
 };
 
 const auditState = {
@@ -395,6 +476,7 @@ const certificateAspectRatio = 1200 / 850;
 const logoAspectRatio = 95 / 150;
 const assinaturaAspectRatio = 80 / 230;
 const instituicaoAspectRatio = 80 / 230;
+const seloAspectRatio = 55 / 80;
 const viewSections = {
   generator: generatorSection,
   certificates: certificatesSection,
@@ -774,6 +856,22 @@ function setAssinatura3SelectStatus(message, type = "info") {
   setStatusMessage(assinatura3SelectStatus, message, type);
 }
 
+function setSelo1SelectStatus(message, type = "info") {
+  setStatusMessage(selo1SelectStatus, message, type);
+}
+
+function setSelo2SelectStatus(message, type = "info") {
+  setStatusMessage(selo2SelectStatus, message, type);
+}
+
+function setSelo3SelectStatus(message, type = "info") {
+  setStatusMessage(selo3SelectStatus, message, type);
+}
+
+function setSelo4SelectStatus(message, type = "info") {
+  setStatusMessage(selo4SelectStatus, message, type);
+}
+
 function setInstituicaoSelectStatus(message, type = "info") {
   setStatusMessage(instituicaoSelectStatus, message, type);
 }
@@ -794,6 +892,22 @@ function setAssinatura3Status(message, type = "info") {
   setStatusMessage(assinatura3Status, message, type);
 }
 
+function setSelo1Status(message, type = "info") {
+  setStatusMessage(selo1Status, message, type);
+}
+
+function setSelo2Status(message, type = "info") {
+  setStatusMessage(selo2Status, message, type);
+}
+
+function setSelo3Status(message, type = "info") {
+  setStatusMessage(selo3Status, message, type);
+}
+
+function setSelo4Status(message, type = "info") {
+  setStatusMessage(selo4Status, message, type);
+}
+
 function setInstituicaoStatus(message, type = "info") {
   setStatusMessage(instituicaoStatus, message, type);
 }
@@ -812,12 +926,58 @@ function getSecretariaAssetCatalog(type) {
   return secretariaAssetCatalogState[type] || { items: [], selectedId: "" };
 }
 
+function isSeloSlot(type) {
+  return SELO_SLOT_KEYS.includes(type);
+}
+
+function getSeloSlotNumber(type) {
+  const index = SELO_SLOT_KEYS.indexOf(type);
+  return index >= 0 ? index + 1 : 0;
+}
+
+function getSeloSlotUiParts(type) {
+  if (type === "selo1") {
+    return {
+      select: selo1Select,
+      removeBtn: selo1RemoveBtn,
+      setSelectStatus: setSelo1SelectStatus,
+      setManualStatus: setSelo1Status,
+    };
+  }
+  if (type === "selo2") {
+    return {
+      select: selo2Select,
+      removeBtn: selo2RemoveBtn,
+      setSelectStatus: setSelo2SelectStatus,
+      setManualStatus: setSelo2Status,
+    };
+  }
+  if (type === "selo3") {
+    return {
+      select: selo3Select,
+      removeBtn: selo3RemoveBtn,
+      setSelectStatus: setSelo3SelectStatus,
+      setManualStatus: setSelo3Status,
+    };
+  }
+  return {
+    select: selo4Select,
+    removeBtn: selo4RemoveBtn,
+    setSelectStatus: setSelo4SelectStatus,
+    setManualStatus: setSelo4Status,
+  };
+}
+
 function getSavedSecretariaAsset(type) {
   if (type === "logo") return savedLogo;
   if (type === "assinatura") return savedAssinatura;
   if (type === "assinatura2") return savedAssinatura2;
   if (type === "assinatura3") return savedAssinatura3;
   if (type === "instituicao") return savedInstituicao;
+  if (type === "selo1") return savedSelo1;
+  if (type === "selo2") return savedSelo2;
+  if (type === "selo3") return savedSelo3;
+  if (type === "selo4") return savedSelo4;
   return null;
 }
 
@@ -827,6 +987,10 @@ function getSavedSecretariaAssetImage(type) {
   if (type === "assinatura2") return savedAssinatura2Image;
   if (type === "assinatura3") return savedAssinatura3Image;
   if (type === "instituicao") return savedInstituicaoImage;
+  if (type === "selo1") return savedSelo1Image;
+  if (type === "selo2") return savedSelo2Image;
+  if (type === "selo3") return savedSelo3Image;
+  if (type === "selo4") return savedSelo4Image;
   return null;
 }
 
@@ -854,10 +1018,46 @@ function setSavedSecretariaAsset(type, asset, image) {
   if (type === "instituicao") {
     savedInstituicao = asset;
     savedInstituicaoImage = image;
+    return;
+  }
+  if (type === "selo1") {
+    savedSelo1 = asset;
+    savedSelo1Image = image;
+    return;
+  }
+  if (type === "selo2") {
+    savedSelo2 = asset;
+    savedSelo2Image = image;
+    return;
+  }
+  if (type === "selo3") {
+    savedSelo3 = asset;
+    savedSelo3Image = image;
+    return;
+  }
+  if (type === "selo4") {
+    savedSelo4 = asset;
+    savedSelo4Image = image;
   }
 }
 
 function getSecretariaAssetUi(type) {
+  if (isSeloSlot(type)) {
+    const slotNumber = getSeloSlotNumber(type);
+    const slotUi = getSeloSlotUiParts(type);
+    return {
+      label: `selo ${slotNumber}`,
+      pluralLabel: "selos",
+      wrap: selosExtrasWrap,
+      select: slotUi.select,
+      removeBtn: slotUi.removeBtn,
+      setSelectStatus: slotUi.setSelectStatus,
+      setManualStatus: slotUi.setManualStatus,
+      blankLabel: `Nao usar selo ${slotNumber}`,
+      missingFileMessage:
+        "O arquivo do selo cadastrado nao foi encontrado no servidor. Reenvie o selo na administracao.",
+    };
+  }
   if (type === "logo") {
     return {
       label: "logo",
@@ -928,6 +1128,20 @@ function getSecretariaAssetUi(type) {
         "O arquivo da instituição cadastrada não foi encontrado no servidor. Reenvie a instituição na administração.",
     };
   }
+  if (type === "selo") {
+    return {
+      label: "selo",
+      pluralLabel: "selos",
+      wrap: selosExtrasWrap,
+      select: null,
+      removeBtn: null,
+      setSelectStatus: () => undefined,
+      setManualStatus: () => undefined,
+      blankLabel: "Nao usar selo",
+      missingFileMessage:
+        "O arquivo do selo cadastrado nao foi encontrado no servidor. Reenvie o selo na administracao.",
+    };
+  }
   return getSecretariaAssetUi("logo");
 }
 
@@ -962,6 +1176,11 @@ function getActiveSignatureImage(slotKey) {
   if (slotKey === "assinatura2") return assets.assinatura2 || savedAssinatura2Image;
   if (slotKey === "assinatura3") return assets.assinatura3 || savedAssinatura3Image;
   return getActiveAssinaturaImage();
+}
+
+function getActiveSeloImage(slotKey) {
+  if (!isSeloSlot(slotKey)) return null;
+  return assets[slotKey] || getSavedSecretariaAssetImage(slotKey);
 }
 
 function getSignatureLabel(slotKey) {
@@ -1176,6 +1395,36 @@ function syncExtraSignatureCatalogs(items = [], options = {}) {
       const message =
         statusMessage ||
         "A secretaria ativa ainda nao tem assinaturas cadastradas para usar nos itens extras.";
+      ui.setSelectStatus(message, statusType);
+    } else {
+      ui.setSelectStatus("", "info");
+    }
+  });
+}
+
+function syncSeloCatalogs(items = [], options = {}) {
+  const availableItems = Array.isArray(items) ? items : [];
+  const { statusMessage = "", statusType = "info" } = options;
+
+  SELO_SLOT_KEYS.forEach((type) => {
+    const catalog = getSecretariaAssetCatalog(type);
+    const ui = getSecretariaAssetUi(type);
+    catalog.items = availableItems;
+
+    const selectedExists = availableItems.some(
+      (item) => String(item.id) === String(catalog.selectedId || "")
+    );
+    if (!selectedExists) {
+      catalog.selectedId = "";
+      setSavedSecretariaAsset(type, null, null);
+    }
+
+    populateSecretariaAssetOptions(type, availableItems, catalog.selectedId, true);
+    if (ui.wrap) ui.wrap.hidden = false;
+    if (statusMessage || !availableItems.length) {
+      const message =
+        statusMessage ||
+        "A secretaria ativa ainda nao tem selos cadastrados. Voce pode enviar arquivos temporarios nesta emissao.";
       ui.setSelectStatus(message, statusType);
     } else {
       ui.setSelectStatus("", "info");
@@ -1428,6 +1677,15 @@ function clearSessionUi(message = "") {
   secretariaAssetCatalogState.assinatura3.selectedId = "";
   secretariaAssetCatalogState.instituicao.items = [];
   secretariaAssetCatalogState.instituicao.selectedId = "";
+  secretariaAssetCatalogState.selo.items = [];
+  secretariaAssetCatalogState.selo.selectedId = "";
+  SELO_SLOT_KEYS.forEach((type) => {
+    const catalog = getSecretariaAssetCatalog(type);
+    catalog.items = [];
+    catalog.selectedId = "";
+    assets[type] = null;
+    setSavedSecretariaAsset(type, null, null);
+  });
   assets.template = null;
   assets.logo = null;
   assets.assinatura = null;
@@ -1446,12 +1704,24 @@ function clearSessionUi(message = "") {
   savedAssinatura3Image = null;
   savedInstituicao = null;
   savedInstituicaoImage = null;
+  savedSelo1 = null;
+  savedSelo1Image = null;
+  savedSelo2 = null;
+  savedSelo2Image = null;
+  savedSelo3 = null;
+  savedSelo3Image = null;
+  savedSelo4 = null;
+  savedSelo4Image = null;
   if (templateInput) templateInput.value = "";
   if (templateHideTitleInput) templateHideTitleInput.checked = false;
   if (logoInput) logoInput.value = "";
   if (assinaturaInput) assinaturaInput.value = "";
   if (assinatura2Input) assinatura2Input.value = "";
   if (assinatura3Input) assinatura3Input.value = "";
+  if (selo1Input) selo1Input.value = "";
+  if (selo2Input) selo2Input.value = "";
+  if (selo3Input) selo3Input.value = "";
+  if (selo4Input) selo4Input.value = "";
   if (assinaturaLabelInput) assinaturaLabelInput.value = DEFAULT_ASSINATURA_LABEL;
   if (assinatura2LabelInput) assinatura2LabelInput.value = "";
   if (assinatura3LabelInput) assinatura3LabelInput.value = "";
@@ -1468,19 +1738,31 @@ function clearSessionUi(message = "") {
   populateSecretariaAssetOptions("assinatura2", [], "", true);
   populateSecretariaAssetOptions("assinatura3", [], "", true);
   populateSecretariaAssetOptions("instituicao", [], "", true);
+  SELO_SLOT_KEYS.forEach((type) => {
+    populateSecretariaAssetOptions(type, [], "", true);
+  });
   if (logoLibraryWrap) logoLibraryWrap.hidden = false;
   if (assinaturaLibraryWrap) assinaturaLibraryWrap.hidden = false;
   if (assinaturasExtrasWrap) assinaturasExtrasWrap.hidden = false;
+  if (selosExtrasWrap) selosExtrasWrap.hidden = false;
   if (instituicaoLibraryWrap) instituicaoLibraryWrap.hidden = false;
   setLogoSelectStatus("", "info");
   setAssinaturaSelectStatus("", "info");
   setAssinatura2SelectStatus("", "info");
   setAssinatura3SelectStatus("", "info");
+  setSelo1SelectStatus("", "info");
+  setSelo2SelectStatus("", "info");
+  setSelo3SelectStatus("", "info");
+  setSelo4SelectStatus("", "info");
   setInstituicaoSelectStatus("", "info");
   setLogoStatus("", "info");
   setAssinaturaStatus("", "info");
   setAssinatura2Status("", "info");
   setAssinatura3Status("", "info");
+  setSelo1Status("", "info");
+  setSelo2Status("", "info");
+  setSelo3Status("", "info");
+  setSelo4Status("", "info");
   setInstituicaoStatus("", "info");
   resetUserForm();
   resetSecretariaForm();
@@ -1815,6 +2097,9 @@ function syncSecretariaAssetTypeUi() {
   } else if (tipo === "instituicao") {
     nameLabel = "Nome da instituição";
     placeholder = "Ex.: Instituição oficial ou marca institucional";
+  } else if (tipo === "selo") {
+    nameLabel = "Nome do selo";
+    placeholder = "Ex.: Selo, icone ou marca parceira";
   }
   if (secretariaAssetNameLabel) {
     secretariaAssetNameLabel.textContent = nameLabel;
@@ -3158,10 +3443,57 @@ async function loadAvailableSecretariaAssetType(type) {
   }
 }
 
+async function loadAvailableSeloAssets() {
+  const catalog = getSecretariaAssetCatalog("selo");
+  if (!sessionState || !sessionState.secretaria_ativa_id) {
+    catalog.items = [];
+    catalog.selectedId = "";
+    syncSeloCatalogs([], {
+      statusMessage:
+        "Selecione uma secretaria para usar selos cadastrados ou enviar arquivos temporarios.",
+    });
+    return;
+  }
+
+  try {
+    const payload = await apiJsonRequest(
+      `/api/secretaria-assets${buildQueryString({
+        tipo: "selo",
+        secretaria_id: sessionState.secretaria_ativa_id,
+      })}`
+    );
+    const items = Array.isArray(payload) ? payload : [];
+    catalog.items = items;
+    syncSeloCatalogs(items);
+
+    await Promise.all(
+      SELO_SLOT_KEYS.map((type) => {
+        const slotCatalog = getSecretariaAssetCatalog(type);
+        if (!slotCatalog.selectedId) return Promise.resolve();
+        return applySavedSecretariaAssetSelection(type, slotCatalog.selectedId, {
+          silentStatus: true,
+        });
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    catalog.items = [];
+    catalog.selectedId = "";
+    syncSeloCatalogs([], {
+      statusMessage: "Nao foi possivel carregar os selos da secretaria.",
+      statusType: "error",
+    });
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+    }
+  }
+}
+
 async function loadAvailableSecretariaAssets() {
   await loadAvailableSecretariaAssetType("logo");
   await loadAvailableSecretariaAssetType("assinatura");
   await loadAvailableSecretariaAssetType("instituicao");
+  await loadAvailableSeloAssets();
 }
 
 async function deleteTemplate(template) {
@@ -3761,9 +4093,24 @@ function drawSignatureBlock(slotKey) {
   drawSignatureLabelLines(getSignatureLabelLines(slotKey), slotLayout.x, labelY, lineWidth + 40);
 }
 
+function drawSeloBlock(slotKey) {
+  if (!ctx || !isSeloSlot(slotKey)) return;
+  const activeImage = getActiveSeloImage(slotKey);
+  if (!activeImage) return;
+
+  const slotLayout = layout[slotKey];
+  drawCenteredImage(
+    activeImage,
+    slotLayout.x,
+    slotLayout.y,
+    slotLayout.maxW,
+    slotLayout.maxH
+  );
+}
+
 function drawInstitutionBlock(activeInstituicaoImage) {
   if (!ctx) return;
-  if (isSignatureSlotActive("assinatura3")) return;
+  if (isSignatureSlotActive("assinatura2") || isSignatureSlotActive("assinatura3")) return;
 
   const lineWidth = Math.max(220, Math.min(320, layout.instituicao.maxW + 70));
   const lineY = layout.instituicao.y + 38;
@@ -3849,6 +4196,78 @@ function syncAdvancedAssetControls() {
     layout.assinatura3.maxW
   );
   configureRangeInput(
+    selo1XInput,
+    SELO_CONTROL_LIMITS.xMin,
+    SELO_CONTROL_LIMITS.xMax,
+    layout.selo1.x
+  );
+  configureRangeInput(
+    selo1YInput,
+    SELO_CONTROL_LIMITS.yMin,
+    SELO_CONTROL_LIMITS.yMax,
+    layout.selo1.y
+  );
+  configureRangeInput(
+    selo1SizeInput,
+    SELO_CONTROL_LIMITS.sizeMin,
+    SELO_CONTROL_LIMITS.sizeMax,
+    layout.selo1.maxW
+  );
+  configureRangeInput(
+    selo2XInput,
+    SELO_CONTROL_LIMITS.xMin,
+    SELO_CONTROL_LIMITS.xMax,
+    layout.selo2.x
+  );
+  configureRangeInput(
+    selo2YInput,
+    SELO_CONTROL_LIMITS.yMin,
+    SELO_CONTROL_LIMITS.yMax,
+    layout.selo2.y
+  );
+  configureRangeInput(
+    selo2SizeInput,
+    SELO_CONTROL_LIMITS.sizeMin,
+    SELO_CONTROL_LIMITS.sizeMax,
+    layout.selo2.maxW
+  );
+  configureRangeInput(
+    selo3XInput,
+    SELO_CONTROL_LIMITS.xMin,
+    SELO_CONTROL_LIMITS.xMax,
+    layout.selo3.x
+  );
+  configureRangeInput(
+    selo3YInput,
+    SELO_CONTROL_LIMITS.yMin,
+    SELO_CONTROL_LIMITS.yMax,
+    layout.selo3.y
+  );
+  configureRangeInput(
+    selo3SizeInput,
+    SELO_CONTROL_LIMITS.sizeMin,
+    SELO_CONTROL_LIMITS.sizeMax,
+    layout.selo3.maxW
+  );
+  configureRangeInput(
+    selo4XInput,
+    SELO_CONTROL_LIMITS.xMin,
+    SELO_CONTROL_LIMITS.xMax,
+    layout.selo4.x
+  );
+  configureRangeInput(
+    selo4YInput,
+    SELO_CONTROL_LIMITS.yMin,
+    SELO_CONTROL_LIMITS.yMax,
+    layout.selo4.y
+  );
+  configureRangeInput(
+    selo4SizeInput,
+    SELO_CONTROL_LIMITS.sizeMin,
+    SELO_CONTROL_LIMITS.sizeMax,
+    layout.selo4.maxW
+  );
+  configureRangeInput(
     instituicaoXInput,
     INSTITUICAO_CONTROL_LIMITS.xMin,
     INSTITUICAO_CONTROL_LIMITS.xMax,
@@ -3881,9 +4300,31 @@ function updateControlLabels() {
   if (assinatura3XVal) assinatura3XVal.textContent = `${layout.assinatura3.x} px`;
   if (assinatura3YVal) assinatura3YVal.textContent = `${layout.assinatura3.y} px`;
   if (assinatura3SizeVal) assinatura3SizeVal.textContent = `${layout.assinatura3.maxW} px`;
+  if (selo1XVal) selo1XVal.textContent = `${layout.selo1.x} px`;
+  if (selo1YVal) selo1YVal.textContent = `${layout.selo1.y} px`;
+  if (selo1SizeVal) selo1SizeVal.textContent = `${layout.selo1.maxW} px`;
+  if (selo2XVal) selo2XVal.textContent = `${layout.selo2.x} px`;
+  if (selo2YVal) selo2YVal.textContent = `${layout.selo2.y} px`;
+  if (selo2SizeVal) selo2SizeVal.textContent = `${layout.selo2.maxW} px`;
+  if (selo3XVal) selo3XVal.textContent = `${layout.selo3.x} px`;
+  if (selo3YVal) selo3YVal.textContent = `${layout.selo3.y} px`;
+  if (selo3SizeVal) selo3SizeVal.textContent = `${layout.selo3.maxW} px`;
+  if (selo4XVal) selo4XVal.textContent = `${layout.selo4.x} px`;
+  if (selo4YVal) selo4YVal.textContent = `${layout.selo4.y} px`;
+  if (selo4SizeVal) selo4SizeVal.textContent = `${layout.selo4.maxW} px`;
   if (instituicaoXVal) instituicaoXVal.textContent = `${layout.instituicao.x} px`;
   if (instituicaoYVal) instituicaoYVal.textContent = `${layout.instituicao.y} px`;
   if (instituicaoSizeVal) instituicaoSizeVal.textContent = `${layout.instituicao.maxW} px`;
+}
+
+function applySeloLayoutFromControls(slotKey, xInput, yInput, sizeInput) {
+  if (!layout[slotKey]) return;
+  if (xInput) layout[slotKey].x = Number(xInput.value);
+  if (yInput) layout[slotKey].y = Number(yInput.value);
+  if (sizeInput) {
+    layout[slotKey].maxW = Number(sizeInput.value);
+    layout[slotKey].maxH = scaleHeightByWidth(layout[slotKey].maxW, seloAspectRatio);
+  }
 }
 
 function applyLayoutFromControls() {
@@ -3921,6 +4362,10 @@ function applyLayoutFromControls() {
       assinaturaAspectRatio
     );
   }
+  applySeloLayoutFromControls("selo1", selo1XInput, selo1YInput, selo1SizeInput);
+  applySeloLayoutFromControls("selo2", selo2XInput, selo2YInput, selo2SizeInput);
+  applySeloLayoutFromControls("selo3", selo3XInput, selo3YInput, selo3SizeInput);
+  applySeloLayoutFromControls("selo4", selo4XInput, selo4YInput, selo4SizeInput);
   if (instituicaoXInput) layout.instituicao.x = Number(instituicaoXInput.value);
   if (instituicaoYInput) layout.instituicao.y = Number(instituicaoYInput.value);
   if (instituicaoSizeInput) {
@@ -3969,6 +4414,12 @@ function syncTemplateControls() {
     assinatura3RemoveBtn.disabled = !assets.assinatura3;
     assinatura3RemoveBtn.hidden = !assets.assinatura3;
   }
+  SELO_SLOT_KEYS.forEach((slotKey) => {
+    const ui = getSecretariaAssetUi(slotKey);
+    if (!ui.removeBtn) return;
+    ui.removeBtn.disabled = !assets[slotKey];
+    ui.removeBtn.hidden = !assets[slotKey];
+  });
   if (instituicaoRemoveBtn) {
     instituicaoRemoveBtn.disabled = !assets.instituicao;
     instituicaoRemoveBtn.hidden = !assets.instituicao;
@@ -4283,6 +4734,7 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   drawSignatureBlock("assinatura2");
   drawSignatureBlock("assinatura3");
   drawInstitutionBlock(activeInstituicaoImage);
+  SELO_SLOT_KEYS.forEach((slotKey) => drawSeloBlock(slotKey));
 
   const qrValue = sanitizeText(qrText);
   if (qrValue) {
@@ -4351,6 +4803,13 @@ async function handleAssetChange(input, key, options = {}) {
         ? `Assinatura 3 temporaria removida. A previa voltou a usar a assinatura ${savedAssinatura3.nome}.`
         : "";
       setAssinatura3Status(message, "info");
+    } else if (isSeloSlot(key)) {
+      const ui = getSecretariaAssetUi(key);
+      const savedAsset = getSavedSecretariaAsset(key);
+      const message = savedAsset
+        ? `${capitalizeLabel(ui.label)} temporario removido. A previa voltou a usar o selo ${savedAsset.nome}.`
+        : "";
+      ui.setManualStatus(message, "info");
     } else if (key === "instituicao") {
       const message = savedInstituicao
         ? `Instituição temporária removida. A prévia voltou a usar a instituição ${savedInstituicao.nome}.`
@@ -4397,6 +4856,12 @@ async function handleAssetChange(input, key, options = {}) {
         "Assinatura 3 temporaria pronta para uso. Ela sobrescreve a assinatura cadastrada selecionada somente nesta emissao.",
         "success"
       );
+    } else if (isSeloSlot(key)) {
+      const ui = getSecretariaAssetUi(key);
+      ui.setManualStatus(
+        `${capitalizeLabel(ui.label)} temporario pronto para uso. Ele sobrescreve o selo cadastrado selecionado somente nesta emissao.`,
+        "success"
+      );
     } else if (key === "instituicao") {
       setInstituicaoStatus(
         "Instituição temporária pronta para uso. Ela sobrescreve a instituição cadastrada selecionada somente nesta emissão.",
@@ -4419,6 +4884,9 @@ async function handleAssetChange(input, key, options = {}) {
       setAssinatura2Status("Nao foi possivel carregar a assinatura 2 informada.", "error");
     } else if (key === "assinatura3") {
       setAssinatura3Status("Nao foi possivel carregar a assinatura 3 informada.", "error");
+    } else if (isSeloSlot(key)) {
+      const ui = getSecretariaAssetUi(key);
+      ui.setManualStatus(`Nao foi possivel carregar o ${ui.label} informado.`, "error");
     } else if (key === "instituicao") {
       setInstituicaoStatus("Não foi possível carregar a instituição informada.", "error");
     }
@@ -5733,6 +6201,41 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     });
   }
 
+  [
+    ["selo1", selo1Input, selo1Select],
+    ["selo2", selo2Input, selo2Select],
+    ["selo3", selo3Input, selo3Select],
+    ["selo4", selo4Input, selo4Select],
+  ].forEach(([slotKey, input, select]) => {
+    const ui = getSecretariaAssetUi(slotKey);
+
+    if (input) {
+      input.addEventListener("change", () => {
+        void handleAssetChange(input, slotKey);
+      });
+    }
+
+    if (select) {
+      select.addEventListener("change", () => {
+        void applySavedSecretariaAssetSelection(slotKey, select.value);
+      });
+    }
+
+    if (ui.removeBtn) {
+      ui.removeBtn.addEventListener("click", () => {
+        assets[slotKey] = null;
+        if (input) input.value = "";
+        syncTemplateControls();
+        const savedAsset = getSavedSecretariaAsset(slotKey);
+        const message = savedAsset
+          ? `${capitalizeLabel(ui.label)} temporario removido. O preview voltou a usar o selo ${savedAsset.nome}.`
+          : `${capitalizeLabel(ui.label)} temporario removido.`;
+        ui.setManualStatus(message, "info");
+        void renderLastCertificate();
+      });
+    }
+  });
+
   if (logoXInput) logoXInput.addEventListener("input", applyLayoutFromControls);
   if (logoYInput) logoYInput.addEventListener("input", applyLayoutFromControls);
   if (logoSizeInput) logoSizeInput.addEventListener("input", applyLayoutFromControls);
@@ -5745,6 +6248,18 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   if (assinatura3XInput) assinatura3XInput.addEventListener("input", applyLayoutFromControls);
   if (assinatura3YInput) assinatura3YInput.addEventListener("input", applyLayoutFromControls);
   if (assinatura3SizeInput) assinatura3SizeInput.addEventListener("input", applyLayoutFromControls);
+  if (selo1XInput) selo1XInput.addEventListener("input", applyLayoutFromControls);
+  if (selo1YInput) selo1YInput.addEventListener("input", applyLayoutFromControls);
+  if (selo1SizeInput) selo1SizeInput.addEventListener("input", applyLayoutFromControls);
+  if (selo2XInput) selo2XInput.addEventListener("input", applyLayoutFromControls);
+  if (selo2YInput) selo2YInput.addEventListener("input", applyLayoutFromControls);
+  if (selo2SizeInput) selo2SizeInput.addEventListener("input", applyLayoutFromControls);
+  if (selo3XInput) selo3XInput.addEventListener("input", applyLayoutFromControls);
+  if (selo3YInput) selo3YInput.addEventListener("input", applyLayoutFromControls);
+  if (selo3SizeInput) selo3SizeInput.addEventListener("input", applyLayoutFromControls);
+  if (selo4XInput) selo4XInput.addEventListener("input", applyLayoutFromControls);
+  if (selo4YInput) selo4YInput.addEventListener("input", applyLayoutFromControls);
+  if (selo4SizeInput) selo4SizeInput.addEventListener("input", applyLayoutFromControls);
   if (instituicaoXInput) instituicaoXInput.addEventListener("input", applyLayoutFromControls);
   if (instituicaoYInput) instituicaoYInput.addEventListener("input", applyLayoutFromControls);
   if (instituicaoSizeInput) instituicaoSizeInput.addEventListener("input", applyLayoutFromControls);
@@ -6549,6 +7064,10 @@ syncTemplateControls();
 setTemplateStatus("", "info");
 setLogoStatus("", "info");
 setAssinaturaStatus("", "info");
+setSelo1Status("", "info");
+setSelo2Status("", "info");
+setSelo3Status("", "info");
+setSelo4Status("", "info");
 setInstituicaoStatus("", "info");
 void renderLastCertificate();
 void refreshSession();
