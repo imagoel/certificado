@@ -56,7 +56,7 @@ def test_admin_nao_cria_usuario_com_papel_invalido(client, seed_data, login):
 def test_admin_exclui_usuario_sem_apagar_historico(client, seed_data, login):
     login("admin", seed_data["admin_password"])
 
-    response = client.delete(f"/api/admin/usuarios/{seed_data['operador_id']}", json={})
+    response = client.request("DELETE", f"/api/admin/usuarios/{seed_data['operador_id']}", json={})
 
     assert response.status_code == 200
     assert "excluido com sucesso" in response.json()["message"].lower()
@@ -103,7 +103,7 @@ def test_admin_exclui_usuario_que_criou_asset_sem_quebrar(client, seed_data, log
     client.post("/api/auth/logout")
     login("admin", seed_data["admin_password"])
 
-    delete_response = client.delete(f"/api/admin/usuarios/{created_admin['id']}", json={})
+    delete_response = client.request("DELETE", f"/api/admin/usuarios/{created_admin['id']}", json={})
     assert delete_response.status_code == 200
 
     assets_response = client.get("/api/admin/secretaria-assets")
@@ -132,7 +132,7 @@ def test_admin_nao_exclui_secretaria_com_certificados_emitidos(client, seed_data
     client.post("/api/auth/logout")
     login("admin", seed_data["admin_password"])
 
-    blocked_response = client.delete(f"/api/admin/secretarias/{seed_data['seafi_id']}", json={})
+    blocked_response = client.request("DELETE", f"/api/admin/secretarias/{seed_data['seafi_id']}", json={})
     assert blocked_response.status_code == 409
     assert "nao pode ser excluida" in blocked_response.text.lower()
 
@@ -146,7 +146,7 @@ def test_admin_nao_exclui_secretaria_com_certificados_emitidos(client, seed_data
     )
     secretaria_id = create_secretaria_response.json()["id"]
 
-    delete_response = client.delete(f"/api/admin/secretarias/{secretaria_id}", json={})
+    delete_response = client.request("DELETE", f"/api/admin/secretarias/{secretaria_id}", json={})
 
     assert delete_response.status_code == 200
     assert "excluida com sucesso" in delete_response.json()["message"].lower()
@@ -236,7 +236,7 @@ def test_recriar_usuario_limpa_bloqueio_de_login(client, seed_data, login):
     assert blocked.status_code == 429
 
     login("admin", seed_data["admin_password"])
-    delete_response = client.delete(f"/api/admin/usuarios/{usuario_id}", json={})
+    delete_response = client.request("DELETE", f"/api/admin/usuarios/{usuario_id}", json={})
     assert delete_response.status_code == 200
 
     recreate_response = client.post(

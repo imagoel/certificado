@@ -23,6 +23,7 @@ def test_admin_cadastra_molde_e_operador_pode_selecionar_na_secretaria_ativa(
             "nome": "Certificado Educacao Infantil",
             "ativo": "true",
             "padrao": "true",
+            "ocultar_titulo_certificado": "true",
             "ordem": "0",
         },
         files={"arquivo": ("molde.png", PNG_BYTES, "image/png")},
@@ -32,6 +33,7 @@ def test_admin_cadastra_molde_e_operador_pode_selecionar_na_secretaria_ativa(
     template_payload = create_response.json()
     assert template_payload["secretaria_id"] == seed_data["seafi_id"]
     assert template_payload["padrao"] is True
+    assert template_payload["ocultar_titulo_certificado"] is True
 
     client.post("/api/auth/logout")
     login("operador", seed_data["operador_password"])
@@ -40,6 +42,7 @@ def test_admin_cadastra_molde_e_operador_pode_selecionar_na_secretaria_ativa(
     assert list_response.status_code == 200
     assert len(list_response.json()) == 1
     assert list_response.json()[0]["nome"] == "Certificado Educacao Infantil"
+    assert list_response.json()[0]["ocultar_titulo_certificado"] is True
 
     file_response = client.get(list_response.json()[0]["arquivo_url"])
     assert file_response.status_code == 200
@@ -101,11 +104,13 @@ def test_operador_gerencia_moldes_da_secretaria_vinculada(client, seed_data, log
             "nome": "Molde Operador Atualizado",
             "ativo": "true",
             "padrao": "false",
+            "ocultar_titulo_certificado": "true",
             "ordem": "2",
         },
     )
     assert update_response.status_code == 200
     assert update_response.json()["nome"] == "Molde Operador Atualizado"
+    assert update_response.json()["ocultar_titulo_certificado"] is True
 
     delete_response = client.delete(f"/api/admin/templates/{template_payload['id']}")
     assert delete_response.status_code == 200

@@ -28,8 +28,9 @@ def normalize_template_payload(
     nome: str,
     ativo: bool,
     padrao: bool,
+    ocultar_titulo_certificado: bool,
     ordem: int,
-) -> tuple[str, bool, bool, int]:
+) -> tuple[str, bool, bool, bool, int]:
     normalized_name = (nome or "").strip()
     if len(normalized_name) < 2:
         raise HTTPException(status_code=422, detail="Informe um nome com pelo menos 2 caracteres.")
@@ -37,7 +38,13 @@ def normalize_template_payload(
     normalized_order = max(0, int(ordem))
     if padrao and not ativo:
         raise HTTPException(status_code=422, detail="Um molde padrao precisa estar ativo.")
-    return normalized_name, bool(ativo), bool(padrao), normalized_order
+    return (
+        normalized_name,
+        bool(ativo),
+        bool(padrao),
+        bool(ocultar_titulo_certificado),
+        normalized_order,
+    )
 
 
 def clear_other_default_templates(
@@ -159,6 +166,7 @@ async def admin_create_template(
     nome: str = Form(...),
     ativo: bool = Form(True),
     padrao: bool = Form(False),
+    ocultar_titulo_certificado: bool = Form(False),
     ordem: int = Form(0),
     arquivo: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -166,9 +174,20 @@ async def admin_create_template(
 ) -> CertificateTemplateResponse:
     secretaria = require_template_manage_secretaria(db, usuario, secretaria_id)
 
-    normalized_name, normalized_active, normalized_default, normalized_order = (
-        normalize_template_payload(nome=nome, ativo=ativo, padrao=padrao, ordem=ordem)
+    normalized_payload = normalize_template_payload(
+        nome=nome,
+        ativo=ativo,
+        padrao=padrao,
+        ocultar_titulo_certificado=ocultar_titulo_certificado,
+        ordem=ordem,
     )
+    (
+        normalized_name,
+        normalized_active,
+        normalized_default,
+        normalized_hide_title,
+        normalized_order,
+    ) = normalized_payload
 
     content = await arquivo.read()
     validate_template_upload(arquivo, content)
@@ -186,6 +205,7 @@ async def admin_create_template(
         arquivo_bytes=len(content),
         ativo=normalized_active,
         padrao=normalized_default,
+        ocultar_titulo_certificado=normalized_hide_title,
         ordem=normalized_order,
         criado_por_usuario_id=usuario.id,
     )
@@ -216,6 +236,7 @@ async def admin_update_template(
     nome: str | None = Form(default=None),
     ativo: bool | None = Form(default=None),
     padrao: bool | None = Form(default=None),
+    ocultar_titulo_certificado: bool | None = Form(default=None),
     ordem: int | None = Form(default=None),
     arquivo: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
@@ -229,15 +250,26 @@ async def admin_update_template(
     updated_name = template.nome if nome is None else nome
     updated_active = template.ativo if ativo is None else ativo
     updated_default = template.padrao if padrao is None else padrao
-    updated_order = template.ordem if ordem is None else ordem
-    normalized_name, normalized_active, normalized_default, normalized_order = (
-        normalize_template_payload(
-            nome=updated_name,
-            ativo=updated_active,
-            padrao=updated_default,
-            ordem=updated_order,
-        )
+    updated_hide_title = (
+        template.ocultar_titulo_certificado
+        if ocultar_titulo_certificado is None
+        else ocultar_titulo_certificado
     )
+    updated_order = template.ordem if ordem is None else ordem
+    normalized_payload = normalize_template_payload(
+        nome=updated_name,
+        ativo=updated_active,
+        padrao=updated_default,
+        ocultar_titulo_certificado=updated_hide_title,
+        ordem=updated_order,
+    )
+    (
+        normalized_name,
+        normalized_active,
+        normalized_default,
+        normalized_hide_title,
+        normalized_order,
+    ) = normalized_payload
 
     previous_relpath = template.arquivo_relpath
     if arquivo is not None and arquivo.filename:
@@ -258,6 +290,7 @@ async def admin_update_template(
     template.nome = normalized_name
     template.ativo = normalized_active
     template.padrao = normalized_default
+    template.ocultar_titulo_certificado = normalized_hide_title
     template.ordem = normalized_order
 
     if template.padrao:

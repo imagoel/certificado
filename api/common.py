@@ -363,6 +363,7 @@ def build_template_response(
         nome=template.nome,
         ativo=template.ativo,
         padrao=template.padrao,
+        ocultar_titulo_certificado=template.ocultar_titulo_certificado,
         ordem=template.ordem,
         arquivo_url=build_template_file_url(request, template.id),
         criado_em=template.criado_em,

@@ -81,6 +81,7 @@ Resumo importante:
 - molde temporario por tela de geracao
 - logo temporaria por tela de geracao
 - assinatura temporaria por tela de geracao
+- assinatura 2 e assinatura 3 opcionais como itens extras da geracao
 - aba propria de auditoria visivel apenas para `admin_global`
 - auditoria de login, emissao, upload, exclusao e acoes administrativas
 
@@ -152,6 +153,7 @@ Regra importante:
 
 - o molde funciona como **fundo do certificado**
 - textos, QR Code, assinatura e logo continuam nas posicoes atuais
+- se o arquivo do molde ja trouxer o titulo "Certificado", marque a opcao do molde para ocultar o titulo gerado pelo sistema
 - o operador **nao move o layout dos campos**
 
 Formatos aceitos para moldes:
@@ -179,6 +181,8 @@ Funcionamento:
 - ao selecionar a secretaria ativa, o gerador carrega automaticamente o molde, a logo, a assinatura e a instituicao padrao
 - o operador pode trocar para outro item aprovado da mesma secretaria
 - uploads manuais na tela continuam valendo como sobrescrita temporaria apenas para aquela geracao
+- no gerador, assinatura 2 e assinatura 3 reutilizam o catalogo de assinaturas da secretaria e podem ser posicionadas livremente
+- cada assinatura extra e desenhada como bloco completo, com imagem, linha e texto abaixo
 
 Formatos aceitos:
 
@@ -486,7 +490,8 @@ Compatibilidade:
 - a tela de auditoria saiu da aba `Certificados` e ganhou aba propria
 - a tabela de certificados ficou mais compacta em telas pequenas, com detalhes secundarios embutidos na celula principal
 - `Molde`, `Logo` e `Assinatura` foram simplificados em tres blocos mais enxutos, com sobrescrita temporaria apenas quando necessario
-- `Ajustes avancados de logo e assinatura` ficam recolhidos por padrao
+- `Ajustes avancados de logo, assinatura e instituicao` ficam recolhidos por padrao
+- `Itens extras` permitem usar assinatura 2 e assinatura 3 com linha, texto e posicionamento independente
 - o foco visual de inputs, botoes e controles foi reforcado para melhorar navegacao por teclado
 
 ## Proximas Evolucoes Naturais

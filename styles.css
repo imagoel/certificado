@@ -326,13 +326,19 @@ label {
   line-height: 1.4;
 }
 
-input {
+input,
+textarea {
   width: 100%;
   padding: 9px 11px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font: inherit;
   font-size: 16px;
+}
+
+textarea {
+  min-height: 64px;
+  resize: vertical;
 }
 
 select {
@@ -346,6 +352,7 @@ select {
 }
 
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible,
 button:focus-visible,
 summary:focus-visible {
@@ -524,6 +531,28 @@ button[disabled] {
 
 .generator-asset-block .status:empty {
   display: none;
+}
+
+.signature-extra-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.signature-extra-card {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.signature-extra-card h3 {
+  margin: 0 0 4px;
+  color: #1a4f8b;
+  font-size: 0.98rem;
 }
 
 .asset-upload-group {
@@ -1062,6 +1091,7 @@ button[disabled] {
   .filter-grid,
   .grid-two,
   .grid-three,
+  .signature-extra-grid,
   .audit-grid {
     grid-template-columns: 1fr;
   }

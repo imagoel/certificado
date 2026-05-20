@@ -3,20 +3,30 @@ const generateSubmitBtn = form ? form.querySelector('button[type="submit"]') : n
 const downloadBtn = document.getElementById("download");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
+const assinatura2Input = document.getElementById("assinatura2");
+const assinatura3Input = document.getElementById("assinatura3");
 const instituicaoInput = document.getElementById("instituicao");
 const logoRemoveBtn = document.getElementById("logo-remove");
 const assinaturaRemoveBtn = document.getElementById("assinatura-remove");
+const assinatura2RemoveBtn = document.getElementById("assinatura2-remove");
+const assinatura3RemoveBtn = document.getElementById("assinatura3-remove");
 const instituicaoRemoveBtn = document.getElementById("instituicao-remove");
 const templateInput = document.getElementById("template");
 const templateRemoveBtn = document.getElementById("template-remove");
 const templateLibraryWrap = document.getElementById("template-library-wrap");
 const templateSelect = document.getElementById("template-select");
+const templateHideTitleInput = document.getElementById("template-hide-title");
 const logoLibraryWrap = document.getElementById("logo-library-wrap");
 const logoSelect = document.getElementById("logo-select");
 const logoSelectStatus = document.getElementById("logo-select-status");
 const assinaturaLibraryWrap = document.getElementById("assinatura-library-wrap");
 const assinaturaSelect = document.getElementById("assinatura-select");
 const assinaturaSelectStatus = document.getElementById("assinatura-select-status");
+const assinaturasExtrasWrap = document.getElementById("assinaturas-extras-wrap");
+const assinatura2Select = document.getElementById("assinatura2-select");
+const assinatura2SelectStatus = document.getElementById("assinatura2-select-status");
+const assinatura3Select = document.getElementById("assinatura3-select");
+const assinatura3SelectStatus = document.getElementById("assinatura3-select-status");
 const instituicaoLibraryWrap = document.getElementById("instituicao-library-wrap");
 const instituicaoSelect = document.getElementById("instituicao-select");
 const instituicaoSelectStatus = document.getElementById("instituicao-select-status");
@@ -97,6 +107,7 @@ const templateAdminSecretariaSelect = document.getElementById("template-admin-se
 const templateAdminNameInput = document.getElementById("template-admin-name");
 const templateAdminActiveInput = document.getElementById("template-admin-active");
 const templateAdminDefaultInput = document.getElementById("template-admin-default");
+const templateAdminHideTitleInput = document.getElementById("template-admin-hide-title");
 const templateAdminOrderInput = document.getElementById("template-admin-order");
 const templateAdminFileInput = document.getElementById("template-admin-file");
 const templateAdminResetBtn = document.getElementById("template-admin-reset");
@@ -172,6 +183,8 @@ const dataInput = document.getElementById("data");
 const cargaHInput = document.getElementById("carga_h");
 const logoStatus = document.getElementById("logo-status");
 const assinaturaStatus = document.getElementById("assinatura-status");
+const assinatura2Status = document.getElementById("assinatura2-status");
+const assinatura3Status = document.getElementById("assinatura3-status");
 const instituicaoStatus = document.getElementById("instituicao-status");
 const templateStatus = document.getElementById("template-status");
 const templateSelectStatus = document.getElementById("template-select-status");
@@ -189,6 +202,15 @@ const logoSizeInput = document.getElementById("logoSize");
 const assinaturaXInput = document.getElementById("assinaturaX");
 const assinaturaYInput = document.getElementById("assinaturaY");
 const assinaturaSizeInput = document.getElementById("assinaturaSize");
+const assinaturaLabelInput = document.getElementById("assinaturaLabel");
+const assinatura2XInput = document.getElementById("assinatura2X");
+const assinatura2YInput = document.getElementById("assinatura2Y");
+const assinatura2SizeInput = document.getElementById("assinatura2Size");
+const assinatura2LabelInput = document.getElementById("assinatura2Label");
+const assinatura3XInput = document.getElementById("assinatura3X");
+const assinatura3YInput = document.getElementById("assinatura3Y");
+const assinatura3SizeInput = document.getElementById("assinatura3Size");
+const assinatura3LabelInput = document.getElementById("assinatura3Label");
 const instituicaoXInput = document.getElementById("instituicaoX");
 const instituicaoYInput = document.getElementById("instituicaoY");
 const instituicaoSizeInput = document.getElementById("instituicaoSize");
@@ -202,6 +224,12 @@ const logoSizeVal = document.getElementById("logoSizeVal");
 const assinaturaXVal = document.getElementById("assinaturaXVal");
 const assinaturaYVal = document.getElementById("assinaturaYVal");
 const assinaturaSizeVal = document.getElementById("assinaturaSizeVal");
+const assinatura2XVal = document.getElementById("assinatura2XVal");
+const assinatura2YVal = document.getElementById("assinatura2YVal");
+const assinatura2SizeVal = document.getElementById("assinatura2SizeVal");
+const assinatura3XVal = document.getElementById("assinatura3XVal");
+const assinatura3YVal = document.getElementById("assinatura3YVal");
+const assinatura3SizeVal = document.getElementById("assinatura3SizeVal");
 const instituicaoXVal = document.getElementById("instituicaoXVal");
 const instituicaoYVal = document.getElementById("instituicaoYVal");
 const instituicaoSizeVal = document.getElementById("instituicaoSizeVal");
@@ -215,6 +243,18 @@ const DEFAULT_ASSINATURA_LAYOUT = Object.freeze({
   y: 662,
   maxW: 230,
   maxH: 80,
+});
+const DEFAULT_ASSINATURA2_LAYOUT = Object.freeze({
+  x: CERTIFICATE_CANVAS_WIDTH / 2,
+  y: DEFAULT_ASSINATURA_LAYOUT.y,
+  maxW: DEFAULT_ASSINATURA_LAYOUT.maxW,
+  maxH: DEFAULT_ASSINATURA_LAYOUT.maxH,
+});
+const DEFAULT_ASSINATURA3_LAYOUT = Object.freeze({
+  x: CERTIFICATE_CANVAS_WIDTH - DEFAULT_ASSINATURA_LAYOUT.x,
+  y: DEFAULT_ASSINATURA_LAYOUT.y,
+  maxW: DEFAULT_ASSINATURA_LAYOUT.maxW,
+  maxH: DEFAULT_ASSINATURA_LAYOUT.maxH,
 });
 const DEFAULT_INSTITUICAO_LAYOUT = Object.freeze({
   x: CERTIFICATE_CANVAS_WIDTH - DEFAULT_ASSINATURA_LAYOUT.x,
@@ -238,17 +278,30 @@ const INSTITUICAO_CONTROL_LIMITS = Object.freeze({
   sizeMin: ASSINATURA_CONTROL_LIMITS.sizeMin,
   sizeMax: ASSINATURA_CONTROL_LIMITS.sizeMax,
 });
+const EXTRA_ASSINATURA_CONTROL_LIMITS = Object.freeze({
+  xMin: 140,
+  xMax: 1060,
+  yMin: 560,
+  yMax: 760,
+  sizeMin: ASSINATURA_CONTROL_LIMITS.sizeMin,
+  sizeMax: ASSINATURA_CONTROL_LIMITS.sizeMax,
+});
+const DEFAULT_ASSINATURA_LABEL = "Assinatura do Responsável";
 
 const assets = {
   template: null,
   logo: null,
   assinatura: null,
+  assinatura2: null,
+  assinatura3: null,
   instituicao: null,
 };
 
 const layout = {
   logo: { x: 600, y: 95, maxW: 150, maxH: 95 },
   assinatura: { ...DEFAULT_ASSINATURA_LAYOUT },
+  assinatura2: { ...DEFAULT_ASSINATURA2_LAYOUT },
+  assinatura3: { ...DEFAULT_ASSINATURA3_LAYOUT },
   instituicao: { ...DEFAULT_INSTITUICAO_LAYOUT },
   qr: { x: 160, y: 175, maxW: 120, maxH: 120 },
 };
@@ -279,6 +332,10 @@ let savedLogo = null;
 let savedLogoImage = null;
 let savedAssinatura = null;
 let savedAssinaturaImage = null;
+let savedAssinatura2 = null;
+let savedAssinatura2Image = null;
+let savedAssinatura3 = null;
+let savedAssinatura3Image = null;
 let savedInstituicao = null;
 let savedInstituicaoImage = null;
 
@@ -314,6 +371,8 @@ const templateCatalogState = {
 const secretariaAssetCatalogState = {
   logo: { items: [], selectedId: "" },
   assinatura: { items: [], selectedId: "" },
+  assinatura2: { items: [], selectedId: "" },
+  assinatura3: { items: [], selectedId: "" },
   instituicao: { items: [], selectedId: "" },
 };
 
@@ -707,6 +766,14 @@ function setAssinaturaSelectStatus(message, type = "info") {
   setStatusMessage(assinaturaSelectStatus, message, type);
 }
 
+function setAssinatura2SelectStatus(message, type = "info") {
+  setStatusMessage(assinatura2SelectStatus, message, type);
+}
+
+function setAssinatura3SelectStatus(message, type = "info") {
+  setStatusMessage(assinatura3SelectStatus, message, type);
+}
+
 function setInstituicaoSelectStatus(message, type = "info") {
   setStatusMessage(instituicaoSelectStatus, message, type);
 }
@@ -717,6 +784,14 @@ function setLogoStatus(message, type = "info") {
 
 function setAssinaturaStatus(message, type = "info") {
   setStatusMessage(assinaturaStatus, message, type);
+}
+
+function setAssinatura2Status(message, type = "info") {
+  setStatusMessage(assinatura2Status, message, type);
+}
+
+function setAssinatura3Status(message, type = "info") {
+  setStatusMessage(assinatura3Status, message, type);
 }
 
 function setInstituicaoStatus(message, type = "info") {
@@ -740,6 +815,8 @@ function getSecretariaAssetCatalog(type) {
 function getSavedSecretariaAsset(type) {
   if (type === "logo") return savedLogo;
   if (type === "assinatura") return savedAssinatura;
+  if (type === "assinatura2") return savedAssinatura2;
+  if (type === "assinatura3") return savedAssinatura3;
   if (type === "instituicao") return savedInstituicao;
   return null;
 }
@@ -747,6 +824,8 @@ function getSavedSecretariaAsset(type) {
 function getSavedSecretariaAssetImage(type) {
   if (type === "logo") return savedLogoImage;
   if (type === "assinatura") return savedAssinaturaImage;
+  if (type === "assinatura2") return savedAssinatura2Image;
+  if (type === "assinatura3") return savedAssinatura3Image;
   if (type === "instituicao") return savedInstituicaoImage;
   return null;
 }
@@ -760,6 +839,16 @@ function setSavedSecretariaAsset(type, asset, image) {
   if (type === "assinatura") {
     savedAssinatura = asset;
     savedAssinaturaImage = image;
+    return;
+  }
+  if (type === "assinatura2") {
+    savedAssinatura2 = asset;
+    savedAssinatura2Image = image;
+    return;
+  }
+  if (type === "assinatura3") {
+    savedAssinatura3 = asset;
+    savedAssinatura3Image = image;
     return;
   }
   if (type === "instituicao") {
@@ -797,6 +886,34 @@ function getSecretariaAssetUi(type) {
         "O arquivo da assinatura cadastrada não foi encontrado no servidor. Reenvie a assinatura na administração.",
     };
   }
+  if (type === "assinatura2") {
+    return {
+      label: "assinatura 2",
+      pluralLabel: "assinaturas",
+      wrap: assinaturasExtrasWrap,
+      select: assinatura2Select,
+      removeBtn: assinatura2RemoveBtn,
+      setSelectStatus: setAssinatura2SelectStatus,
+      setManualStatus: setAssinatura2Status,
+      blankLabel: "Nao usar assinatura 2",
+      missingFileMessage:
+        "O arquivo da assinatura cadastrada nao foi encontrado no servidor. Reenvie a assinatura na administracao.",
+    };
+  }
+  if (type === "assinatura3") {
+    return {
+      label: "assinatura 3",
+      pluralLabel: "assinaturas",
+      wrap: assinaturasExtrasWrap,
+      select: assinatura3Select,
+      removeBtn: assinatura3RemoveBtn,
+      setSelectStatus: setAssinatura3SelectStatus,
+      setManualStatus: setAssinatura3Status,
+      blankLabel: "Nao usar assinatura 3",
+      missingFileMessage:
+        "O arquivo da assinatura cadastrada nao foi encontrado no servidor. Reenvie a assinatura na administracao.",
+    };
+  }
   if (type === "instituicao") {
     return {
       label: "instituição",
@@ -823,12 +940,59 @@ function getActiveTemplateImage() {
   return assets.template || savedTemplateImage;
 }
 
+function shouldDrawCertificateTitle() {
+  if (assets.template) {
+    return !(templateHideTitleInput && templateHideTitleInput.checked);
+  }
+  if (savedTemplateImage && savedTemplate) {
+    return !Boolean(savedTemplate.ocultar_titulo_certificado);
+  }
+  return true;
+}
+
 function getActiveLogoImage() {
   return assets.logo || savedLogoImage;
 }
 
 function getActiveAssinaturaImage() {
   return assets.assinatura || savedAssinaturaImage;
+}
+
+function getActiveSignatureImage(slotKey) {
+  if (slotKey === "assinatura2") return assets.assinatura2 || savedAssinatura2Image;
+  if (slotKey === "assinatura3") return assets.assinatura3 || savedAssinatura3Image;
+  return getActiveAssinaturaImage();
+}
+
+function getSignatureLabel(slotKey) {
+  return getSignatureLabelLines(slotKey).join("\n");
+}
+
+function getSignatureLabelLines(slotKey) {
+  let rawText = "";
+  if (slotKey === "assinatura2") {
+    rawText = assinatura2LabelInput ? assinatura2LabelInput.value : "";
+  } else if (slotKey === "assinatura3") {
+    rawText = assinatura3LabelInput ? assinatura3LabelInput.value : "";
+  } else {
+    rawText = assinaturaLabelInput ? assinaturaLabelInput.value : DEFAULT_ASSINATURA_LABEL;
+  }
+
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => sanitizeText(line))
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (slotKey === "assinatura" && !lines.length) {
+    return [DEFAULT_ASSINATURA_LABEL];
+  }
+  return lines;
+}
+
+function isSignatureSlotActive(slotKey) {
+  if (slotKey === "assinatura") return true;
+  return Boolean(getActiveSignatureImage(slotKey) || getSignatureLabel(slotKey));
 }
 
 function getActiveInstituicaoImage() {
@@ -950,7 +1114,12 @@ function populateTemplateOptions(select, templates, selectedValue = "", includeB
   (Array.isArray(templates) ? templates : []).forEach((template) => {
     const option = document.createElement("option");
     option.value = String(template.id);
-    option.textContent = template.padrao ? `${template.nome} (padrão)` : template.nome;
+    const labels = [];
+    if (template.padrao) labels.push("padrão");
+    if (template.ocultar_titulo_certificado) labels.push("título no molde");
+    option.textContent = labels.length
+      ? `${template.nome} (${labels.join(", ")})`
+      : template.nome;
     option.selected = String(template.id) === selectedText;
     select.appendChild(option);
   });
@@ -981,6 +1150,36 @@ function populateSecretariaAssetOptions(type, items, selectedValue = "", include
     option.textContent = item.padrao ? `${item.nome} (padrão)` : item.nome;
     option.selected = String(item.id) === selectedText;
     select.appendChild(option);
+  });
+}
+
+function syncExtraSignatureCatalogs(items = [], options = {}) {
+  const availableItems = Array.isArray(items) ? items : [];
+  const { statusMessage = "", statusType = "info" } = options;
+
+  ["assinatura2", "assinatura3"].forEach((type) => {
+    const catalog = getSecretariaAssetCatalog(type);
+    const ui = getSecretariaAssetUi(type);
+    catalog.items = availableItems;
+
+    const selectedExists = availableItems.some(
+      (item) => String(item.id) === String(catalog.selectedId || "")
+    );
+    if (!selectedExists) {
+      catalog.selectedId = "";
+      setSavedSecretariaAsset(type, null, null);
+    }
+
+    populateSecretariaAssetOptions(type, availableItems, catalog.selectedId, true);
+    if (ui.wrap) ui.wrap.hidden = false;
+    if (statusMessage || !availableItems.length) {
+      const message =
+        statusMessage ||
+        "A secretaria ativa ainda nao tem assinaturas cadastradas para usar nos itens extras.";
+      ui.setSelectStatus(message, statusType);
+    } else {
+      ui.setSelectStatus("", "info");
+    }
   });
 }
 
@@ -1223,11 +1422,17 @@ function clearSessionUi(message = "") {
   secretariaAssetCatalogState.logo.selectedId = "";
   secretariaAssetCatalogState.assinatura.items = [];
   secretariaAssetCatalogState.assinatura.selectedId = "";
+  secretariaAssetCatalogState.assinatura2.items = [];
+  secretariaAssetCatalogState.assinatura2.selectedId = "";
+  secretariaAssetCatalogState.assinatura3.items = [];
+  secretariaAssetCatalogState.assinatura3.selectedId = "";
   secretariaAssetCatalogState.instituicao.items = [];
   secretariaAssetCatalogState.instituicao.selectedId = "";
   assets.template = null;
   assets.logo = null;
   assets.assinatura = null;
+  assets.assinatura2 = null;
+  assets.assinatura3 = null;
   assets.instituicao = null;
   savedTemplate = null;
   savedTemplateImage = null;
@@ -1235,11 +1440,21 @@ function clearSessionUi(message = "") {
   savedLogoImage = null;
   savedAssinatura = null;
   savedAssinaturaImage = null;
+  savedAssinatura2 = null;
+  savedAssinatura2Image = null;
+  savedAssinatura3 = null;
+  savedAssinatura3Image = null;
   savedInstituicao = null;
   savedInstituicaoImage = null;
   if (templateInput) templateInput.value = "";
+  if (templateHideTitleInput) templateHideTitleInput.checked = false;
   if (logoInput) logoInput.value = "";
   if (assinaturaInput) assinaturaInput.value = "";
+  if (assinatura2Input) assinatura2Input.value = "";
+  if (assinatura3Input) assinatura3Input.value = "";
+  if (assinaturaLabelInput) assinaturaLabelInput.value = DEFAULT_ASSINATURA_LABEL;
+  if (assinatura2LabelInput) assinatura2LabelInput.value = "";
+  if (assinatura3LabelInput) assinatura3LabelInput.value = "";
   if (instituicaoInput) instituicaoInput.value = "";
   syncTemplateControls();
   setTemplateStatus("", "info");
@@ -1250,15 +1465,22 @@ function clearSessionUi(message = "") {
   setTemplateSelectStatus("", "info");
   populateSecretariaAssetOptions("logo", [], "", true);
   populateSecretariaAssetOptions("assinatura", [], "", true);
+  populateSecretariaAssetOptions("assinatura2", [], "", true);
+  populateSecretariaAssetOptions("assinatura3", [], "", true);
   populateSecretariaAssetOptions("instituicao", [], "", true);
   if (logoLibraryWrap) logoLibraryWrap.hidden = false;
   if (assinaturaLibraryWrap) assinaturaLibraryWrap.hidden = false;
+  if (assinaturasExtrasWrap) assinaturasExtrasWrap.hidden = false;
   if (instituicaoLibraryWrap) instituicaoLibraryWrap.hidden = false;
   setLogoSelectStatus("", "info");
   setAssinaturaSelectStatus("", "info");
+  setAssinatura2SelectStatus("", "info");
+  setAssinatura3SelectStatus("", "info");
   setInstituicaoSelectStatus("", "info");
   setLogoStatus("", "info");
   setAssinaturaStatus("", "info");
+  setAssinatura2Status("", "info");
+  setAssinatura3Status("", "info");
   setInstituicaoStatus("", "info");
   resetUserForm();
   resetSecretariaForm();
@@ -1553,6 +1775,7 @@ function resetTemplateAdminForm() {
   if (templateAdminEditIdInput) templateAdminEditIdInput.value = "";
   if (templateAdminActiveInput) templateAdminActiveInput.checked = true;
   if (templateAdminDefaultInput) templateAdminDefaultInput.checked = false;
+  if (templateAdminHideTitleInput) templateAdminHideTitleInput.checked = false;
   if (templateAdminOrderInput) templateAdminOrderInput.value = "0";
   syncTemplateAdminFormState();
   setTemplateAdminStatus("", "info");
@@ -1661,6 +1884,9 @@ function fillTemplateAdminForm(template) {
   if (templateAdminNameInput) templateAdminNameInput.value = template.nome || "";
   if (templateAdminActiveInput) templateAdminActiveInput.checked = Boolean(template.ativo);
   if (templateAdminDefaultInput) templateAdminDefaultInput.checked = Boolean(template.padrao);
+  if (templateAdminHideTitleInput) {
+    templateAdminHideTitleInput.checked = Boolean(template.ocultar_titulo_certificado);
+  }
   if (templateAdminOrderInput) templateAdminOrderInput.value = String(template.ordem || 0);
   if (templateAdminFileInput) templateAdminFileInput.value = "";
   syncTemplateAdminFormState();
@@ -1955,7 +2181,7 @@ function renderTemplatesTable() {
   if (!adminState.templates.length) {
     templateAdminListBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">Nenhum molde cadastrado até o momento.</td>
+        <td colspan="7" class="empty-state">Nenhum molde cadastrado até o momento.</td>
       </tr>
     `;
     return;
@@ -1977,6 +2203,15 @@ function renderTemplatesTable() {
 
     const defaultCell = document.createElement("td");
     defaultCell.appendChild(buildStatusPill(template.padrao, "Padrão", "Opcional"));
+
+    const titleCell = document.createElement("td");
+    titleCell.appendChild(
+      buildStatusPill(
+        template.ocultar_titulo_certificado,
+        "No molde",
+        "Gerado"
+      )
+    );
 
     const orderCell = document.createElement("td");
     orderCell.textContent = String(template.ordem || 0);
@@ -2010,7 +2245,15 @@ function renderTemplatesTable() {
     );
     actionsCell.appendChild(actionsWrap);
 
-    row.append(secretariaCell, nomeCell, statusCell, defaultCell, orderCell, actionsCell);
+    row.append(
+      secretariaCell,
+      nomeCell,
+      statusCell,
+      defaultCell,
+      titleCell,
+      orderCell,
+      actionsCell
+    );
     templateAdminListBody.appendChild(row);
   });
 }
@@ -2853,6 +3096,12 @@ async function loadAvailableSecretariaAssetType(type) {
     setSavedSecretariaAsset(type, null, null);
     if (ui.wrap) ui.wrap.hidden = false;
     populateSecretariaAssetOptions(type, [], "", true);
+    if (type === "assinatura") {
+      syncExtraSignatureCatalogs([], {
+        statusMessage:
+          "Selecione uma secretaria para usar assinaturas extras cadastradas ou enviar arquivos temporarios.",
+      });
+    }
     ui.setSelectStatus(
       `Selecione uma secretaria para usar ${ui.pluralLabel} cadastradas ou enviar um arquivo temporário.`,
       "info"
@@ -2869,6 +3118,9 @@ async function loadAvailableSecretariaAssetType(type) {
     );
     const items = Array.isArray(payload) ? payload : [];
     catalog.items = items;
+    if (type === "assinatura") {
+      syncExtraSignatureCatalogs(items);
+    }
     if (ui.wrap) ui.wrap.hidden = false;
     populateSecretariaAssetOptions(type, items, catalog.selectedId, true);
 
@@ -2889,6 +3141,12 @@ async function loadAvailableSecretariaAssetType(type) {
     setSavedSecretariaAsset(type, null, null);
     if (ui.wrap) ui.wrap.hidden = false;
     populateSecretariaAssetOptions(type, [], "", true);
+    if (type === "assinatura") {
+      syncExtraSignatureCatalogs([], {
+        statusMessage: "Nao foi possivel carregar as assinaturas extras da secretaria.",
+        statusType: "error",
+      });
+    }
     if (error && error.status === 401) {
       await handleUnauthorized();
       return;
@@ -3456,6 +3714,74 @@ function drawCenteredImage(image, x, y, maxW, maxH) {
   ctx.drawImage(image, drawX, drawY, size.width, size.height);
 }
 
+function drawCenteredLine(x, y, width) {
+  if (!ctx) return;
+  ctx.beginPath();
+  ctx.moveTo(x - width / 2, y);
+  ctx.lineTo(x + width / 2, y);
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawSignatureLabelLines(lines, x, y, maxWidth) {
+  if (!ctx || !lines.length) return;
+  const lineHeight = lines.length > 1 ? 18 : 24;
+  ctx.fillStyle = "#444";
+  lines.forEach((line, index) => {
+    drawAdaptiveCenteredText(line, x, y + index * lineHeight, {
+      family: "Arial",
+      startSize: lines.length > 1 ? 16 : 22,
+      minSize: 11,
+      maxWidth,
+    });
+  });
+}
+
+function drawSignatureBlock(slotKey) {
+  if (!ctx || !isSignatureSlotActive(slotKey)) return;
+
+  const slotLayout = layout[slotKey] || layout.assinatura;
+  const activeImage = getActiveSignatureImage(slotKey);
+  const lineWidth = Math.max(220, Math.min(320, slotLayout.maxW + 70));
+  const lineY = slotLayout.y + 38;
+  const labelY = lineY + 35;
+
+  if (activeImage) {
+    drawCenteredImage(
+      activeImage,
+      slotLayout.x,
+      slotLayout.y,
+      slotLayout.maxW,
+      slotLayout.maxH
+    );
+  }
+
+  drawCenteredLine(slotLayout.x, lineY, lineWidth);
+  drawSignatureLabelLines(getSignatureLabelLines(slotKey), slotLayout.x, labelY, lineWidth + 40);
+}
+
+function drawInstitutionBlock(activeInstituicaoImage) {
+  if (!ctx) return;
+  if (isSignatureSlotActive("assinatura3")) return;
+
+  const lineWidth = Math.max(220, Math.min(320, layout.instituicao.maxW + 70));
+  const lineY = layout.instituicao.y + 38;
+
+  if (activeInstituicaoImage) {
+    drawCenteredImage(
+      activeInstituicaoImage,
+      layout.instituicao.x,
+      layout.instituicao.y,
+      layout.instituicao.maxW,
+      layout.instituicao.maxH
+    );
+  }
+
+  drawCenteredLine(layout.instituicao.x, lineY, lineWidth);
+  drawSignatureLabelLines(["Instituição"], layout.instituicao.x, lineY + 35, lineWidth + 40);
+}
+
 function scaleHeightByWidth(width, ratio) {
   return Math.max(1, Math.round(width * ratio));
 }
@@ -3487,6 +3813,42 @@ function syncAdvancedAssetControls() {
     layout.assinatura.maxW
   );
   configureRangeInput(
+    assinatura2XInput,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.xMin,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.xMax,
+    layout.assinatura2.x
+  );
+  configureRangeInput(
+    assinatura2YInput,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.yMin,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.yMax,
+    layout.assinatura2.y
+  );
+  configureRangeInput(
+    assinatura2SizeInput,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.sizeMin,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.sizeMax,
+    layout.assinatura2.maxW
+  );
+  configureRangeInput(
+    assinatura3XInput,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.xMin,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.xMax,
+    layout.assinatura3.x
+  );
+  configureRangeInput(
+    assinatura3YInput,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.yMin,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.yMax,
+    layout.assinatura3.y
+  );
+  configureRangeInput(
+    assinatura3SizeInput,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.sizeMin,
+    EXTRA_ASSINATURA_CONTROL_LIMITS.sizeMax,
+    layout.assinatura3.maxW
+  );
+  configureRangeInput(
     instituicaoXInput,
     INSTITUICAO_CONTROL_LIMITS.xMin,
     INSTITUICAO_CONTROL_LIMITS.xMax,
@@ -3513,6 +3875,12 @@ function updateControlLabels() {
   if (assinaturaXVal) assinaturaXVal.textContent = `${layout.assinatura.x} px`;
   if (assinaturaYVal) assinaturaYVal.textContent = `${layout.assinatura.y} px`;
   if (assinaturaSizeVal) assinaturaSizeVal.textContent = `${layout.assinatura.maxW} px`;
+  if (assinatura2XVal) assinatura2XVal.textContent = `${layout.assinatura2.x} px`;
+  if (assinatura2YVal) assinatura2YVal.textContent = `${layout.assinatura2.y} px`;
+  if (assinatura2SizeVal) assinatura2SizeVal.textContent = `${layout.assinatura2.maxW} px`;
+  if (assinatura3XVal) assinatura3XVal.textContent = `${layout.assinatura3.x} px`;
+  if (assinatura3YVal) assinatura3YVal.textContent = `${layout.assinatura3.y} px`;
+  if (assinatura3SizeVal) assinatura3SizeVal.textContent = `${layout.assinatura3.maxW} px`;
   if (instituicaoXVal) instituicaoXVal.textContent = `${layout.instituicao.x} px`;
   if (instituicaoYVal) instituicaoYVal.textContent = `${layout.instituicao.y} px`;
   if (instituicaoSizeVal) instituicaoSizeVal.textContent = `${layout.instituicao.maxW} px`;
@@ -3532,6 +3900,24 @@ function applyLayoutFromControls() {
     layout.assinatura.maxW = Number(assinaturaSizeInput.value);
     layout.assinatura.maxH = scaleHeightByWidth(
       layout.assinatura.maxW,
+      assinaturaAspectRatio
+    );
+  }
+  if (assinatura2XInput) layout.assinatura2.x = Number(assinatura2XInput.value);
+  if (assinatura2YInput) layout.assinatura2.y = Number(assinatura2YInput.value);
+  if (assinatura2SizeInput) {
+    layout.assinatura2.maxW = Number(assinatura2SizeInput.value);
+    layout.assinatura2.maxH = scaleHeightByWidth(
+      layout.assinatura2.maxW,
+      assinaturaAspectRatio
+    );
+  }
+  if (assinatura3XInput) layout.assinatura3.x = Number(assinatura3XInput.value);
+  if (assinatura3YInput) layout.assinatura3.y = Number(assinatura3YInput.value);
+  if (assinatura3SizeInput) {
+    layout.assinatura3.maxW = Number(assinatura3SizeInput.value);
+    layout.assinatura3.maxH = scaleHeightByWidth(
+      layout.assinatura3.maxW,
       assinaturaAspectRatio
     );
   }
@@ -3574,6 +3960,14 @@ function syncTemplateControls() {
   if (assinaturaRemoveBtn) {
     assinaturaRemoveBtn.disabled = !assets.assinatura;
     assinaturaRemoveBtn.hidden = !assets.assinatura;
+  }
+  if (assinatura2RemoveBtn) {
+    assinatura2RemoveBtn.disabled = !assets.assinatura2;
+    assinatura2RemoveBtn.hidden = !assets.assinatura2;
+  }
+  if (assinatura3RemoveBtn) {
+    assinatura3RemoveBtn.disabled = !assets.assinatura3;
+    assinatura3RemoveBtn.hidden = !assets.assinatura3;
   }
   if (instituicaoRemoveBtn) {
     instituicaoRemoveBtn.disabled = !assets.instituicao;
@@ -3790,7 +4184,6 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   const myTicket = ++renderTicket;
   const activeTemplateImage = getActiveTemplateImage();
   const activeLogoImage = getActiveLogoImage();
-  const activeAssinaturaImage = getActiveAssinaturaImage();
   const activeInstituicaoImage = getActiveInstituicaoImage();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3816,7 +4209,9 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   ctx.font = "bold 64px Georgia";
   const centerX = canvas.width / 2;
   const maxTextWidth = canvas.width - 220;
-  ctx.fillText("CERTIFICADO", centerX, 190);
+  if (shouldDrawCertificateTitle()) {
+    ctx.fillText("CERTIFICADO", centerX, 190);
+  }
 
   ctx.fillStyle = "#334";
   drawAdaptiveCenteredText(linha1, centerX, 270, {
@@ -3884,34 +4279,10 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
     });
   }
 
-  ctx.beginPath();
-  ctx.moveTo(180, 700);
-  ctx.lineTo(480, 700);
-  ctx.moveTo(720, 700);
-  ctx.lineTo(1020, 700);
-  ctx.strokeStyle = "#444";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  if (activeAssinaturaImage) {
-    drawCenteredImage(
-      activeAssinaturaImage,
-      layout.assinatura.x,
-      layout.assinatura.y,
-      layout.assinatura.maxW,
-      layout.assinatura.maxH
-    );
-  }
-
-  if (activeInstituicaoImage) {
-    drawCenteredImage(
-      activeInstituicaoImage,
-      layout.instituicao.x,
-      layout.instituicao.y,
-      layout.instituicao.maxW,
-      layout.instituicao.maxH
-    );
-  }
+  drawSignatureBlock("assinatura");
+  drawSignatureBlock("assinatura2");
+  drawSignatureBlock("assinatura3");
+  drawInstitutionBlock(activeInstituicaoImage);
 
   const qrValue = sanitizeText(qrText);
   if (qrValue) {
@@ -3927,10 +4298,6 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
     );
   }
 
-  ctx.font = "22px Arial";
-  ctx.fillStyle = "#444";
-  ctx.fillText("Assinatura do Responsável", 330, 735);
-  ctx.fillText("Instituição", 870, 735);
 }
 
 async function renderLastCertificate() {
@@ -3959,6 +4326,7 @@ async function handleAssetChange(input, key, options = {}) {
     assets[key] = null;
     syncTemplateControls();
     if (key === "template") {
+      if (templateHideTitleInput) templateHideTitleInput.checked = false;
       const message = savedTemplate
         ? `Molde temporário removido. A prévia voltou a usar o modelo ${savedTemplate.nome}.`
         : "";
@@ -3973,6 +4341,16 @@ async function handleAssetChange(input, key, options = {}) {
         ? `Assinatura temporária removida. A prévia voltou a usar a assinatura ${savedAssinatura.nome}.`
         : "";
       setAssinaturaStatus(message, "info");
+    } else if (key === "assinatura2") {
+      const message = savedAssinatura2
+        ? `Assinatura 2 temporaria removida. A previa voltou a usar a assinatura ${savedAssinatura2.nome}.`
+        : "";
+      setAssinatura2Status(message, "info");
+    } else if (key === "assinatura3") {
+      const message = savedAssinatura3
+        ? `Assinatura 3 temporaria removida. A previa voltou a usar a assinatura ${savedAssinatura3.nome}.`
+        : "";
+      setAssinatura3Status(message, "info");
     } else if (key === "instituicao") {
       const message = savedInstituicao
         ? `Instituição temporária removida. A prévia voltou a usar a instituição ${savedInstituicao.nome}.`
@@ -4009,6 +4387,16 @@ async function handleAssetChange(input, key, options = {}) {
         "Assinatura temporária pronta para uso. Ela sobrescreve a assinatura cadastrada selecionada somente nesta emissão.",
         "success"
       );
+    } else if (key === "assinatura2") {
+      setAssinatura2Status(
+        "Assinatura 2 temporaria pronta para uso. Ela sobrescreve a assinatura cadastrada selecionada somente nesta emissao.",
+        "success"
+      );
+    } else if (key === "assinatura3") {
+      setAssinatura3Status(
+        "Assinatura 3 temporaria pronta para uso. Ela sobrescreve a assinatura cadastrada selecionada somente nesta emissao.",
+        "success"
+      );
     } else if (key === "instituicao") {
       setInstituicaoStatus(
         "Instituição temporária pronta para uso. Ela sobrescreve a instituição cadastrada selecionada somente nesta emissão.",
@@ -4027,6 +4415,10 @@ async function handleAssetChange(input, key, options = {}) {
       setLogoStatus("Não foi possível carregar a logo informada.", "error");
     } else if (key === "assinatura") {
       setAssinaturaStatus("Não foi possível carregar a assinatura informada.", "error");
+    } else if (key === "assinatura2") {
+      setAssinatura2Status("Nao foi possivel carregar a assinatura 2 informada.", "error");
+    } else if (key === "assinatura3") {
+      setAssinatura3Status("Nao foi possivel carregar a assinatura 3 informada.", "error");
     } else if (key === "instituicao") {
       setInstituicaoStatus("Não foi possível carregar a instituição informada.", "error");
     }
@@ -5215,6 +5607,12 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     });
   }
 
+  if (templateHideTitleInput) {
+    templateHideTitleInput.addEventListener("change", () => {
+      void renderLastCertificate();
+    });
+  }
+
   if (templateSelect) {
     templateSelect.addEventListener("change", () => {
       void applySavedTemplateSelection(templateSelect.value);
@@ -5225,6 +5623,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     templateRemoveBtn.addEventListener("click", () => {
       assets.template = null;
       if (templateInput) templateInput.value = "";
+      if (templateHideTitleInput) templateHideTitleInput.checked = false;
       syncTemplateControls();
       const message = savedTemplate
         ? `Molde temporário removido. O preview voltou a usar o modelo ${savedTemplate.nome}.`
@@ -5255,6 +5654,56 @@ if (!form || !downloadBtn || !canvas || !ctx) {
         ? `Assinatura temporária removida. O preview voltou a usar a assinatura ${savedAssinatura.nome}.`
         : "Assinatura temporária removida. O preview voltou a usar a configuração padrão da tela.";
       setAssinaturaStatus(message, "info");
+      void renderLastCertificate();
+    });
+  }
+
+  if (assinatura2Input) {
+    assinatura2Input.addEventListener("change", () => {
+      void handleAssetChange(assinatura2Input, "assinatura2");
+    });
+  }
+
+  if (assinatura2Select) {
+    assinatura2Select.addEventListener("change", () => {
+      void applySavedSecretariaAssetSelection("assinatura2", assinatura2Select.value);
+    });
+  }
+
+  if (assinatura2RemoveBtn) {
+    assinatura2RemoveBtn.addEventListener("click", () => {
+      assets.assinatura2 = null;
+      if (assinatura2Input) assinatura2Input.value = "";
+      syncTemplateControls();
+      const message = savedAssinatura2
+        ? `Assinatura 2 temporaria removida. O preview voltou a usar a assinatura ${savedAssinatura2.nome}.`
+        : "Assinatura 2 temporaria removida.";
+      setAssinatura2Status(message, "info");
+      void renderLastCertificate();
+    });
+  }
+
+  if (assinatura3Input) {
+    assinatura3Input.addEventListener("change", () => {
+      void handleAssetChange(assinatura3Input, "assinatura3");
+    });
+  }
+
+  if (assinatura3Select) {
+    assinatura3Select.addEventListener("change", () => {
+      void applySavedSecretariaAssetSelection("assinatura3", assinatura3Select.value);
+    });
+  }
+
+  if (assinatura3RemoveBtn) {
+    assinatura3RemoveBtn.addEventListener("click", () => {
+      assets.assinatura3 = null;
+      if (assinatura3Input) assinatura3Input.value = "";
+      syncTemplateControls();
+      const message = savedAssinatura3
+        ? `Assinatura 3 temporaria removida. O preview voltou a usar a assinatura ${savedAssinatura3.nome}.`
+        : "Assinatura 3 temporaria removida.";
+      setAssinatura3Status(message, "info");
       void renderLastCertificate();
     });
   }
@@ -5290,9 +5739,23 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   if (assinaturaXInput) assinaturaXInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaYInput) assinaturaYInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaSizeInput) assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura2XInput) assinatura2XInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura2YInput) assinatura2YInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura2SizeInput) assinatura2SizeInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura3XInput) assinatura3XInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura3YInput) assinatura3YInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura3SizeInput) assinatura3SizeInput.addEventListener("input", applyLayoutFromControls);
   if (instituicaoXInput) instituicaoXInput.addEventListener("input", applyLayoutFromControls);
   if (instituicaoYInput) instituicaoYInput.addEventListener("input", applyLayoutFromControls);
   if (instituicaoSizeInput) instituicaoSizeInput.addEventListener("input", applyLayoutFromControls);
+
+  [assinaturaLabelInput, assinatura2LabelInput, assinatura3LabelInput].forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", () => {
+      if (isBatchRunning) return;
+      void renderLastCertificate();
+    });
+  });
 
   if (textoLinha1Input) {
     textoLinha1Input.addEventListener("input", () => {
@@ -5712,6 +6175,9 @@ if (templateAdminForm) {
       nome: templateAdminNameInput ? templateAdminNameInput.value.trim() : "",
       ativo: templateAdminActiveInput ? templateAdminActiveInput.checked : true,
       padrao: templateAdminDefaultInput ? templateAdminDefaultInput.checked : false,
+      ocultarTituloCertificado: templateAdminHideTitleInput
+        ? templateAdminHideTitleInput.checked
+        : false,
       ordem: templateAdminOrderInput ? templateAdminOrderInput.value : "0",
     };
 
@@ -5728,6 +6194,10 @@ if (templateAdminForm) {
     formData.set("nome", payload.nome);
     formData.set("ativo", String(payload.ativo));
     formData.set("padrao", String(payload.padrao));
+    formData.set(
+      "ocultar_titulo_certificado",
+      String(payload.ocultarTituloCertificado)
+    );
     formData.set("ordem", String(payload.ordem || 0));
     if (file) {
       formData.set("arquivo", file, file.name);

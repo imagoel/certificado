@@ -93,6 +93,7 @@ class CertificateTemplateResponse(BaseModel):
     nome: str
     ativo: bool
     padrao: bool
+    ocultar_titulo_certificado: bool = False
     ordem: int = 0
     arquivo_url: str
     criado_em: datetime

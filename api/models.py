@@ -137,6 +137,7 @@ class CertificateTemplate(Base):
     arquivo_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     padrao: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ocultar_titulo_certificado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     ordem: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     criado_por_usuario_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuarios.id"), nullable=True

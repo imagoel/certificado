@@ -143,6 +143,11 @@
               <div class="asset-upload-group">
                 <label for="template" class="sr-only">Arquivo temporário do molde</label>
                 <input id="template" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="template-select-status template-status" />
+                <label class="checkbox-field">
+                  <input id="template-hide-title" type="checkbox" />
+                  Molde temporário já contém o título "Certificado"
+                </label>
+                <p class="field-help">Use apenas quando a palavra Certificado já estiver desenhada no arquivo enviado.</p>
                 <div class="actions asset-inline-actions">
                   <button id="template-remove" type="button" class="secondary-btn" disabled hidden>Remover molde temporário</button>
                 </div>
@@ -186,6 +191,49 @@
               </div>
             </section>
 
+            <section id="assinaturas-extras-wrap" class="batch-controls generator-asset-block signature-extras-block">
+              <h2>Itens extras</h2>
+              <p class="hint">Use assinatura 2 e 3 quando o molde já tiver mais campos de assinatura. Cada item sai como bloco completo: imagem, linha e texto abaixo.</p>
+
+              <div class="signature-extra-grid">
+                <div class="signature-extra-card">
+                  <h3>Assinatura 2</h3>
+                  <label for="assinatura2-select">Assinatura cadastrada</label>
+                  <select id="assinatura2-select">
+                    <option value="">Não usar assinatura 2</option>
+                  </select>
+                  <p id="assinatura2-select-status" class="status" aria-live="polite"></p>
+
+                  <div class="asset-upload-group">
+                    <label for="assinatura2" class="sr-only">Arquivo temporário da assinatura 2</label>
+                    <input id="assinatura2" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura2-select-status assinatura2-status" />
+                    <div class="actions asset-inline-actions">
+                      <button id="assinatura2-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura 2 temporária</button>
+                    </div>
+                    <p id="assinatura2-status" class="status" aria-live="polite"></p>
+                  </div>
+                </div>
+
+                <div class="signature-extra-card">
+                  <h3>Assinatura 3</h3>
+                  <label for="assinatura3-select">Assinatura cadastrada</label>
+                  <select id="assinatura3-select">
+                    <option value="">Não usar assinatura 3</option>
+                  </select>
+                  <p id="assinatura3-select-status" class="status" aria-live="polite"></p>
+
+                  <div class="asset-upload-group">
+                    <label for="assinatura3" class="sr-only">Arquivo temporário da assinatura 3</label>
+                    <input id="assinatura3" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura3-select-status assinatura3-status" />
+                    <div class="actions asset-inline-actions">
+                      <button id="assinatura3-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura 3 temporária</button>
+                    </div>
+                    <p id="assinatura3-status" class="status" aria-live="polite"></p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section id="instituicao-library-wrap" class="batch-controls generator-asset-block">
               <h2>Instituição</h2>
               <label for="instituicao-select">Instituição cadastrada</label>
@@ -205,8 +253,8 @@
             </section>
 
             <details class="asset-controls asset-controls-details">
-              <summary>Ajustes avançados de logo, assinatura e instituição</summary>
-              <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo, a assinatura ou a instituição na prévia.</p>
+              <summary>Ajustes avançados de logo, assinaturas e instituição</summary>
+              <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo, as assinaturas ou a instituição na prévia.</p>
 
               <div class="asset-controls-body">
                 <fieldset class="slider-fieldset">
@@ -227,6 +275,9 @@
                   <legend>Ajuste da assinatura</legend>
                   <p class="slider-hint">Se a assinatura parecer muito alta ou baixa, ajuste primeiro a posição Y e depois o tamanho.</p>
 
+                  <label for="assinaturaLabel">Texto abaixo da linha</label>
+                  <textarea id="assinaturaLabel" rows="2">Assinatura do Responsável</textarea>
+
                   <label for="assinaturaX">Posição X: <span id="assinaturaXVal">330 px</span></label>
                   <input id="assinaturaX" type="range" min="140" max="520" step="1" value="330" />
 
@@ -235,6 +286,40 @@
 
                   <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230 px</span></label>
                   <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
+                </fieldset>
+
+                <fieldset class="slider-fieldset">
+                  <legend>Ajuste da assinatura 2</legend>
+                  <p class="slider-hint">Opcional. Use para moldes com um segundo campo de assinatura.</p>
+
+                  <label for="assinatura2Label">Texto abaixo da linha</label>
+                  <textarea id="assinatura2Label" rows="2" placeholder="Ex.: Nome&#10;Cargo"></textarea>
+
+                  <label for="assinatura2X">Posição X: <span id="assinatura2XVal">600 px</span></label>
+                  <input id="assinatura2X" type="range" min="140" max="1060" step="1" value="600" />
+
+                  <label for="assinatura2Y">Posição Y: <span id="assinatura2YVal">662 px</span></label>
+                  <input id="assinatura2Y" type="range" min="560" max="760" step="1" value="662" />
+
+                  <label for="assinatura2Size">Tamanho: <span id="assinatura2SizeVal">230 px</span></label>
+                  <input id="assinatura2Size" type="range" min="120" max="360" step="1" value="230" />
+                </fieldset>
+
+                <fieldset class="slider-fieldset">
+                  <legend>Ajuste da assinatura 3</legend>
+                  <p class="slider-hint">Opcional. Use para moldes com um terceiro campo de assinatura.</p>
+
+                  <label for="assinatura3Label">Texto abaixo da linha</label>
+                  <textarea id="assinatura3Label" rows="2" placeholder="Ex.: Nome&#10;Cargo"></textarea>
+
+                  <label for="assinatura3X">Posição X: <span id="assinatura3XVal">870 px</span></label>
+                  <input id="assinatura3X" type="range" min="140" max="1060" step="1" value="870" />
+
+                  <label for="assinatura3Y">Posição Y: <span id="assinatura3YVal">662 px</span></label>
+                  <input id="assinatura3Y" type="range" min="560" max="760" step="1" value="662" />
+
+                  <label for="assinatura3Size">Tamanho: <span id="assinatura3SizeVal">230 px</span></label>
+                  <input id="assinatura3Size" type="range" min="120" max="360" step="1" value="230" />
                 </fieldset>
 
                 <fieldset class="slider-fieldset">
@@ -711,6 +796,12 @@
               </label>
             </div>
 
+            <label class="checkbox-field">
+              <input id="template-admin-hide-title" type="checkbox" />
+              Este molde já contém o título "Certificado"
+            </label>
+            <p class="field-help">Marque esta opção quando o arquivo do molde já tiver a palavra Certificado para evitar duplicidade na emissão.</p>
+
             <div class="grid-two">
               <div class="field-stack">
                 <label for="template-admin-order">Ordem</label>
@@ -740,13 +831,14 @@
                   <th>Nome</th>
                   <th>Status</th>
                   <th>Padrão</th>
+                  <th>Título</th>
                   <th>Ordem</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody id="template-admin-list-body">
                 <tr>
-                  <td colspan="6" class="empty-state">Carregando moldes...</td>
+                  <td colspan="7" class="empty-state">Carregando moldes...</td>
                 </tr>
               </tbody>
             </table>
@@ -960,6 +1052,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260429-2"></script>
+  <script src="app.js?v=20260519-2"></script>
 </body>
 </html>
