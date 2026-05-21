@@ -714,7 +714,7 @@ button[disabled] {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .preview-toolbar {
@@ -749,6 +749,7 @@ button[disabled] {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
 .preview-hotspot {
@@ -810,45 +811,64 @@ button[disabled] {
 }
 
 .preview-adjust-panel {
-  margin-top: 12px;
-  padding: 12px;
+  position: absolute;
+  z-index: 5;
+  width: min(320px, calc(100% - 16px));
+  padding: 10px;
   border: 1px solid #bfd6f3;
   border-radius: 12px;
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-  box-shadow: 0 14px 30px rgba(17, 56, 108, 0.08);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 34px rgba(17, 56, 108, 0.18);
+  backdrop-filter: blur(8px);
 }
 
 .preview-adjust-panel-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .preview-adjust-panel-header strong {
   display: block;
-  margin-bottom: 2px;
   color: #1a4f8b;
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
-.preview-adjust-panel-header .hint {
-  margin: 0;
+.preview-adjust-panel-header button {
+  padding: 6px 9px;
+  font-size: 0.82rem;
+}
+
+.preview-adjust-label-field {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 8px;
+  color: #183b63;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.preview-adjust-label-field textarea {
+  min-height: 52px;
+  padding: 7px 8px;
+  font-size: 0.86rem;
+  resize: vertical;
 }
 
 .preview-adjust-grid {
   display: grid;
-  grid-template-columns: minmax(110px, 150px) minmax(0, 1fr);
-  gap: 8px 12px;
-  align-items: center;
+  gap: 7px;
 }
 
 .preview-adjust-grid label {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
+  justify-content: space-between;
+  gap: 8px;
   color: #183b63;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .preview-adjust-grid label span {
@@ -858,6 +878,7 @@ button[disabled] {
 
 .preview-adjust-grid input[type="range"] {
   padding: 0;
+  height: 18px;
 }
 
 .filter-grid {
@@ -1255,17 +1276,17 @@ button[disabled] {
     justify-content: center;
   }
 
-  .preview-adjust-panel-header {
-    flex-direction: column;
+  .preview-adjust-panel {
+    width: min(300px, calc(100% - 12px));
+    padding: 9px;
   }
 
-  .preview-adjust-panel-header button {
-    width: 100%;
+  .preview-adjust-panel-header {
+    align-items: center;
   }
 
   .preview-adjust-grid {
-    grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 5px;
   }
 
   .asset-controls-body {

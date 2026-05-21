@@ -495,7 +495,7 @@ Compatibilidade:
 - a tela de auditoria saiu da aba `Certificados` e ganhou aba propria
 - a tabela de certificados ficou mais compacta em telas pequenas, com detalhes secundarios embutidos na celula principal
 - `Molde`, `Logo` e `Assinatura` foram simplificados em tres blocos mais enxutos, com sobrescrita temporaria apenas quando necessario
-- `Ajustes avancados de logo, assinatura, selos e instituicao` ficam recolhidos por padrao
+- ajustes de logo, QR Code, assinaturas, selos e instituicao sao feitos por painel contextual ao clicar nos itens da previa
 - `Itens extras` permitem usar assinatura 2, assinatura 3 e ate quatro selos com posicionamento independente
 - o foco visual de inputs, botoes e controles foi reforcado para melhorar navegacao por teclado
 

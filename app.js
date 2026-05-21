@@ -196,12 +196,15 @@ const batchPreviewBody = document.getElementById("batch-preview-body");
 const canvas = document.getElementById("canvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
 const previewWrap = document.getElementById("preview-wrap");
+const previewCanvasFrame = document.getElementById("preview-canvas-frame");
 const previewHotspots = document.getElementById("preview-hotspots");
 const previewShowHotspotsInput = document.getElementById("preview-show-hotspots");
 const previewAdjustStatus = document.getElementById("preview-adjust-status");
 const previewAdjustPanel = document.getElementById("preview-adjust-panel");
 const previewAdjustTitle = document.getElementById("preview-adjust-title");
 const previewAdjustCloseBtn = document.getElementById("preview-adjust-close");
+const previewAdjustLabelWrap = document.getElementById("preview-adjust-label-wrap");
+const previewAdjustLabelInput = document.getElementById("preview-adjust-label");
 const previewAdjustXInput = document.getElementById("preview-adjust-x");
 const previewAdjustYInput = document.getElementById("preview-adjust-y");
 const previewAdjustSizeInput = document.getElementById("preview-adjust-size");
@@ -1304,6 +1307,10 @@ function getPreviewAdjustTargetControlElement(target) {
   return null;
 }
 
+function isSignaturePreviewTarget(target) {
+  return target === "assinatura" || target === "assinatura2" || target === "assinatura3";
+}
+
 function getPreviewAdjustTargetInputs(target) {
   if (target === "logo") {
     return { x: logoXInput, y: logoYInput, size: logoSizeInput };
@@ -1312,13 +1319,28 @@ function getPreviewAdjustTargetInputs(target) {
     return { x: qrXInput, y: qrYInput, size: qrSizeInput };
   }
   if (target === "assinatura") {
-    return { x: assinaturaXInput, y: assinaturaYInput, size: assinaturaSizeInput };
+    return {
+      x: assinaturaXInput,
+      y: assinaturaYInput,
+      size: assinaturaSizeInput,
+      label: assinaturaLabelInput,
+    };
   }
   if (target === "assinatura2") {
-    return { x: assinatura2XInput, y: assinatura2YInput, size: assinatura2SizeInput };
+    return {
+      x: assinatura2XInput,
+      y: assinatura2YInput,
+      size: assinatura2SizeInput,
+      label: assinatura2LabelInput,
+    };
   }
   if (target === "assinatura3") {
-    return { x: assinatura3XInput, y: assinatura3YInput, size: assinatura3SizeInput };
+    return {
+      x: assinatura3XInput,
+      y: assinatura3YInput,
+      size: assinatura3SizeInput,
+      label: assinatura3LabelInput,
+    };
   }
   if (target === "instituicao") {
     return { x: instituicaoXInput, y: instituicaoYInput, size: instituicaoSizeInput };
@@ -1430,7 +1452,7 @@ function getPreviewAdjustTargetRect(target) {
 
 function setPreviewAdjustStatus(message) {
   if (!previewAdjustStatus) return;
-  previewAdjustStatus.textContent = message || "Clique em um item destacado para ajustar aqui na prévia.";
+  previewAdjustStatus.textContent = message || "Clique em um item destacado para abrir os ajustes perto dele.";
 }
 
 function syncPreviewAdjustRange(sourceInput, targetInput, valueElement) {
@@ -1441,6 +1463,46 @@ function syncPreviewAdjustRange(sourceInput, targetInput, valueElement) {
   targetInput.value = sourceInput.value;
   if (valueElement) valueElement.textContent = `${sourceInput.value} px`;
   return true;
+}
+
+function positionPreviewAdjustPanel() {
+  if (!previewAdjustPanel || !previewCanvasFrame || !canvas || !selectedPreviewAdjustTarget) {
+    return;
+  }
+  const rect = getPreviewAdjustTargetRect(selectedPreviewAdjustTarget);
+  if (!rect) return;
+
+  const frameWidth = previewCanvasFrame.clientWidth;
+  const frameHeight = previewCanvasFrame.clientHeight;
+  if (!frameWidth || !frameHeight) return;
+
+  const scaleX = frameWidth / canvas.width;
+  const scaleY = frameHeight / canvas.height;
+  const panelWidth = previewAdjustPanel.offsetWidth || 300;
+  const panelHeight = previewAdjustPanel.offsetHeight || 180;
+  const margin = 8;
+  const gap = 10;
+  const targetLeft = rect.x * scaleX;
+  const targetTop = rect.y * scaleY;
+  const targetRight = (rect.x + rect.width) * scaleX;
+  const targetBottom = (rect.y + rect.height) * scaleY;
+  const targetCenterX = (targetLeft + targetRight) / 2;
+
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const maxLeft = Math.max(margin, frameWidth - panelWidth - margin);
+  const maxTop = Math.max(margin, frameHeight - panelHeight - margin);
+  const preferredTop = targetTop - panelHeight - gap;
+  const fallbackTop = targetBottom + gap;
+
+  const left = clamp(targetCenterX - panelWidth / 2, margin, maxLeft);
+  const top = preferredTop >= margin
+    ? preferredTop
+    : fallbackTop + panelHeight <= frameHeight - margin
+      ? fallbackTop
+      : clamp(targetTop, margin, maxTop);
+
+  previewAdjustPanel.style.left = `${left}px`;
+  previewAdjustPanel.style.top = `${clamp(top, margin, maxTop)}px`;
 }
 
 function syncPreviewAdjustPanel() {
@@ -1458,16 +1520,25 @@ function syncPreviewAdjustPanel() {
   if (!isReady) return;
 
   if (previewAdjustTitle) {
-    previewAdjustTitle.textContent = `Ajuste rapido: ${getPreviewAdjustTargetLabel(target)}`;
+    previewAdjustTitle.textContent = `Ajustar ${getPreviewAdjustTargetLabel(target)}`;
+  }
+  if (previewAdjustLabelWrap && previewAdjustLabelInput) {
+    const shouldShowLabel = isSignaturePreviewTarget(target) && controls.label;
+    previewAdjustLabelWrap.hidden = !shouldShowLabel;
+    if (shouldShowLabel) previewAdjustLabelInput.value = controls.label.value || "";
   }
   syncPreviewAdjustRange(controls.x, previewAdjustXInput, previewAdjustXVal);
   syncPreviewAdjustRange(controls.y, previewAdjustYInput, previewAdjustYVal);
   syncPreviewAdjustRange(controls.size, previewAdjustSizeInput, previewAdjustSizeVal);
+  positionPreviewAdjustPanel();
 }
 
 function applyPreviewAdjustPanelControls() {
   if (!selectedPreviewAdjustTarget) return;
   const controls = getPreviewAdjustTargetInputs(selectedPreviewAdjustTarget);
+  if (controls.label && previewAdjustLabelInput) {
+    controls.label.value = previewAdjustLabelInput.value;
+  }
   if (controls.x && previewAdjustXInput) controls.x.value = previewAdjustXInput.value;
   if (controls.y && previewAdjustYInput) controls.y.value = previewAdjustYInput.value;
   if (controls.size && previewAdjustSizeInput) controls.size.value = previewAdjustSizeInput.value;
@@ -1549,7 +1620,7 @@ function selectPreviewAdjustTarget(target) {
   updatePreviewHotspots();
 
   const label = getPreviewAdjustTargetLabel(target);
-  setPreviewAdjustStatus(`Ajustando: ${label}. Use a barra abaixo da prévia para mover ou alterar o tamanho.`);
+  setPreviewAdjustStatus(`Ajustando: ${label}. Use o painel que abriu perto do item para mover ou alterar o tamanho.`);
   if (previewAdjustXInput) previewAdjustXInput.focus({ preventScroll: true });
 }
 
@@ -6588,9 +6659,18 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     previewAdjustCloseBtn.addEventListener("click", clearPreviewAdjustTarget);
   }
 
-  [previewAdjustXInput, previewAdjustYInput, previewAdjustSizeInput].forEach((input) => {
+  [
+    previewAdjustLabelInput,
+    previewAdjustXInput,
+    previewAdjustYInput,
+    previewAdjustSizeInput,
+  ].forEach((input) => {
     if (!input) return;
     input.addEventListener("input", applyPreviewAdjustPanelControls);
+  });
+
+  window.addEventListener("resize", () => {
+    positionPreviewAdjustPanel();
   });
 
   if (logoInput) {
