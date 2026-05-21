@@ -1053,7 +1053,7 @@ button[disabled] {
 }
 
 .cert-actions {
-  min-width: 150px;
+  min-width: 118px;
 }
 
 .empty-state {
@@ -1070,6 +1070,90 @@ button[disabled] {
 
 .inline-actions button {
   padding: 8px 10px;
+}
+
+.icon-btn {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: #1a4f8b;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.icon-btn:hover,
+.icon-btn:focus-visible {
+  border-color: #9dbce3;
+  background: #f2f7ff;
+  box-shadow: 0 0 0 3px rgba(11, 110, 253, 0.12);
+}
+
+.icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
+}
+
+.icon-btn-svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.action-menu {
+  position: relative;
+}
+
+.action-menu summary {
+  list-style: none;
+}
+
+.action-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.action-menu-content {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  min-width: 116px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 32px rgba(17, 56, 108, 0.14);
+}
+
+.action-menu:not([open]) .action-menu-content {
+  display: none;
+}
+
+.action-menu-item {
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 8px;
+  background: transparent;
+  color: #1f3654;
+}
+
+.action-menu-item:hover,
+.action-menu-item:focus-visible {
+  background: #f2f7ff;
+}
+
+.action-menu-item.danger-action {
+  color: #b32929;
+}
+
+.action-menu-item.danger-action:hover,
+.action-menu-item.danger-action:focus-visible {
+  background: #fff1f1;
 }
 
 .pagination-row {
@@ -1348,10 +1432,6 @@ button[disabled] {
     min-width: 160px;
   }
 
-  .certificates-table .cert-col-status {
-    white-space: nowrap;
-  }
-
   .certificates-table .cert-actions {
     min-width: 120px;
   }
@@ -1448,6 +1528,21 @@ button[disabled] {
     width: 100%;
   }
 
+  .cert-actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+
+  .cert-actions .icon-btn,
+  .cert-actions .action-menu-trigger {
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .cert-actions .action-menu-item {
+    width: 100%;
+  }
+
   .table-wrap {
     border-radius: 8px;
   }
@@ -1517,8 +1612,7 @@ button[disabled] {
     min-width: 620px;
   }
 
-  .certificates-table .cert-col-code,
-  .certificates-table .cert-col-status {
+  .certificates-table .cert-col-code {
     white-space: nowrap;
   }
 

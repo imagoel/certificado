@@ -542,7 +542,6 @@
             <button type="button" id="cert-quick-today" class="quick-filter-btn">Hoje</button>
             <button type="button" id="cert-quick-last7" class="quick-filter-btn">Últimos 7 dias</button>
             <button type="button" id="cert-quick-active-secretaria" class="quick-filter-btn">Secretaria ativa</button>
-            <button type="button" id="cert-quick-with-file" class="quick-filter-btn">Com PNG</button>
           </div>
 
           <form id="cert-list-filters" class="filter-grid">
@@ -578,11 +577,6 @@
               <input id="cert-filter-emitido-ate" type="date" />
             </div>
 
-            <label class="checkbox-field compact-checkbox">
-              <input id="cert-filter-com-arquivo" type="checkbox" />
-              Somente com PNG salvo
-            </label>
-
             <div class="actions actions-end">
               <button type="submit">Filtrar</button>
               <button id="cert-filter-reset" type="button" class="secondary-btn">Limpar</button>
@@ -602,13 +596,12 @@
                   <th class="cert-col-secondary">Conclusão</th>
                   <th class="cert-col-secondary">Emitido em</th>
                   <th class="cert-col-secondary">Emitido por</th>
-                  <th class="cert-col-status">Status</th>
                   <th class="cert-col-actions">Ações</th>
                 </tr>
               </thead>
               <tbody id="cert-list-body">
                 <tr>
-                  <td colspan="9" class="empty-state">Faça login para carregar os certificados.</td>
+                  <td colspan="8" class="empty-state">Faça login para carregar os certificados.</td>
                 </tr>
               </tbody>
             </table>

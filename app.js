@@ -80,11 +80,9 @@ const certFilterConcluidoDeInput = document.getElementById("cert-filter-concluid
 const certFilterConcluidoAteInput = document.getElementById("cert-filter-concluido-ate");
 const certFilterEmitidoDeInput = document.getElementById("cert-filter-emitido-de");
 const certFilterEmitidoAteInput = document.getElementById("cert-filter-emitido-ate");
-const certFilterComArquivoInput = document.getElementById("cert-filter-com-arquivo");
 const certQuickTodayBtn = document.getElementById("cert-quick-today");
 const certQuickLast7Btn = document.getElementById("cert-quick-last7");
 const certQuickActiveSecretariaBtn = document.getElementById("cert-quick-active-secretaria");
-const certQuickWithFileBtn = document.getElementById("cert-quick-with-file");
 const certFilterResetBtn = document.getElementById("cert-filter-reset");
 const certExportCsvBtn = document.getElementById("cert-export-csv");
 const certListStatus = document.getElementById("cert-list-status");
@@ -482,7 +480,6 @@ const certListState = {
     concluidoAte: "",
     emitidoDe: "",
     emitidoAte: "",
-    somenteComArquivo: false,
   },
 };
 
@@ -642,9 +639,6 @@ function syncCertificateFilterInputsFromState() {
   if (certFilterEmitidoAteInput) {
     certFilterEmitidoAteInput.value = certListState.filters.emitidoAte || "";
   }
-  if (certFilterComArquivoInput) {
-    certFilterComArquivoInput.checked = Boolean(certListState.filters.somenteComArquivo);
-  }
   updateCertificateQuickFilterButtons();
 }
 
@@ -665,9 +659,6 @@ function readCertificateFiltersFromInputs() {
   certListState.filters.emitidoAte = certFilterEmitidoAteInput
     ? certFilterEmitidoAteInput.value
     : "";
-  certListState.filters.somenteComArquivo = certFilterComArquivoInput
-    ? certFilterComArquivoInput.checked
-    : false;
 }
 
 function resetCertificateFiltersState() {
@@ -677,7 +668,6 @@ function resetCertificateFiltersState() {
   certListState.filters.concluidoAte = "";
   certListState.filters.emitidoDe = "";
   certListState.filters.emitidoAte = "";
-  certListState.filters.somenteComArquivo = false;
 }
 
 function updateCertificateQuickFilterButtons() {
@@ -702,7 +692,6 @@ function updateCertificateQuickFilterButtons() {
     Boolean(activeSecretariaId)
       && String(certListState.filters.secretariaId || "") === activeSecretariaId
   );
-  setQuickButtonState(certQuickWithFileBtn, Boolean(certListState.filters.somenteComArquivo));
 }
 
 function syncAuditFilterInputsFromState() {
@@ -1925,6 +1914,35 @@ function createInlineButton(label, onClick, className = "secondary-btn") {
   return button;
 }
 
+function createIconSvg(iconName) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  svg.classList.add("icon-btn-svg");
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  const paths = {
+    eye: "M12 5c5.2 0 8.6 4.7 9.7 6.5.2.3.2.7 0 1C20.6 14.3 17.2 19 12 19s-8.6-4.7-9.7-6.5a1 1 0 0 1 0-1C3.4 9.7 6.8 5 12 5Zm0 2c-3.7 0-6.4 3-7.6 5 1.2 2 3.9 5 7.6 5s6.4-3 7.6-5c-1.2-2-3.9-5-7.6-5Zm0 2.5A2.5 2.5 0 1 1 12 14.5 2.5 2.5 0 0 1 12 9.5Z",
+    download: "M12 3a1 1 0 0 1 1 1v8.6l2.3-2.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4l2.3 2.3V4a1 1 0 0 1 1-1Zm-7 14a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z",
+    more: "M6 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z",
+  };
+  path.setAttribute("d", paths[iconName] || paths.more);
+  svg.appendChild(path);
+  return svg;
+}
+
+function createIconButton(label, iconName, onClick, className = "") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `icon-btn ${className}`.trim();
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.appendChild(createIconSvg(iconName));
+  button.addEventListener("click", onClick);
+  return button;
+}
+
 function setAuthenticatedView(authenticated) {
   if (loginShell) loginShell.hidden = authenticated;
   if (appContainer) appContainer.hidden = !authenticated;
@@ -2008,7 +2026,6 @@ function clearSessionUi(message = "") {
   certListState.filters.concluidoAte = "";
   certListState.filters.emitidoDe = "";
   certListState.filters.emitidoAte = "";
-  certListState.filters.somenteComArquivo = false;
   auditState.page = 1;
   auditState.total = 0;
   auditState.totalPages = 1;
@@ -2028,7 +2045,6 @@ function clearSessionUi(message = "") {
   if (certFilterConcluidoAteInput) certFilterConcluidoAteInput.value = "";
   if (certFilterEmitidoDeInput) certFilterEmitidoDeInput.value = "";
   if (certFilterEmitidoAteInput) certFilterEmitidoAteInput.value = "";
-  if (certFilterComArquivoInput) certFilterComArquivoInput.checked = false;
   if (certFilterSecretariaSelect) {
     certFilterSecretariaSelect.innerHTML = '<option value="">Todas</option>';
   }
@@ -2046,7 +2062,7 @@ function clearSessionUi(message = "") {
   if (certListBody) {
     certListBody.innerHTML = `
       <tr>
-        <td colspan="9" class="empty-state">Faça login para carregar os certificados.</td>
+        <td colspan="8" class="empty-state">Faça login para carregar os certificados.</td>
       </tr>
     `;
   }
@@ -2628,7 +2644,7 @@ function renderCertificateRows(items) {
   if (!items.length) {
     certListBody.innerHTML = `
       <tr>
-        <td colspan="9" class="empty-state">Nenhum certificado encontrado com os filtros atuais.</td>
+        <td colspan="8" class="empty-state">Nenhum certificado encontrado com os filtros atuais.</td>
       </tr>
     `;
     return;
@@ -2690,24 +2706,18 @@ function renderCertificateRows(items) {
     emittedByCell.className = "cert-col-secondary";
     emittedByCell.textContent = item.emitido_por_username || "-";
 
-    const fileCell = document.createElement("td");
-    fileCell.className = "cert-col-status";
-    fileCell.appendChild(
-      buildStatusPill(item.arquivo_disponivel, "PNG salvo", "Sem PNG")
-    );
-
     const actionsCell = document.createElement("td");
     actionsCell.className = "cert-col-actions";
     const actionsWrap = document.createElement("div");
     actionsWrap.className = "inline-actions cert-actions";
 
     actionsWrap.appendChild(
-      createInlineButton("Validar", () => {
+      createIconButton("Validar certificado", "eye", () => {
         window.open(item.url_validacao, "_blank", "noopener,noreferrer");
       })
     );
 
-    const pngButton = createInlineButton("Abrir PNG", () => {
+    const pngButton = createIconButton("Abrir PNG", "download", () => {
       if (item.arquivo_admin_url || item.arquivo_url) {
         window.open(item.arquivo_admin_url || item.arquivo_url, "_blank", "noopener,noreferrer");
       }
@@ -2715,28 +2725,29 @@ function renderCertificateRows(items) {
     pngButton.disabled = !(item.arquivo_admin_url || item.arquivo_url);
     actionsWrap.appendChild(pngButton);
 
-    const preencherButton = createInlineButton("Preencher", () => {
-      const nomeInput = document.getElementById("nome");
-      const cursoInput = document.getElementById("curso");
-      const dataInput = document.getElementById("data");
-      if (nomeInput) nomeInput.value = item.nome || "";
-      if (cursoInput) cursoInput.value = item.curso || "";
-      if (dataInput) dataInput.value = item.concluido || "";
-      if (cargaHInput) cargaHInput.value = item.carga_h || 0;
-      switchSection("generator");
-    });
-    actionsWrap.appendChild(preencherButton);
-
     if (isAdminSession()) {
-      actionsWrap.appendChild(
-        createInlineButton(
-          "Excluir",
-          () => {
-            openDeleteCertificateDialog(item);
-          },
-          "danger-btn"
-        )
+      const menu = document.createElement("details");
+      menu.className = "action-menu";
+
+      const summary = document.createElement("summary");
+      summary.className = "icon-btn action-menu-trigger";
+      summary.title = "Mais ações";
+      summary.setAttribute("aria-label", "Mais ações");
+      summary.appendChild(createIconSvg("more"));
+
+      const menuContent = document.createElement("div");
+      menuContent.className = "action-menu-content";
+      const deleteButton = createInlineButton(
+        "Excluir",
+        () => {
+          menu.open = false;
+          openDeleteCertificateDialog(item);
+        },
+        "action-menu-item danger-action"
       );
+      menuContent.appendChild(deleteButton);
+      menu.append(summary, menuContent);
+      actionsWrap.appendChild(menu);
     }
 
     actionsCell.appendChild(actionsWrap);
@@ -2749,7 +2760,6 @@ function renderCertificateRows(items) {
       concluidoCell,
       emittedCell,
       emittedByCell,
-      fileCell,
       actionsCell
     );
 
@@ -3101,7 +3111,6 @@ function getCertificateReportQueryParams(page, perPage) {
     concluido_ate: certListState.filters.concluidoAte,
     emitido_de: certListState.filters.emitidoDe,
     emitido_ate: certListState.filters.emitidoAte,
-    somente_com_arquivo: certListState.filters.somenteComArquivo || "",
   };
 }
 
@@ -3124,10 +3133,6 @@ function getCertificateReportFilters() {
     { label: "Secretaria", value: getSelectedOptionText(certFilterSecretariaSelect, "Todas") },
     { label: "Conclusão", value: periodLabel(concluidoStart, concluidoEnd) },
     { label: "Emissão", value: periodLabel(emitidoStart, emitidoEnd) },
-    {
-      label: "PNG salvo",
-      value: certListState.filters.somenteComArquivo ? "Somente com PNG" : "Todos",
-    },
   ];
 }
 
@@ -3496,7 +3501,6 @@ async function loadCertificates(page = certListState.page) {
         concluido_ate: certListState.filters.concluidoAte,
         emitido_de: certListState.filters.emitidoDe,
         emitido_ate: certListState.filters.emitidoAte,
-        somente_com_arquivo: certListState.filters.somenteComArquivo || "",
       })}`
     );
 
@@ -7069,14 +7073,6 @@ if (certQuickActiveSecretariaBtn) {
     certListState.filters.secretariaId = sessionState && sessionState.secretaria_ativa_id
       ? String(sessionState.secretaria_ativa_id)
       : "";
-    certListState.page = 1;
-    await loadCertificates(1);
-  });
-}
-
-if (certQuickWithFileBtn) {
-  certQuickWithFileBtn.addEventListener("click", async () => {
-    certListState.filters.somenteComArquivo = !certListState.filters.somenteComArquivo;
     certListState.page = 1;
     await loadCertificates(1);
   });
