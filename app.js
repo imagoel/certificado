@@ -466,6 +466,7 @@ let savedSelo3Image = null;
 let savedSelo4 = null;
 let savedSelo4Image = null;
 let selectedPreviewAdjustTarget = "";
+let isPreviewAdjustPanelApplying = false;
 
 const DEFAULT_CERTIFICATE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -1530,7 +1531,9 @@ function syncPreviewAdjustPanel() {
   syncPreviewAdjustRange(controls.x, previewAdjustXInput, previewAdjustXVal);
   syncPreviewAdjustRange(controls.y, previewAdjustYInput, previewAdjustYVal);
   syncPreviewAdjustRange(controls.size, previewAdjustSizeInput, previewAdjustSizeVal);
-  positionPreviewAdjustPanel();
+  if (!isPreviewAdjustPanelApplying) {
+    positionPreviewAdjustPanel();
+  }
 }
 
 function applyPreviewAdjustPanelControls() {
@@ -1542,7 +1545,16 @@ function applyPreviewAdjustPanelControls() {
   if (controls.x && previewAdjustXInput) controls.x.value = previewAdjustXInput.value;
   if (controls.y && previewAdjustYInput) controls.y.value = previewAdjustYInput.value;
   if (controls.size && previewAdjustSizeInput) controls.size.value = previewAdjustSizeInput.value;
-  applyLayoutFromControls();
+  isPreviewAdjustPanelApplying = true;
+  try {
+    applyLayoutFromControls();
+  } finally {
+    isPreviewAdjustPanelApplying = false;
+  }
+}
+
+function commitPreviewAdjustPanelControls() {
+  positionPreviewAdjustPanel();
 }
 
 function clearPreviewAdjustTarget() {
@@ -6667,6 +6679,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   ].forEach((input) => {
     if (!input) return;
     input.addEventListener("input", applyPreviewAdjustPanelControls);
+    input.addEventListener("change", commitPreviewAdjustPanelControls);
   });
 
   window.addEventListener("resize", () => {
