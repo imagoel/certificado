@@ -247,6 +247,16 @@ const selo4SizeInput = document.getElementById("selo4Size");
 const instituicaoXInput = document.getElementById("instituicaoX");
 const instituicaoYInput = document.getElementById("instituicaoY");
 const instituicaoSizeInput = document.getElementById("instituicaoSize");
+const logoAdjustFieldset = document.getElementById("logo-adjust-fieldset");
+const assinaturaAdjustFieldset = document.getElementById("assinatura-adjust-fieldset");
+const assinatura2AdjustFieldset = document.getElementById("assinatura2-adjust-fieldset");
+const assinatura3AdjustFieldset = document.getElementById("assinatura3-adjust-fieldset");
+const selosAdjustFieldset = document.getElementById("selos-adjust-fieldset");
+const selo1AdjustGroup = document.getElementById("selo1-adjust-group");
+const selo2AdjustGroup = document.getElementById("selo2-adjust-group");
+const selo3AdjustGroup = document.getElementById("selo3-adjust-group");
+const selo4AdjustGroup = document.getElementById("selo4-adjust-group");
+const instituicaoAdjustFieldset = document.getElementById("instituicao-adjust-fieldset");
 
 const textoLinha1Input = document.getElementById("textoLinha1");
 const textoLinha2Input = document.getElementById("textoLinha2");
@@ -1216,6 +1226,14 @@ function isSignatureSlotActive(slotKey) {
 
 function getActiveInstituicaoImage() {
   return assets.instituicao || savedInstituicaoImage;
+}
+
+function shouldDrawInstitutionBlock() {
+  return !isSignatureSlotActive("assinatura2") && !isSignatureSlotActive("assinatura3");
+}
+
+function isInstitutionSlotActive() {
+  return shouldDrawInstitutionBlock() && Boolean(getActiveInstituicaoImage());
 }
 
 function formatDateTime(dateStr) {
@@ -4110,7 +4128,7 @@ function drawSeloBlock(slotKey) {
 
 function drawInstitutionBlock(activeInstituicaoImage) {
   if (!ctx) return;
-  if (isSignatureSlotActive("assinatura2") || isSignatureSlotActive("assinatura3")) return;
+  if (!shouldDrawInstitutionBlock()) return;
 
   const lineWidth = Math.max(220, Math.min(320, layout.instituicao.maxW + 70));
   const lineY = layout.instituicao.y + 38;
@@ -4317,6 +4335,31 @@ function updateControlLabels() {
   if (instituicaoSizeVal) instituicaoSizeVal.textContent = `${layout.instituicao.maxW} px`;
 }
 
+function setHidden(element, shouldHide) {
+  if (!element) return;
+  element.hidden = Boolean(shouldHide);
+}
+
+function syncAdvancedControlVisibility() {
+  const activeSelos = SELO_SLOT_KEYS.filter((slotKey) => Boolean(getActiveSeloImage(slotKey)));
+  const seloGroupBySlot = {
+    selo1: selo1AdjustGroup,
+    selo2: selo2AdjustGroup,
+    selo3: selo3AdjustGroup,
+    selo4: selo4AdjustGroup,
+  };
+
+  setHidden(logoAdjustFieldset, !getActiveLogoImage());
+  setHidden(assinaturaAdjustFieldset, !isSignatureSlotActive("assinatura"));
+  setHidden(assinatura2AdjustFieldset, !isSignatureSlotActive("assinatura2"));
+  setHidden(assinatura3AdjustFieldset, !isSignatureSlotActive("assinatura3"));
+  setHidden(selosAdjustFieldset, activeSelos.length === 0);
+  SELO_SLOT_KEYS.forEach((slotKey) => {
+    setHidden(seloGroupBySlot[slotKey], !activeSelos.includes(slotKey));
+  });
+  setHidden(instituicaoAdjustFieldset, !isInstitutionSlotActive());
+}
+
 function applySeloLayoutFromControls(slotKey, xInput, yInput, sizeInput) {
   if (!layout[slotKey]) return;
   if (xInput) layout[slotKey].x = Number(xInput.value);
@@ -4377,6 +4420,7 @@ function applyLayoutFromControls() {
   }
 
   updateControlLabels();
+  syncAdvancedControlVisibility();
   void renderLastCertificate();
 }
 
@@ -4424,6 +4468,7 @@ function syncTemplateControls() {
     instituicaoRemoveBtn.disabled = !assets.instituicao;
     instituicaoRemoveBtn.hidden = !assets.instituicao;
   }
+  syncAdvancedControlVisibility();
 }
 
 function trimAssetImage(image) {
@@ -4768,6 +4813,7 @@ async function renderLastCertificate() {
   } catch (error) {
     console.error(error);
   }
+  syncAdvancedControlVisibility();
 }
 
 async function handleAssetChange(input, key, options = {}) {
@@ -7061,6 +7107,7 @@ syncGenerateSubmitButton();
 syncAdvancedAssetControls();
 updateControlLabels();
 syncTemplateControls();
+syncAdvancedControlVisibility();
 setTemplateStatus("", "info");
 setLogoStatus("", "info");
 setAssinaturaStatus("", "info");

@@ -332,116 +332,128 @@
             </section>
 
             <details class="asset-controls asset-controls-details">
-              <summary>Ajustes avançados de logo, assinaturas e instituição</summary>
-              <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo, as assinaturas ou a instituição na prévia.</p>
+              <summary>Ajustes avançados de logo, assinaturas, selos e instituição</summary>
+              <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo, as assinaturas, os selos ou a instituição na prévia.</p>
 
               <div class="asset-controls-body">
-                <fieldset class="slider-fieldset">
+                <fieldset id="logo-adjust-fieldset" class="slider-fieldset">
                   <legend>Ajuste da logo</legend>
                   <p class="slider-hint">Use os controles enquanto observa a prévia. Para microajustes, clique no slider e use as setas do teclado.</p>
 
-                  <label for="logoX">Posição X: <span id="logoXVal">600 px</span></label>
+                  <label for="logoX">Mover logo na horizontal (esquerda/direita): <span id="logoXVal">600 px</span></label>
                   <input id="logoX" type="range" min="80" max="1120" step="1" value="600" />
 
-                  <label for="logoY">Posição Y: <span id="logoYVal">95 px</span></label>
+                  <label for="logoY">Mover logo na vertical (cima/baixo): <span id="logoYVal">95 px</span></label>
                   <input id="logoY" type="range" min="60" max="260" step="1" value="95" />
 
                   <label for="logoSize">Tamanho: <span id="logoSizeVal">150 px</span></label>
                   <input id="logoSize" type="range" min="60" max="300" step="1" value="150" />
                 </fieldset>
 
-                <fieldset class="slider-fieldset">
+                <fieldset id="assinatura-adjust-fieldset" class="slider-fieldset">
                   <legend>Ajuste da assinatura</legend>
-                  <p class="slider-hint">Se a assinatura parecer muito alta ou baixa, ajuste primeiro a posição Y e depois o tamanho.</p>
+                  <p class="slider-hint">Se a assinatura parecer muito alta ou baixa, ajuste primeiro a posição vertical e depois o tamanho.</p>
 
                   <label for="assinaturaLabel">Texto abaixo da linha</label>
                   <textarea id="assinaturaLabel" rows="2">Assinatura do Responsável</textarea>
 
-                  <label for="assinaturaX">Posição X: <span id="assinaturaXVal">330 px</span></label>
+                  <label for="assinaturaX">Mover assinatura na horizontal (esquerda/direita): <span id="assinaturaXVal">330 px</span></label>
                   <input id="assinaturaX" type="range" min="140" max="520" step="1" value="330" />
 
-                  <label for="assinaturaY">Posição Y: <span id="assinaturaYVal">662 px</span></label>
+                  <label for="assinaturaY">Mover assinatura na vertical (cima/baixo): <span id="assinaturaYVal">662 px</span></label>
                   <input id="assinaturaY" type="range" min="600" max="720" step="1" value="662" />
 
                   <label for="assinaturaSize">Tamanho: <span id="assinaturaSizeVal">230 px</span></label>
                   <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
                 </fieldset>
 
-                <fieldset class="slider-fieldset">
+                <fieldset id="assinatura2-adjust-fieldset" class="slider-fieldset" hidden>
                   <legend>Ajuste da assinatura 2</legend>
                   <p class="slider-hint">Opcional. Use para moldes com um segundo campo de assinatura.</p>
 
                   <label for="assinatura2Label">Texto abaixo da linha</label>
                   <textarea id="assinatura2Label" rows="2" placeholder="Ex.: Nome&#10;Cargo"></textarea>
 
-                  <label for="assinatura2X">Posição X: <span id="assinatura2XVal">600 px</span></label>
+                  <label for="assinatura2X">Mover assinatura 2 na horizontal (esquerda/direita): <span id="assinatura2XVal">600 px</span></label>
                   <input id="assinatura2X" type="range" min="140" max="1060" step="1" value="600" />
 
-                  <label for="assinatura2Y">Posição Y: <span id="assinatura2YVal">662 px</span></label>
+                  <label for="assinatura2Y">Mover assinatura 2 na vertical (cima/baixo): <span id="assinatura2YVal">662 px</span></label>
                   <input id="assinatura2Y" type="range" min="560" max="760" step="1" value="662" />
 
                   <label for="assinatura2Size">Tamanho: <span id="assinatura2SizeVal">230 px</span></label>
                   <input id="assinatura2Size" type="range" min="120" max="360" step="1" value="230" />
                 </fieldset>
 
-                <fieldset class="slider-fieldset">
+                <fieldset id="assinatura3-adjust-fieldset" class="slider-fieldset" hidden>
                   <legend>Ajuste da assinatura 3</legend>
                   <p class="slider-hint">Opcional. Use para moldes com um terceiro campo de assinatura.</p>
 
                   <label for="assinatura3Label">Texto abaixo da linha</label>
                   <textarea id="assinatura3Label" rows="2" placeholder="Ex.: Nome&#10;Cargo"></textarea>
 
-                  <label for="assinatura3X">Posição X: <span id="assinatura3XVal">870 px</span></label>
+                  <label for="assinatura3X">Mover assinatura 3 na horizontal (esquerda/direita): <span id="assinatura3XVal">870 px</span></label>
                   <input id="assinatura3X" type="range" min="140" max="1060" step="1" value="870" />
 
-                  <label for="assinatura3Y">Posição Y: <span id="assinatura3YVal">662 px</span></label>
+                  <label for="assinatura3Y">Mover assinatura 3 na vertical (cima/baixo): <span id="assinatura3YVal">662 px</span></label>
                   <input id="assinatura3Y" type="range" min="560" max="760" step="1" value="662" />
 
                   <label for="assinatura3Size">Tamanho: <span id="assinatura3SizeVal">230 px</span></label>
                   <input id="assinatura3Size" type="range" min="120" max="360" step="1" value="230" />
                 </fieldset>
 
-                <fieldset class="slider-fieldset">
+                <fieldset id="selos-adjust-fieldset" class="slider-fieldset" hidden>
                   <legend>Ajuste dos selos</legend>
                   <p class="slider-hint">Posicione marcas e icones extras no rodape. Eles nao desenham linha nem texto.</p>
 
-                  <label for="selo1X">Selo 1 X: <span id="selo1XVal">410 px</span></label>
-                  <input id="selo1X" type="range" min="80" max="1120" step="1" value="410" />
-                  <label for="selo1Y">Selo 1 Y: <span id="selo1YVal">745 px</span></label>
-                  <input id="selo1Y" type="range" min="620" max="805" step="1" value="745" />
-                  <label for="selo1Size">Selo 1 tamanho: <span id="selo1SizeVal">80 px</span></label>
-                  <input id="selo1Size" type="range" min="35" max="180" step="1" value="80" />
+                  <div id="selo1-adjust-group">
+                    <h3>Selo 1</h3>
+                    <label for="selo1X">Mover na horizontal (esquerda/direita): <span id="selo1XVal">410 px</span></label>
+                    <input id="selo1X" type="range" min="80" max="1120" step="1" value="410" />
+                    <label for="selo1Y">Mover na vertical (cima/baixo): <span id="selo1YVal">745 px</span></label>
+                    <input id="selo1Y" type="range" min="620" max="805" step="1" value="745" />
+                    <label for="selo1Size">Tamanho: <span id="selo1SizeVal">80 px</span></label>
+                    <input id="selo1Size" type="range" min="35" max="180" step="1" value="80" />
+                  </div>
 
-                  <label for="selo2X">Selo 2 X: <span id="selo2XVal">520 px</span></label>
-                  <input id="selo2X" type="range" min="80" max="1120" step="1" value="520" />
-                  <label for="selo2Y">Selo 2 Y: <span id="selo2YVal">745 px</span></label>
-                  <input id="selo2Y" type="range" min="620" max="805" step="1" value="745" />
-                  <label for="selo2Size">Selo 2 tamanho: <span id="selo2SizeVal">80 px</span></label>
-                  <input id="selo2Size" type="range" min="35" max="180" step="1" value="80" />
+                  <div id="selo2-adjust-group" hidden>
+                    <h3>Selo 2</h3>
+                    <label for="selo2X">Mover na horizontal (esquerda/direita): <span id="selo2XVal">520 px</span></label>
+                    <input id="selo2X" type="range" min="80" max="1120" step="1" value="520" />
+                    <label for="selo2Y">Mover na vertical (cima/baixo): <span id="selo2YVal">745 px</span></label>
+                    <input id="selo2Y" type="range" min="620" max="805" step="1" value="745" />
+                    <label for="selo2Size">Tamanho: <span id="selo2SizeVal">80 px</span></label>
+                    <input id="selo2Size" type="range" min="35" max="180" step="1" value="80" />
+                  </div>
 
-                  <label for="selo3X">Selo 3 X: <span id="selo3XVal">640 px</span></label>
-                  <input id="selo3X" type="range" min="80" max="1120" step="1" value="640" />
-                  <label for="selo3Y">Selo 3 Y: <span id="selo3YVal">745 px</span></label>
-                  <input id="selo3Y" type="range" min="620" max="805" step="1" value="745" />
-                  <label for="selo3Size">Selo 3 tamanho: <span id="selo3SizeVal">80 px</span></label>
-                  <input id="selo3Size" type="range" min="35" max="180" step="1" value="80" />
+                  <div id="selo3-adjust-group" hidden>
+                    <h3>Selo 3</h3>
+                    <label for="selo3X">Mover na horizontal (esquerda/direita): <span id="selo3XVal">640 px</span></label>
+                    <input id="selo3X" type="range" min="80" max="1120" step="1" value="640" />
+                    <label for="selo3Y">Mover na vertical (cima/baixo): <span id="selo3YVal">745 px</span></label>
+                    <input id="selo3Y" type="range" min="620" max="805" step="1" value="745" />
+                    <label for="selo3Size">Tamanho: <span id="selo3SizeVal">80 px</span></label>
+                    <input id="selo3Size" type="range" min="35" max="180" step="1" value="80" />
+                  </div>
 
-                  <label for="selo4X">Selo 4 X: <span id="selo4XVal">760 px</span></label>
-                  <input id="selo4X" type="range" min="80" max="1120" step="1" value="760" />
-                  <label for="selo4Y">Selo 4 Y: <span id="selo4YVal">745 px</span></label>
-                  <input id="selo4Y" type="range" min="620" max="805" step="1" value="745" />
-                  <label for="selo4Size">Selo 4 tamanho: <span id="selo4SizeVal">80 px</span></label>
-                  <input id="selo4Size" type="range" min="35" max="180" step="1" value="80" />
+                  <div id="selo4-adjust-group" hidden>
+                    <h3>Selo 4</h3>
+                    <label for="selo4X">Mover na horizontal (esquerda/direita): <span id="selo4XVal">760 px</span></label>
+                    <input id="selo4X" type="range" min="80" max="1120" step="1" value="760" />
+                    <label for="selo4Y">Mover na vertical (cima/baixo): <span id="selo4YVal">745 px</span></label>
+                    <input id="selo4Y" type="range" min="620" max="805" step="1" value="745" />
+                    <label for="selo4Size">Tamanho: <span id="selo4SizeVal">80 px</span></label>
+                    <input id="selo4Size" type="range" min="35" max="180" step="1" value="80" />
+                  </div>
                 </fieldset>
 
-                <fieldset class="slider-fieldset">
+                <fieldset id="instituicao-adjust-fieldset" class="slider-fieldset" hidden>
                   <legend>Ajuste da instituição</legend>
                   <p class="slider-hint">Use este bloco para posicionar a marca da instituição acima da legenda no rodapé direito.</p>
 
-                  <label for="instituicaoX">Posição X: <span id="instituicaoXVal">870 px</span></label>
+                  <label for="instituicaoX">Mover instituição na horizontal (esquerda/direita): <span id="instituicaoXVal">870 px</span></label>
                   <input id="instituicaoX" type="range" min="680" max="1060" step="1" value="870" />
 
-                  <label for="instituicaoY">Posição Y: <span id="instituicaoYVal">662 px</span></label>
+                  <label for="instituicaoY">Mover instituição na vertical (cima/baixo): <span id="instituicaoYVal">662 px</span></label>
                   <input id="instituicaoY" type="range" min="600" max="720" step="1" value="662" />
 
                   <label for="instituicaoSize">Tamanho: <span id="instituicaoSizeVal">230 px</span></label>

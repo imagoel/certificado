@@ -440,6 +440,12 @@ input[type="file"] {
   color: #1a4f8b;
 }
 
+.slider-fieldset h3 {
+  margin: 4px 0 0;
+  color: #1a4f8b;
+  font-size: 0.95rem;
+}
+
 .slider-hint {
   margin: 0;
   color: var(--muted);
