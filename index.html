@@ -536,7 +536,7 @@
           <div class="preview-toolbar">
             <div>
               <h2>Previa do certificado</h2>
-              <p id="preview-adjust-status" class="hint" aria-live="polite">Clique em um item destacado para abrir os ajustes dele.</p>
+              <p id="preview-adjust-status" class="hint" aria-live="polite">Clique em um item destacado para ajustar aqui na prévia.</p>
             </div>
 
             <label class="checkbox-field preview-toggle">
@@ -549,6 +549,27 @@
             <canvas id="canvas" width="1200" height="850" aria-label="Pré-visualização do certificado"></canvas>
             <div id="preview-hotspots" class="preview-hotspots" aria-label="Areas ajustaveis do certificado"></div>
           </div>
+
+          <div id="preview-adjust-panel" class="preview-adjust-panel" hidden>
+            <div class="preview-adjust-panel-header">
+              <div>
+                <strong id="preview-adjust-title">Ajuste rapido</strong>
+                <p class="hint">Use os controles abaixo enquanto observa o certificado.</p>
+              </div>
+              <button id="preview-adjust-close" type="button" class="secondary-btn">Fechar</button>
+            </div>
+
+            <div class="preview-adjust-grid">
+              <label for="preview-adjust-x">Horizontal <span id="preview-adjust-x-val">0 px</span></label>
+              <input id="preview-adjust-x" type="range" min="0" max="1200" step="1" value="0" />
+
+              <label for="preview-adjust-y">Vertical <span id="preview-adjust-y-val">0 px</span></label>
+              <input id="preview-adjust-y" type="range" min="0" max="850" step="1" value="0" />
+
+              <label for="preview-adjust-size">Tamanho <span id="preview-adjust-size-val">0 px</span></label>
+              <input id="preview-adjust-size" type="range" min="1" max="400" step="1" value="1" />
+            </div>
+          </div>
         </section>
       </section>
 
@@ -559,7 +580,10 @@
               <h2>Certificados Gerados</h2>
               <p class="subtitle">Filtre, visualize e reimprima certificados já emitidos.</p>
             </div>
-            <p id="cert-list-summary" class="summary-pill"></p>
+            <div class="panel-header-actions">
+              <p id="cert-list-summary" class="summary-pill"></p>
+              <button id="cert-export-csv" type="button" class="secondary-btn">Exportar CSV</button>
+            </div>
           </div>
 
           <div class="quick-filter-bar" aria-label="Filtros rápidos de certificados">
@@ -677,9 +701,9 @@
             <div class="field-stack">
               <label for="audit-event">Evento</label>
               <select id="audit-event">
-                <option value="">Todos</option>
+                <option value="">Todos relevantes</option>
                 <optgroup label="Autenticação e sessão">
-                  <option value="auth_login">Login</option>
+                  <option value="auth_login">Login bem-sucedido</option>
                   <option value="auth_login_falhou">Login falhou</option>
                   <option value="auth_login_bloqueado">Login bloqueado</option>
                   <option value="troca_secretaria">Troca de secretaria</option>
@@ -718,6 +742,7 @@
                   <option value="secretaria_asset_selo_excluido">Selo excluído</option>
                 </optgroup>
               </select>
+              <p class="hint">Eventos de rotina, como login bem-sucedido, troca de secretaria e acesso a PNG, aparecem apenas quando selecionados aqui.</p>
             </div>
 
             <div id="audit-secretaria-wrap" class="field-stack">

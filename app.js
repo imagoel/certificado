@@ -86,6 +86,7 @@ const certQuickLast7Btn = document.getElementById("cert-quick-last7");
 const certQuickActiveSecretariaBtn = document.getElementById("cert-quick-active-secretaria");
 const certQuickWithFileBtn = document.getElementById("cert-quick-with-file");
 const certFilterResetBtn = document.getElementById("cert-filter-reset");
+const certExportCsvBtn = document.getElementById("cert-export-csv");
 const certListStatus = document.getElementById("cert-list-status");
 const certListSummary = document.getElementById("cert-list-summary");
 const certListBody = document.getElementById("cert-list-body");
@@ -198,6 +199,15 @@ const previewWrap = document.getElementById("preview-wrap");
 const previewHotspots = document.getElementById("preview-hotspots");
 const previewShowHotspotsInput = document.getElementById("preview-show-hotspots");
 const previewAdjustStatus = document.getElementById("preview-adjust-status");
+const previewAdjustPanel = document.getElementById("preview-adjust-panel");
+const previewAdjustTitle = document.getElementById("preview-adjust-title");
+const previewAdjustCloseBtn = document.getElementById("preview-adjust-close");
+const previewAdjustXInput = document.getElementById("preview-adjust-x");
+const previewAdjustYInput = document.getElementById("preview-adjust-y");
+const previewAdjustSizeInput = document.getElementById("preview-adjust-size");
+const previewAdjustXVal = document.getElementById("preview-adjust-x-val");
+const previewAdjustYVal = document.getElementById("preview-adjust-y-val");
+const previewAdjustSizeVal = document.getElementById("preview-adjust-size-val");
 const nomeInput = document.getElementById("nome");
 const cursoInput = document.getElementById("curso");
 const dataInput = document.getElementById("data");
@@ -265,7 +275,6 @@ const selo2AdjustGroup = document.getElementById("selo2-adjust-group");
 const selo3AdjustGroup = document.getElementById("selo3-adjust-group");
 const selo4AdjustGroup = document.getElementById("selo4-adjust-group");
 const instituicaoAdjustFieldset = document.getElementById("instituicao-adjust-fieldset");
-const advancedAdjustmentsDetails = document.getElementById("advanced-adjustments");
 
 const textoLinha1Input = document.getElementById("textoLinha1");
 const textoLinha2Input = document.getElementById("textoLinha2");
@@ -1295,6 +1304,40 @@ function getPreviewAdjustTargetControlElement(target) {
   return null;
 }
 
+function getPreviewAdjustTargetInputs(target) {
+  if (target === "logo") {
+    return { x: logoXInput, y: logoYInput, size: logoSizeInput };
+  }
+  if (target === "qr") {
+    return { x: qrXInput, y: qrYInput, size: qrSizeInput };
+  }
+  if (target === "assinatura") {
+    return { x: assinaturaXInput, y: assinaturaYInput, size: assinaturaSizeInput };
+  }
+  if (target === "assinatura2") {
+    return { x: assinatura2XInput, y: assinatura2YInput, size: assinatura2SizeInput };
+  }
+  if (target === "assinatura3") {
+    return { x: assinatura3XInput, y: assinatura3YInput, size: assinatura3SizeInput };
+  }
+  if (target === "instituicao") {
+    return { x: instituicaoXInput, y: instituicaoYInput, size: instituicaoSizeInput };
+  }
+  if (target === "selo1") {
+    return { x: selo1XInput, y: selo1YInput, size: selo1SizeInput };
+  }
+  if (target === "selo2") {
+    return { x: selo2XInput, y: selo2YInput, size: selo2SizeInput };
+  }
+  if (target === "selo3") {
+    return { x: selo3XInput, y: selo3YInput, size: selo3SizeInput };
+  }
+  if (target === "selo4") {
+    return { x: selo4XInput, y: selo4YInput, size: selo4SizeInput };
+  }
+  return { x: null, y: null, size: null };
+}
+
 function isPreviewAdjustTargetActive(target) {
   if (target === "logo") return Boolean(getActiveLogoImage());
   if (target === "qr") return true;
@@ -1387,7 +1430,56 @@ function getPreviewAdjustTargetRect(target) {
 
 function setPreviewAdjustStatus(message) {
   if (!previewAdjustStatus) return;
-  previewAdjustStatus.textContent = message || "Clique em um item destacado para abrir os ajustes dele.";
+  previewAdjustStatus.textContent = message || "Clique em um item destacado para ajustar aqui na prévia.";
+}
+
+function syncPreviewAdjustRange(sourceInput, targetInput, valueElement) {
+  if (!sourceInput || !targetInput) return false;
+  targetInput.min = sourceInput.min;
+  targetInput.max = sourceInput.max;
+  targetInput.step = sourceInput.step;
+  targetInput.value = sourceInput.value;
+  if (valueElement) valueElement.textContent = `${sourceInput.value} px`;
+  return true;
+}
+
+function syncPreviewAdjustPanel() {
+  if (!previewAdjustPanel) return;
+  const target = selectedPreviewAdjustTarget;
+  const controls = getPreviewAdjustTargetInputs(target);
+  const isReady =
+    target &&
+    isPreviewAdjustTargetActive(target) &&
+    controls.x &&
+    controls.y &&
+    controls.size;
+
+  previewAdjustPanel.hidden = !isReady;
+  if (!isReady) return;
+
+  if (previewAdjustTitle) {
+    previewAdjustTitle.textContent = `Ajuste rapido: ${getPreviewAdjustTargetLabel(target)}`;
+  }
+  syncPreviewAdjustRange(controls.x, previewAdjustXInput, previewAdjustXVal);
+  syncPreviewAdjustRange(controls.y, previewAdjustYInput, previewAdjustYVal);
+  syncPreviewAdjustRange(controls.size, previewAdjustSizeInput, previewAdjustSizeVal);
+}
+
+function applyPreviewAdjustPanelControls() {
+  if (!selectedPreviewAdjustTarget) return;
+  const controls = getPreviewAdjustTargetInputs(selectedPreviewAdjustTarget);
+  if (controls.x && previewAdjustXInput) controls.x.value = previewAdjustXInput.value;
+  if (controls.y && previewAdjustYInput) controls.y.value = previewAdjustYInput.value;
+  if (controls.size && previewAdjustSizeInput) controls.size.value = previewAdjustSizeInput.value;
+  applyLayoutFromControls();
+}
+
+function clearPreviewAdjustTarget() {
+  selectedPreviewAdjustTarget = "";
+  updatePreviewHotspots();
+  updatePreviewAdjustControlSelection();
+  syncPreviewAdjustPanel();
+  setPreviewAdjustStatus("");
 }
 
 function updatePreviewAdjustControlSelection() {
@@ -1443,33 +1535,22 @@ function updatePreviewHotspots() {
   });
 
   updatePreviewAdjustControlSelection();
+  syncPreviewAdjustPanel();
   if (!selectedPreviewAdjustTarget) {
     setPreviewAdjustStatus("");
   }
 }
 
-function selectPreviewAdjustTarget(target, { scroll = true } = {}) {
+function selectPreviewAdjustTarget(target) {
   if (!isPreviewAdjustTargetActive(target)) return;
   selectedPreviewAdjustTarget = target;
-
-  if (advancedAdjustmentsDetails) {
-    advancedAdjustmentsDetails.open = true;
-  }
 
   syncAdvancedControlVisibility();
   updatePreviewHotspots();
 
   const label = getPreviewAdjustTargetLabel(target);
-  setPreviewAdjustStatus(`Ajustando: ${label}. Use os controles destacados para mover ou alterar o tamanho.`);
-
-  const controlElement = getPreviewAdjustTargetControlElement(target);
-  if (controlElement && scroll) {
-    controlElement.scrollIntoView({ behavior: "smooth", block: "center" });
-    const focusTarget = controlElement.querySelector("input[type='range'], textarea");
-    if (focusTarget) {
-      window.setTimeout(() => focusTarget.focus({ preventScroll: true }), 250);
-    }
-  }
+  setPreviewAdjustStatus(`Ajustando: ${label}. Use a barra abaixo da prévia para mover ou alterar o tamanho.`);
+  if (previewAdjustXInput) previewAdjustXInput.focus({ preventScroll: true });
 }
 
 function formatDateTime(dateStr) {
@@ -2921,6 +3002,150 @@ function getSelectedOptionText(select, fallback = "Todos") {
   if (!select) return fallback;
   const selected = select.selectedOptions && select.selectedOptions[0];
   return sanitizeText(selected ? selected.textContent : "") || fallback;
+}
+
+function setCertificateReportButtonBusy(busy) {
+  if (certExportCsvBtn) certExportCsvBtn.disabled = busy;
+}
+
+function getCertificateReportQueryParams(page, perPage) {
+  return {
+    pagina: page,
+    por_pagina: perPage,
+    busca: certListState.filters.busca,
+    secretaria_id: certListState.filters.secretariaId,
+    concluido_de: certListState.filters.concluidoDe,
+    concluido_ate: certListState.filters.concluidoAte,
+    emitido_de: certListState.filters.emitidoDe,
+    emitido_ate: certListState.filters.emitidoAte,
+    somente_com_arquivo: certListState.filters.somenteComArquivo || "",
+  };
+}
+
+function getCertificateReportFilters() {
+  const concluidoStart = sanitizeText(certListState.filters.concluidoDe);
+  const concluidoEnd = sanitizeText(certListState.filters.concluidoAte);
+  const emitidoStart = sanitizeText(certListState.filters.emitidoDe);
+  const emitidoEnd = sanitizeText(certListState.filters.emitidoAte);
+  const periodLabel = (start, end) =>
+    start && end
+      ? `${formatDate(start)} a ${formatDate(end)}`
+      : start
+        ? `A partir de ${formatDate(start)}`
+        : end
+          ? `Até ${formatDate(end)}`
+          : "Todos";
+
+  return [
+    { label: "Busca", value: sanitizeText(certListState.filters.busca) || "Todas" },
+    { label: "Secretaria", value: getSelectedOptionText(certFilterSecretariaSelect, "Todas") },
+    { label: "Conclusão", value: periodLabel(concluidoStart, concluidoEnd) },
+    { label: "Emissão", value: periodLabel(emitidoStart, emitidoEnd) },
+    {
+      label: "PNG salvo",
+      value: certListState.filters.somenteComArquivo ? "Somente com PNG" : "Todos",
+    },
+  ];
+}
+
+async function fetchCertificateReportItems() {
+  readCertificateFiltersFromInputs();
+  updateCertificateQuickFilterButtons();
+
+  const perPage = 100;
+  let page = 1;
+  let totalPages = 1;
+  let total = 0;
+  const items = [];
+
+  do {
+    const payload = await apiJsonRequest(
+      `/api/certificados${buildQueryString(getCertificateReportQueryParams(page, perPage))}`
+    );
+    const pageItems = Array.isArray(payload.itens) ? payload.itens : [];
+    items.push(...pageItems);
+    total = payload.total || items.length;
+    totalPages = payload.paginas || 1;
+    page += 1;
+  } while (page <= totalPages);
+
+  return {
+    items,
+    total,
+    filters: getCertificateReportFilters(),
+    generatedAt: new Date(),
+  };
+}
+
+function getCertificateReportRow(item) {
+  return [
+    item.codigo || "-",
+    item.nome || "-",
+    item.cpf || "-",
+    item.curso || "-",
+    String(item.carga_h || 0),
+    formatDate(item.concluido),
+    formatDateTime(item.emitido_em),
+    item.emitido_por_username || "-",
+    item.secretaria_sigla || "-",
+    item.secretaria_nome || "-",
+    item.arquivo_disponivel ? "Sim" : "Não",
+    item.url_validacao || "-",
+    item.hash || "-",
+  ];
+}
+
+function buildCertificateCsvReport(report) {
+  const headers = [
+    "Código",
+    "Participante",
+    "CPF",
+    "Curso",
+    "Carga horária",
+    "Data de conclusão",
+    "Emitido em",
+    "Emitido por",
+    "Secretaria",
+    "Nome da secretaria",
+    "PNG salvo",
+    "URL de validação",
+    "Hash",
+  ];
+  const rows = report.items.map(getCertificateReportRow);
+  const metaRows = [
+    ["Relatório de certificados"],
+    ["Gerado em", formatDateTime(report.generatedAt.toISOString())],
+    ["Total de certificados", String(report.total)],
+    ...report.filters.map((filter) => [filter.label, filter.value]),
+    [],
+  ];
+
+  return `\uFEFF${[...metaRows, headers, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(";"))
+    .join("\r\n")}`;
+}
+
+async function exportCertificateCsvReport() {
+  if (!sessionState) return;
+  setCertificateReportButtonBusy(true);
+  setCertListStatus("Gerando relatório CSV dos certificados...", "info");
+
+  try {
+    const report = await fetchCertificateReportItems();
+    const csv = buildCertificateCsvReport(report);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    downloadBlob(blob, `relatorio-certificados-${buildTimestamp()}.csv`);
+    setCertListStatus(`Relatório CSV gerado com ${report.total} certificado(s).`, "info");
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setCertListStatus((error && error.message) || "Não foi possível gerar o relatório.", "error");
+  } finally {
+    setCertificateReportButtonBusy(false);
+  }
 }
 
 function getAuditReportFilters() {
@@ -6359,6 +6584,15 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     previewShowHotspotsInput.addEventListener("change", syncPreviewHotspotToggle);
   }
 
+  if (previewAdjustCloseBtn) {
+    previewAdjustCloseBtn.addEventListener("click", clearPreviewAdjustTarget);
+  }
+
+  [previewAdjustXInput, previewAdjustYInput, previewAdjustSizeInput].forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", applyPreviewAdjustPanelControls);
+  });
+
   if (logoInput) {
     logoInput.addEventListener("change", () => {
       void handleAssetChange(logoInput, "logo");
@@ -6752,6 +6986,12 @@ if (certQuickWithFileBtn) {
     certListState.filters.somenteComArquivo = !certListState.filters.somenteComArquivo;
     certListState.page = 1;
     await loadCertificates(1);
+  });
+}
+
+if (certExportCsvBtn) {
+  certExportCsvBtn.addEventListener("click", () => {
+    void exportCertificateCsvReport();
   });
 }
 

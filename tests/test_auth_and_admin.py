@@ -18,7 +18,13 @@ def test_admin_can_access_admin_auditoria(client, seed_data, login):
     audit_response = client.get("/api/admin/auditoria")
 
     assert audit_response.status_code == 200
-    assert audit_response.json()["total"] >= 1
+    assert all(item["evento"] != "auth_login" for item in audit_response.json()["itens"])
+
+    login_audit_response = client.get("/api/admin/auditoria?evento=auth_login")
+
+    assert login_audit_response.status_code == 200
+    assert login_audit_response.json()["total"] >= 1
+    assert any(item["evento"] == "auth_login" for item in login_audit_response.json()["itens"])
 
 
 def test_operador_nao_pode_acessar_rotas_admin(client, seed_data, login):

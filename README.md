@@ -235,8 +235,10 @@ Eventos auditados incluem:
 Observacoes:
 
 - a auditoria e restrita a `admin_global`
+- por padrao a listagem mostra apenas eventos relevantes; eventos de rotina como login com sucesso, troca de secretaria e acesso a PNG aparecem somente quando filtrados pelo tipo de evento
 - o frontend interpreta os horarios vindos da API como UTC e exibe no horario local de `America/Sao_Paulo`
 - a exclusao de certificado preserva o historico anterior de auditoria
+- a tela de certificados permite exportar um relatorio CSV respeitando os filtros atuais da listagem
 
 ## Endpoints Principais
 

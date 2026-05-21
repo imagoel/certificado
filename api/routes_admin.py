@@ -38,6 +38,13 @@ from security import hash_password, normalize_username, verify_password
 
 router = APIRouter()
 
+LOW_SIGNAL_AUDIT_EVENTS = (
+    "auth_login",
+    "auth_logout",
+    "troca_secretaria",
+    "certificado_png_acessado",
+)
+
 
 @router.get("/api/admin/secretarias", response_model=list[SecretariaResponse])
 def admin_list_secretarias(
@@ -391,8 +398,11 @@ def admin_list_audit_events(
             )
         )
 
-    if evento.strip():
-        query = query.filter(AuditEvent.evento == evento.strip())
+    normalized_event = evento.strip()
+    if normalized_event:
+        query = query.filter(AuditEvent.evento == normalized_event)
+    else:
+        query = query.filter(~AuditEvent.evento.in_(LOW_SIGNAL_AUDIT_EVENTS))
 
     if secretaria_id:
         query = query.filter(AuditEvent.secretaria_id == secretaria_id)
