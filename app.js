@@ -194,6 +194,10 @@ const batchPreviewSummary = document.getElementById("batch-preview-summary");
 const batchPreviewBody = document.getElementById("batch-preview-body");
 const canvas = document.getElementById("canvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
+const previewWrap = document.getElementById("preview-wrap");
+const previewHotspots = document.getElementById("preview-hotspots");
+const previewShowHotspotsInput = document.getElementById("preview-show-hotspots");
+const previewAdjustStatus = document.getElementById("preview-adjust-status");
 const nomeInput = document.getElementById("nome");
 const cursoInput = document.getElementById("curso");
 const dataInput = document.getElementById("data");
@@ -220,6 +224,9 @@ const batchConfirmCancelBtn = document.getElementById("batch-confirm-cancel");
 const logoXInput = document.getElementById("logoX");
 const logoYInput = document.getElementById("logoY");
 const logoSizeInput = document.getElementById("logoSize");
+const qrXInput = document.getElementById("qrX");
+const qrYInput = document.getElementById("qrY");
+const qrSizeInput = document.getElementById("qrSize");
 const assinaturaXInput = document.getElementById("assinaturaX");
 const assinaturaYInput = document.getElementById("assinaturaY");
 const assinaturaSizeInput = document.getElementById("assinaturaSize");
@@ -248,6 +255,7 @@ const instituicaoXInput = document.getElementById("instituicaoX");
 const instituicaoYInput = document.getElementById("instituicaoY");
 const instituicaoSizeInput = document.getElementById("instituicaoSize");
 const logoAdjustFieldset = document.getElementById("logo-adjust-fieldset");
+const qrAdjustFieldset = document.getElementById("qr-adjust-fieldset");
 const assinaturaAdjustFieldset = document.getElementById("assinatura-adjust-fieldset");
 const assinatura2AdjustFieldset = document.getElementById("assinatura2-adjust-fieldset");
 const assinatura3AdjustFieldset = document.getElementById("assinatura3-adjust-fieldset");
@@ -257,6 +265,7 @@ const selo2AdjustGroup = document.getElementById("selo2-adjust-group");
 const selo3AdjustGroup = document.getElementById("selo3-adjust-group");
 const selo4AdjustGroup = document.getElementById("selo4-adjust-group");
 const instituicaoAdjustFieldset = document.getElementById("instituicao-adjust-fieldset");
+const advancedAdjustmentsDetails = document.getElementById("advanced-adjustments");
 
 const textoLinha1Input = document.getElementById("textoLinha1");
 const textoLinha2Input = document.getElementById("textoLinha2");
@@ -264,6 +273,9 @@ const textoLinha2Input = document.getElementById("textoLinha2");
 const logoXVal = document.getElementById("logoXVal");
 const logoYVal = document.getElementById("logoYVal");
 const logoSizeVal = document.getElementById("logoSizeVal");
+const qrXVal = document.getElementById("qrXVal");
+const qrYVal = document.getElementById("qrYVal");
+const qrSizeVal = document.getElementById("qrSizeVal");
 const assinaturaXVal = document.getElementById("assinaturaXVal");
 const assinaturaYVal = document.getElementById("assinaturaYVal");
 const assinaturaSizeVal = document.getElementById("assinaturaSizeVal");
@@ -355,8 +367,25 @@ const SELO_CONTROL_LIMITS = Object.freeze({
   sizeMin: 35,
   sizeMax: 180,
 });
+const QR_CONTROL_LIMITS = Object.freeze({
+  xMin: 70,
+  xMax: 1130,
+  yMin: 70,
+  yMax: 780,
+  sizeMin: 60,
+  sizeMax: 220,
+});
 const DEFAULT_ASSINATURA_LABEL = "Assinatura do Responsável";
 const SELO_SLOT_KEYS = ["selo1", "selo2", "selo3", "selo4"];
+const PREVIEW_ADJUST_TARGET_KEYS = [
+  "logo",
+  "qr",
+  "assinatura",
+  "assinatura2",
+  "assinatura3",
+  "instituicao",
+  ...SELO_SLOT_KEYS,
+];
 
 const assets = {
   template: null,
@@ -424,6 +453,7 @@ let savedSelo3 = null;
 let savedSelo3Image = null;
 let savedSelo4 = null;
 let savedSelo4Image = null;
+let selectedPreviewAdjustTarget = "";
 
 const DEFAULT_CERTIFICATE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -554,6 +584,10 @@ function getApiBaseUrl() {
     return `${protocol}//${hostname}:29180`;
   }
   return origin.replace(/\/+$/, "");
+}
+
+function getPreviewQrText() {
+  return `${window.location.origin.replace(/\/+$/, "")}/validar/ABC-2026-00000`;
 }
 
 function formatFileSize(bytes) {
@@ -1234,6 +1268,208 @@ function shouldDrawInstitutionBlock() {
 
 function isInstitutionSlotActive() {
   return shouldDrawInstitutionBlock() && Boolean(getActiveInstituicaoImage());
+}
+
+function getPreviewAdjustTargetLabel(target) {
+  if (target === "logo") return "Logo";
+  if (target === "qr") return "QR Code";
+  if (target === "assinatura") return "Assinatura";
+  if (target === "assinatura2") return "Assinatura 2";
+  if (target === "assinatura3") return "Assinatura 3";
+  if (target === "instituicao") return "Instituicao";
+  if (isSeloSlot(target)) return `Selo ${getSeloSlotNumber(target)}`;
+  return "Item";
+}
+
+function getPreviewAdjustTargetControlElement(target) {
+  if (target === "logo") return logoAdjustFieldset;
+  if (target === "qr") return qrAdjustFieldset;
+  if (target === "assinatura") return assinaturaAdjustFieldset;
+  if (target === "assinatura2") return assinatura2AdjustFieldset;
+  if (target === "assinatura3") return assinatura3AdjustFieldset;
+  if (target === "instituicao") return instituicaoAdjustFieldset;
+  if (target === "selo1") return selo1AdjustGroup;
+  if (target === "selo2") return selo2AdjustGroup;
+  if (target === "selo3") return selo3AdjustGroup;
+  if (target === "selo4") return selo4AdjustGroup;
+  return null;
+}
+
+function isPreviewAdjustTargetActive(target) {
+  if (target === "logo") return Boolean(getActiveLogoImage());
+  if (target === "qr") return true;
+  if (target === "assinatura" || target === "assinatura2" || target === "assinatura3") {
+    return isSignatureSlotActive(target);
+  }
+  if (target === "instituicao") return isInstitutionSlotActive();
+  if (isSeloSlot(target)) return Boolean(getActiveSeloImage(target));
+  return false;
+}
+
+function getCenteredCanvasRect(x, y, width, height, padding = 10) {
+  return {
+    x: x - width / 2 - padding,
+    y: y - height / 2 - padding,
+    width: width + padding * 2,
+    height: height + padding * 2,
+  };
+}
+
+function normalizeCanvasRect(rect, minWidth = 72, minHeight = 54) {
+  if (!canvas || !rect) return null;
+  const centerX = rect.x + rect.width / 2;
+  const centerY = rect.y + rect.height / 2;
+  const width = Math.max(rect.width, minWidth);
+  const height = Math.max(rect.height, minHeight);
+  const x = Math.max(0, Math.min(canvas.width - width, centerX - width / 2));
+  const y = Math.max(0, Math.min(canvas.height - height, centerY - height / 2));
+  return { x, y, width, height };
+}
+
+function getSignaturePreviewRect(slotKey) {
+  const slotLayout = layout[slotKey] || layout.assinatura;
+  const lineWidth = Math.max(220, Math.min(320, slotLayout.maxW + 70));
+  const lineY = slotLayout.y + 38;
+  const labelHeight = getSignatureLabelLines(slotKey).length > 1 ? 56 : 34;
+  const top = Math.min(slotLayout.y - slotLayout.maxH / 2, lineY - 12) - 12;
+  const bottom = lineY + 35 + labelHeight;
+  return normalizeCanvasRect({
+    x: slotLayout.x - lineWidth / 2 - 20,
+    y: top,
+    width: lineWidth + 40,
+    height: bottom - top,
+  }, 240, 86);
+}
+
+function getInstitutionPreviewRect() {
+  const lineWidth = Math.max(220, Math.min(320, layout.instituicao.maxW + 70));
+  const lineY = layout.instituicao.y + 38;
+  const top = Math.min(layout.instituicao.y - layout.instituicao.maxH / 2, lineY - 12) - 12;
+  const bottom = lineY + 72;
+  return normalizeCanvasRect({
+    x: layout.instituicao.x - lineWidth / 2 - 20,
+    y: top,
+    width: lineWidth + 40,
+    height: bottom - top,
+  }, 240, 86);
+}
+
+function getPreviewAdjustTargetRect(target) {
+  if (!canvas) return null;
+  if (target === "logo") {
+    return normalizeCanvasRect(
+      getCenteredCanvasRect(layout.logo.x, layout.logo.y, layout.logo.maxW, layout.logo.maxH, 12),
+      90,
+      58
+    );
+  }
+  if (target === "qr") {
+    return normalizeCanvasRect(
+      getCenteredCanvasRect(layout.qr.x, layout.qr.y, layout.qr.maxW, layout.qr.maxH, 8),
+      76,
+      76
+    );
+  }
+  if (target === "assinatura" || target === "assinatura2" || target === "assinatura3") {
+    return getSignaturePreviewRect(target);
+  }
+  if (target === "instituicao") return getInstitutionPreviewRect();
+  if (isSeloSlot(target)) {
+    const slotLayout = layout[target];
+    return normalizeCanvasRect(
+      getCenteredCanvasRect(slotLayout.x, slotLayout.y, slotLayout.maxW, slotLayout.maxH, 10),
+      72,
+      52
+    );
+  }
+  return null;
+}
+
+function setPreviewAdjustStatus(message) {
+  if (!previewAdjustStatus) return;
+  previewAdjustStatus.textContent = message || "Clique em um item destacado para abrir os ajustes dele.";
+}
+
+function updatePreviewAdjustControlSelection() {
+  PREVIEW_ADJUST_TARGET_KEYS.forEach((target) => {
+    const element = getPreviewAdjustTargetControlElement(target);
+    if (!element) return;
+    element.classList.add("preview-adjust-target");
+    element.classList.toggle("is-selected", target === selectedPreviewAdjustTarget);
+  });
+}
+
+function syncPreviewHotspotToggle() {
+  if (!previewWrap || !previewShowHotspotsInput) return;
+  previewWrap.classList.toggle("is-showing-hotspots", previewShowHotspotsInput.checked);
+}
+
+function updatePreviewHotspots() {
+  if (!previewHotspots || !canvas) return;
+
+  if (
+    selectedPreviewAdjustTarget &&
+    !isPreviewAdjustTargetActive(selectedPreviewAdjustTarget)
+  ) {
+    selectedPreviewAdjustTarget = "";
+  }
+
+  previewHotspots.replaceChildren();
+
+  PREVIEW_ADJUST_TARGET_KEYS.forEach((target) => {
+    if (!isPreviewAdjustTargetActive(target)) return;
+    const rect = getPreviewAdjustTargetRect(target);
+    if (!rect) return;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "preview-hotspot";
+    button.dataset.previewTarget = target;
+    button.setAttribute("aria-label", `Ajustar ${getPreviewAdjustTargetLabel(target)}`);
+    button.setAttribute("aria-pressed", target === selectedPreviewAdjustTarget ? "true" : "false");
+    button.classList.toggle("is-selected", target === selectedPreviewAdjustTarget);
+    button.style.left = `${(rect.x / canvas.width) * 100}%`;
+    button.style.top = `${(rect.y / canvas.height) * 100}%`;
+    button.style.width = `${(rect.width / canvas.width) * 100}%`;
+    button.style.height = `${(rect.height / canvas.height) * 100}%`;
+
+    const label = document.createElement("span");
+    label.className = "preview-hotspot-label";
+    label.textContent = getPreviewAdjustTargetLabel(target);
+    button.appendChild(label);
+    button.addEventListener("click", () => selectPreviewAdjustTarget(target));
+
+    previewHotspots.appendChild(button);
+  });
+
+  updatePreviewAdjustControlSelection();
+  if (!selectedPreviewAdjustTarget) {
+    setPreviewAdjustStatus("");
+  }
+}
+
+function selectPreviewAdjustTarget(target, { scroll = true } = {}) {
+  if (!isPreviewAdjustTargetActive(target)) return;
+  selectedPreviewAdjustTarget = target;
+
+  if (advancedAdjustmentsDetails) {
+    advancedAdjustmentsDetails.open = true;
+  }
+
+  syncAdvancedControlVisibility();
+  updatePreviewHotspots();
+
+  const label = getPreviewAdjustTargetLabel(target);
+  setPreviewAdjustStatus(`Ajustando: ${label}. Use os controles destacados para mover ou alterar o tamanho.`);
+
+  const controlElement = getPreviewAdjustTargetControlElement(target);
+  if (controlElement && scroll) {
+    controlElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    const focusTarget = controlElement.querySelector("input[type='range'], textarea");
+    if (focusTarget) {
+      window.setTimeout(() => focusTarget.focus({ preventScroll: true }), 250);
+    }
+  }
 }
 
 function formatDateTime(dateStr) {
@@ -4178,6 +4414,24 @@ function syncAdvancedAssetControls() {
     layout.assinatura.maxW
   );
   configureRangeInput(
+    qrXInput,
+    QR_CONTROL_LIMITS.xMin,
+    QR_CONTROL_LIMITS.xMax,
+    layout.qr.x
+  );
+  configureRangeInput(
+    qrYInput,
+    QR_CONTROL_LIMITS.yMin,
+    QR_CONTROL_LIMITS.yMax,
+    layout.qr.y
+  );
+  configureRangeInput(
+    qrSizeInput,
+    QR_CONTROL_LIMITS.sizeMin,
+    QR_CONTROL_LIMITS.sizeMax,
+    layout.qr.maxW
+  );
+  configureRangeInput(
     assinatura2XInput,
     EXTRA_ASSINATURA_CONTROL_LIMITS.xMin,
     EXTRA_ASSINATURA_CONTROL_LIMITS.xMax,
@@ -4309,6 +4563,9 @@ function updateControlLabels() {
   if (logoXVal) logoXVal.textContent = `${layout.logo.x} px`;
   if (logoYVal) logoYVal.textContent = `${layout.logo.y} px`;
   if (logoSizeVal) logoSizeVal.textContent = `${layout.logo.maxW} px`;
+  if (qrXVal) qrXVal.textContent = `${layout.qr.x} px`;
+  if (qrYVal) qrYVal.textContent = `${layout.qr.y} px`;
+  if (qrSizeVal) qrSizeVal.textContent = `${layout.qr.maxW} px`;
   if (assinaturaXVal) assinaturaXVal.textContent = `${layout.assinatura.x} px`;
   if (assinaturaYVal) assinaturaYVal.textContent = `${layout.assinatura.y} px`;
   if (assinaturaSizeVal) assinaturaSizeVal.textContent = `${layout.assinatura.maxW} px`;
@@ -4350,6 +4607,7 @@ function syncAdvancedControlVisibility() {
   };
 
   setHidden(logoAdjustFieldset, !getActiveLogoImage());
+  setHidden(qrAdjustFieldset, false);
   setHidden(assinaturaAdjustFieldset, !isSignatureSlotActive("assinatura"));
   setHidden(assinatura2AdjustFieldset, !isSignatureSlotActive("assinatura2"));
   setHidden(assinatura3AdjustFieldset, !isSignatureSlotActive("assinatura3"));
@@ -4358,6 +4616,7 @@ function syncAdvancedControlVisibility() {
     setHidden(seloGroupBySlot[slotKey], !activeSelos.includes(slotKey));
   });
   setHidden(instituicaoAdjustFieldset, !isInstitutionSlotActive());
+  updatePreviewHotspots();
 }
 
 function applySeloLayoutFromControls(slotKey, xInput, yInput, sizeInput) {
@@ -4377,6 +4636,12 @@ function applyLayoutFromControls() {
   if (logoSizeInput) {
     layout.logo.maxW = Number(logoSizeInput.value);
     layout.logo.maxH = scaleHeightByWidth(layout.logo.maxW, logoAspectRatio);
+  }
+  if (qrXInput) layout.qr.x = Number(qrXInput.value);
+  if (qrYInput) layout.qr.y = Number(qrYInput.value);
+  if (qrSizeInput) {
+    layout.qr.maxW = Number(qrSizeInput.value);
+    layout.qr.maxH = Number(qrSizeInput.value);
   }
   if (assinaturaXInput) layout.assinatura.x = Number(assinaturaXInput.value);
   if (assinaturaYInput) layout.assinatura.y = Number(assinaturaYInput.value);
@@ -4635,7 +4900,7 @@ function getPreviewCertificateData() {
     data,
     linha1,
     linha2,
-    qrText: "",
+    qrText: getPreviewQrText(),
     codigo: "",
     cargaH: cargaResult.value || 0,
   };
@@ -6090,6 +6355,10 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     }
   });
 
+  if (previewShowHotspotsInput) {
+    previewShowHotspotsInput.addEventListener("change", syncPreviewHotspotToggle);
+  }
+
   if (logoInput) {
     logoInput.addEventListener("change", () => {
       void handleAssetChange(logoInput, "logo");
@@ -6285,6 +6554,9 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   if (logoXInput) logoXInput.addEventListener("input", applyLayoutFromControls);
   if (logoYInput) logoYInput.addEventListener("input", applyLayoutFromControls);
   if (logoSizeInput) logoSizeInput.addEventListener("input", applyLayoutFromControls);
+  if (qrXInput) qrXInput.addEventListener("input", applyLayoutFromControls);
+  if (qrYInput) qrYInput.addEventListener("input", applyLayoutFromControls);
+  if (qrSizeInput) qrSizeInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaXInput) assinaturaXInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaYInput) assinaturaYInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaSizeInput) assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
@@ -7107,6 +7379,7 @@ syncGenerateSubmitButton();
 syncAdvancedAssetControls();
 updateControlLabels();
 syncTemplateControls();
+syncPreviewHotspotToggle();
 syncAdvancedControlVisibility();
 setTemplateStatus("", "info");
 setLogoStatus("", "info");

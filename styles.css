@@ -717,6 +717,98 @@ button[disabled] {
   overflow: hidden;
 }
 
+.preview-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.preview-toolbar h2 {
+  margin: 0 0 3px;
+  color: #1a4f8b;
+  font-size: 1rem;
+}
+
+.preview-toggle {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #f7fbff;
+  color: #1a4f8b;
+  font-size: 0.9rem;
+}
+
+.preview-canvas-frame {
+  position: relative;
+}
+
+.preview-hotspots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.preview-hotspot {
+  position: absolute;
+  padding: 0;
+  border: 2px dashed rgba(11, 110, 253, 0.7);
+  border-radius: 10px;
+  background: rgba(11, 110, 253, 0.08);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: auto;
+  transition: opacity 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.preview-wrap.is-showing-hotspots .preview-hotspot,
+.preview-hotspot:hover,
+.preview-hotspot:focus-visible,
+.preview-hotspot.is-selected {
+  opacity: 1;
+}
+
+.preview-hotspot:hover,
+.preview-hotspot:focus-visible {
+  border-style: solid;
+  background: rgba(11, 110, 253, 0.15);
+  box-shadow: 0 0 0 4px rgba(11, 110, 253, 0.13);
+}
+
+.preview-hotspot.is-selected {
+  border-style: solid;
+  border-color: #0b6efd;
+  background: rgba(11, 110, 253, 0.2);
+  box-shadow: 0 0 0 4px rgba(11, 110, 253, 0.18);
+}
+
+.preview-hotspot-label {
+  position: absolute;
+  top: 6px;
+  left: 7px;
+  max-width: calc(100% - 14px);
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #0b6efd;
+  color: #fff;
+  font-size: clamp(0.58rem, 1.4vw, 0.78rem);
+  font-weight: 700;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(11, 110, 253, 0.24);
+}
+
+.preview-adjust-target.is-selected {
+  border-color: #7aaefc;
+  background: #f4f9ff;
+  box-shadow: 0 0 0 3px rgba(11, 110, 253, 0.14);
+}
+
 .filter-grid {
   display: grid;
   gap: 10px;
@@ -1101,6 +1193,15 @@ button[disabled] {
   .asset-controls-details summary {
     padding: 10px 11px;
     font-size: 0.95rem;
+  }
+
+  .preview-toolbar {
+    flex-direction: column;
+  }
+
+  .preview-toggle {
+    width: 100%;
+    justify-content: center;
   }
 
   .asset-controls-body {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="styles.css?v=20260429-2" />
+  <link rel="stylesheet" href="styles.css?v=20260520-1" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -331,7 +331,7 @@
               </div>
             </section>
 
-            <details class="asset-controls asset-controls-details">
+            <details id="advanced-adjustments" class="asset-controls asset-controls-details">
               <summary>Ajustes avançados de logo, assinaturas, selos e instituição</summary>
               <p class="hint">Abra esta área apenas se precisar reposicionar manualmente a logo, as assinaturas, os selos ou a instituição na prévia.</p>
 
@@ -348,6 +348,20 @@
 
                   <label for="logoSize">Tamanho: <span id="logoSizeVal">150 px</span></label>
                   <input id="logoSize" type="range" min="60" max="300" step="1" value="150" />
+                </fieldset>
+
+                <fieldset id="qr-adjust-fieldset" class="slider-fieldset">
+                  <legend>Ajuste do QR Code</legend>
+                  <p class="slider-hint">O QR Code aponta para a validação pública. Na prévia, ele usa um código de exemplo apenas para ajudar no posicionamento.</p>
+
+                  <label for="qrX">Mover QR Code na horizontal (esquerda/direita): <span id="qrXVal">160 px</span></label>
+                  <input id="qrX" type="range" min="70" max="1130" step="1" value="160" />
+
+                  <label for="qrY">Mover QR Code na vertical (cima/baixo): <span id="qrYVal">175 px</span></label>
+                  <input id="qrY" type="range" min="70" max="780" step="1" value="175" />
+
+                  <label for="qrSize">Tamanho: <span id="qrSizeVal">120 px</span></label>
+                  <input id="qrSize" type="range" min="60" max="220" step="1" value="120" />
                 </fieldset>
 
                 <fieldset id="assinatura-adjust-fieldset" class="slider-fieldset">
@@ -518,8 +532,23 @@
           </form>
         </section>
 
-        <section class="preview-wrap">
-          <canvas id="canvas" width="1200" height="850" aria-label="Pré-visualização do certificado"></canvas>
+        <section id="preview-wrap" class="preview-wrap is-showing-hotspots">
+          <div class="preview-toolbar">
+            <div>
+              <h2>Previa do certificado</h2>
+              <p id="preview-adjust-status" class="hint" aria-live="polite">Clique em um item destacado para abrir os ajustes dele.</p>
+            </div>
+
+            <label class="checkbox-field preview-toggle">
+              <input id="preview-show-hotspots" type="checkbox" checked />
+              Mostrar areas ajustaveis
+            </label>
+          </div>
+
+          <div class="preview-canvas-frame">
+            <canvas id="canvas" width="1200" height="850" aria-label="Pré-visualização do certificado"></canvas>
+            <div id="preview-hotspots" class="preview-hotspots" aria-label="Areas ajustaveis do certificado"></div>
+          </div>
         </section>
       </section>
 
@@ -1173,6 +1202,6 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="app.js?v=20260519-2"></script>
+  <script src="app.js?v=20260520-1"></script>
 </body>
 </html>
