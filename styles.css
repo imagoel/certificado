@@ -1053,7 +1053,14 @@ button[disabled] {
 }
 
 .cert-actions {
-  min-width: 118px;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 132px;
+}
+
+.certificates-table .cert-col-actions {
+  min-width: 132px;
+  width: 132px;
 }
 
 .empty-state {
@@ -1106,6 +1113,7 @@ button[disabled] {
 }
 
 .action-menu {
+  flex: 0 0 auto;
   position: relative;
 }
 
@@ -1433,7 +1441,7 @@ button[disabled] {
   }
 
   .certificates-table .cert-actions {
-    min-width: 120px;
+    min-width: 132px;
   }
 
   .section-tab {
@@ -1617,6 +1625,6 @@ button[disabled] {
   }
 
   .certificates-table .cert-col-actions {
-    min-width: 120px;
+    min-width: 132px;
   }
 }

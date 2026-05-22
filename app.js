@@ -3179,7 +3179,6 @@ function getCertificateReportRow(item) {
     item.secretaria_nome || "-",
     item.arquivo_disponivel ? "Sim" : "Não",
     item.url_validacao || "-",
-    item.hash || "-",
   ];
 }
 
@@ -3197,18 +3196,10 @@ function buildCertificateCsvReport(report) {
     "Nome da secretaria",
     "PNG salvo",
     "URL de validação",
-    "Hash",
   ];
   const rows = report.items.map(getCertificateReportRow);
-  const metaRows = [
-    ["Relatório de certificados"],
-    ["Gerado em", formatDateTime(report.generatedAt.toISOString())],
-    ["Total de certificados", String(report.total)],
-    ...report.filters.map((filter) => [filter.label, filter.value]),
-    [],
-  ];
 
-  return `\uFEFF${[...metaRows, headers, ...rows]
+  return `\uFEFF${[headers, ...rows]
     .map((row) => row.map(escapeCsvCell).join(";"))
     .join("\r\n")}`;
 }
