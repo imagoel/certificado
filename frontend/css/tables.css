@@ -1,0 +1,259 @@
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.modal-dialog {
+  width: min(500px, calc(100vw - 28px));
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 24px 60px rgba(17, 32, 49, 0.24);
+}
+
+.modal-dialog::backdrop {
+  background: rgba(17, 32, 49, 0.45);
+}
+
+.modal-form {
+  padding: 16px;
+  background: #fff;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px 9px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th {
+  background: #f7fbff;
+  color: #1a4f8b;
+  font-size: 0.92rem;
+}
+
+.data-table tbody tr:hover {
+  background: #fbfdff;
+}
+
+.certificates-table {
+  min-width: 1080px;
+}
+
+.certificates-table th,
+.certificates-table td {
+  overflow-wrap: anywhere;
+}
+
+.certificates-table .cert-col-code {
+  width: 132px;
+}
+
+.certificates-table .cert-col-participant,
+.certificates-table .cert-name-cell {
+  min-width: 220px;
+  width: 24%;
+}
+
+.certificates-table .cert-col-course {
+  min-width: 240px;
+  width: 26%;
+}
+
+.certificates-table .cert-col-secondary {
+  min-width: 118px;
+}
+
+.cert-name-title {
+  display: block;
+  margin-bottom: 2px;
+  color: #143a67;
+  white-space: normal;
+}
+
+.table-mobile-meta {
+  display: none;
+}
+
+.table-mobile-meta-item {
+  display: block;
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.cert-actions {
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 132px;
+}
+
+.certificates-table .cert-col-actions {
+  min-width: 132px;
+  width: 132px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 16px;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-actions button {
+  padding: 8px 10px;
+}
+
+.icon-btn {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: #1a4f8b;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.icon-btn:hover,
+.icon-btn:focus-visible {
+  border-color: #9dbce3;
+  background: #f2f7ff;
+  box-shadow: 0 0 0 3px rgba(11, 110, 253, 0.12);
+}
+
+.icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
+}
+
+.icon-btn-svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.action-menu {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.action-menu summary {
+  list-style: none;
+}
+
+.action-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.action-menu-content {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  min-width: 116px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 32px rgba(17, 56, 108, 0.14);
+}
+
+.action-menu:not([open]) .action-menu-content {
+  display: none;
+}
+
+.action-menu-item {
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 8px;
+  background: transparent;
+  color: #1f3654;
+}
+
+.action-menu-item:hover,
+.action-menu-item:focus-visible {
+  background: #f2f7ff;
+}
+
+.action-menu-item.danger-action {
+  color: #b32929;
+}
+
+.action-menu-item.danger-action:hover,
+.action-menu-item.danger-action:focus-visible {
+  background: #fff1f1;
+}
+
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.pagination-indicator {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.status-pill.ok {
+  background: #e8f7ee;
+  color: #12763a;
+}
+
+.status-pill.warn {
+  background: #fff4dd;
+  color: #9a6700;
+}
+
+.code-chip {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f2f7ff;
+  color: #1a4f8b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px dashed #b5c5d7;
+  border-radius: 10px;
+  background: #fff;
+}

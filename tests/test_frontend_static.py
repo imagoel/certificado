@@ -6,6 +6,18 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 FRONTEND_JS_DIR = ROOT_DIR / "frontend" / "js"
 
 
+EXPECTED_FRONTEND_STYLESHEET_ORDER = [
+    "frontend/css/base.css",
+    "frontend/css/login.css",
+    "frontend/css/layout.css",
+    "frontend/css/forms.css",
+    "frontend/css/preview.css",
+    "frontend/css/grids.css",
+    "frontend/css/tables.css",
+    "frontend/css/responsive.css",
+]
+
+
 EXPECTED_FRONTEND_SCRIPT_ORDER = [
     "frontend/js/app-state.js",
     "frontend/js/app-utils.js",
@@ -44,8 +56,23 @@ def _frontend_script_paths() -> list[str]:
     return [ref.split("?", 1)[0] for ref in refs if ref.startswith("frontend/js/")]
 
 
+def _frontend_stylesheet_paths() -> list[str]:
+    html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
+    refs = re.findall(r'<link rel="stylesheet" href="([^"]+)"', html)
+    return [ref.split("?", 1)[0] for ref in refs]
+
+
 def _frontend_source() -> str:
     return "\n".join(path.read_text(encoding="utf-8") for path in sorted(FRONTEND_JS_DIR.glob("*.js")))
+
+
+def test_frontend_stylesheets_are_loaded_in_expected_order():
+    stylesheet_paths = _frontend_stylesheet_paths()
+
+    assert stylesheet_paths == EXPECTED_FRONTEND_STYLESHEET_ORDER
+    assert "styles.css" not in stylesheet_paths
+    for stylesheet_path in stylesheet_paths:
+        assert (ROOT_DIR / stylesheet_path).is_file()
 
 
 def test_frontend_scripts_are_loaded_in_expected_order():

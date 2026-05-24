@@ -19,5 +19,6 @@ Eles compartilham o mesmo escopo global do navegador, por isso a ordem abaixo de
 12. `app-batch.js`: preview, confirmacao, geracao em lote, download e helpers de arquivo.
 13. `app-bootstrap.js`: inicializacao da tela e registro dos eventos.
 
-Para novas mudancas visuais, prefira mexer primeiro em `styles.css` e no HTML da secao afetada.
+Os estilos em `frontend/css/` sao carregados em ordem pelo `index.html` e dependem da cascata.
+Para novas mudancas visuais, prefira mexer no arquivo CSS correspondente ao dominio da tela e no HTML da secao afetada.
 Para novas regras de comportamento, coloque a funcao no arquivo correspondente ao papel dela.

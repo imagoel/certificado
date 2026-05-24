@@ -1,0 +1,414 @@
+
+@media (max-width: 960px) {
+  .app-session {
+    flex-direction: column;
+  }
+
+  .session-meta {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .panel-header {
+    flex-direction: column;
+  }
+
+  .panel-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .audit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+@media (max-width: 700px) {
+  .form-fieldset {
+    padding: 10px;
+  }
+
+  .form-fieldset-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .container {
+    padding: 8px 8px 14px;
+  }
+
+  .panel,
+  .preview-wrap,
+  .asset-controls,
+  .batch-controls {
+    padding: 11px;
+  }
+
+  .login-page {
+    min-height: 100vh;
+    padding: 18px 12px 18px;
+  }
+
+  .login-stack {
+    width: min(100%, 420px);
+    gap: 18px;
+  }
+
+  .login-logo {
+    width: min(100%, 248px);
+  }
+
+  .login-card {
+    padding: 22px 18px 18px;
+    border-radius: 22px;
+  }
+
+  .login-footer {
+    padding-top: 12px;
+  }
+
+  .login-footer-logos {
+    gap: 16px;
+  }
+
+  .login-footer-logo-gti {
+    height: 56px;
+  }
+
+  .login-footer-logo-immanuel {
+    height: 104px;
+  }
+
+  .login-footer-divider {
+    height: 86px;
+  }
+
+  h1 {
+    font-size: 1.62rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .summary-pill {
+    white-space: normal;
+  }
+
+  .quick-filter-bar {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .quick-filter-btn {
+    padding: 7px 10px;
+    font-size: 0.84rem;
+  }
+
+  .filter-grid,
+  .grid-two,
+  .grid-three,
+  .signature-extra-grid,
+  .audit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-tab {
+    flex: 1 1 120px;
+    padding: 8px 10px;
+  }
+
+  .session-user,
+  .session-secretaria {
+    font-size: 0.9rem;
+    padding: 7px 9px;
+  }
+
+  .actions-end,
+  .pagination-row {
+    justify-content: flex-start;
+  }
+
+  .modal-dialog {
+    width: min(calc(100vw - 12px), 500px);
+  }
+
+  .asset-controls-details summary {
+    padding: 10px 11px;
+    font-size: 0.95rem;
+  }
+
+  .preview-toolbar {
+    flex-direction: column;
+  }
+
+  .preview-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .preview-adjust-panel {
+    width: min(300px, calc(100% - 12px));
+    padding: 9px;
+  }
+
+  .preview-adjust-panel-header {
+    align-items: center;
+  }
+
+  .preview-adjust-grid {
+    gap: 5px;
+  }
+
+  .asset-controls-body {
+    padding: 0 11px 11px;
+  }
+
+  .slider-fieldset {
+    padding: 9px;
+  }
+
+  .batch-controls h2,
+  .asset-controls h2 {
+    font-size: 0.96rem;
+  }
+}
+
+@media (max-width: 520px) {
+  body {
+    line-height: 1.4;
+  }
+
+  h1 {
+    font-size: 1.42rem;
+  }
+
+  .actions > button,
+  .actions > a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .compact-table {
+    min-width: 500px;
+  }
+
+  .data-table {
+    min-width: 680px;
+  }
+
+  .certificates-table {
+    min-width: 0;
+  }
+
+  .certificates-table .cert-col-secondary {
+    display: none;
+  }
+
+  .certificates-table .cert-name-cell {
+    min-width: 180px;
+  }
+
+  .certificates-table .table-mobile-meta {
+    display: grid;
+    gap: 2px;
+    margin-top: 4px;
+  }
+
+  .certificates-table .cert-col-course {
+    min-width: 160px;
+  }
+
+  .certificates-table .cert-actions {
+    min-width: 132px;
+  }
+
+  .section-tab {
+    flex-basis: calc(50% - 6px);
+  }
+
+  .quick-filter-label {
+    width: 100%;
+    margin-bottom: 2px;
+  }
+
+  .app-session,
+  .stack-section {
+    gap: 10px;
+  }
+
+  .session-meta {
+    gap: 6px;
+  }
+
+  .panel,
+  .preview-wrap,
+  .asset-controls,
+  .batch-controls,
+  .modal-form {
+    padding: 9px;
+  }
+
+  .panel-header {
+    gap: 8px;
+  }
+
+  .field-help,
+  .hint,
+  .status,
+  .checkbox-list-empty {
+    font-size: 0.84rem;
+  }
+
+  input,
+  select,
+  button {
+    font-size: 16px;
+  }
+
+  .form,
+  .generator-asset-block,
+  .field-stack {
+    gap: 5px;
+  }
+
+  .section-switcher {
+    gap: 6px;
+  }
+
+  .section-tab {
+    flex-basis: calc(50% - 4px);
+    padding: 8px 8px;
+  }
+
+  .batch-controls h2,
+  .asset-controls h2,
+  .asset-controls-details summary {
+    font-size: 0.93rem;
+  }
+
+  .batch-controls label,
+  .asset-controls label {
+    font-size: 0.92rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 8px;
+  }
+
+  .pagination-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .quick-filter-btn {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+
+  .inline-actions {
+    flex-direction: column;
+  }
+
+  .inline-actions button {
+    width: 100%;
+  }
+
+  .cert-actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+
+  .cert-actions .icon-btn,
+  .cert-actions .action-menu-trigger {
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .cert-actions .action-menu-item {
+    width: 100%;
+  }
+
+  .table-wrap {
+    border-radius: 8px;
+  }
+
+  .login-card .actions > button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .container {
+    padding: 6px 6px 12px;
+  }
+
+  .login-page {
+    min-height: 100vh;
+    padding: 14px 10px 16px;
+  }
+
+  .login-stack {
+    gap: 14px;
+  }
+
+  .login-logo {
+    width: min(100%, 214px);
+  }
+
+  .login-card {
+    padding: 18px 14px 16px;
+    border-radius: 20px;
+  }
+
+  .login-footer-logos {
+    gap: 12px;
+  }
+
+  .login-footer-logo-gti {
+    height: 44px;
+  }
+
+  .login-footer-logo-immanuel {
+    height: 80px;
+  }
+
+  .login-footer-divider {
+    height: 66px;
+  }
+
+  .section-tab {
+    flex-basis: 100%;
+  }
+
+  .quick-filter-btn {
+    flex-basis: 100%;
+  }
+
+  .session-user,
+  .session-secretaria {
+    font-size: 0.86rem;
+  }
+
+  .compact-table {
+    min-width: 440px;
+  }
+
+  .data-table {
+    min-width: 620px;
+  }
+
+  .certificates-table .cert-col-code {
+    white-space: nowrap;
+  }
+
+  .certificates-table .cert-col-actions {
+    min-width: 132px;
+  }
+}

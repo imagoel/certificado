@@ -294,7 +294,7 @@ Observacao: para operadores, esses endpoints retornam e aceitam somente secretar
 
 ## Estrutura do Projeto
 
-- `index.html`, `styles.css`, `frontend/js/*.js`: interface web, login, geracao e administracao
+- `index.html`, `frontend/css/*.css`, `frontend/js/*.js`: interface web, login, geracao e administracao
 - `api/main.py`: bootstrap da aplicacao FastAPI
 - `api/common.py`: configuracao compartilhada, helpers e dependencias
 - `api/routes_auth.py`: autenticacao e troca de secretaria
