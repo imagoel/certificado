@@ -909,7 +909,18 @@ function syncPreviewAdjustRange(sourceInput, targetInput, valueElement) {
   return true;
 }
 
-function positionPreviewAdjustPanel() {
+function isPreviewAdjustPanelControlActive() {
+  return Boolean(
+    previewAdjustPanel &&
+    document.activeElement &&
+    previewAdjustPanel.contains(document.activeElement)
+  );
+}
+
+function positionPreviewAdjustPanel(options = {}) {
+  if (!options.force && isPreviewAdjustPanelControlActive()) {
+    return;
+  }
   if (!previewAdjustPanel || !previewCanvasFrame || !canvas || !selectedPreviewAdjustTarget) {
     return;
   }

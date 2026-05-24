@@ -82,6 +82,13 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     if (!input) return;
     input.addEventListener("input", applyPreviewAdjustPanelControls);
     input.addEventListener("change", commitPreviewAdjustPanelControls);
+    input.addEventListener("blur", () => {
+      window.requestAnimationFrame(() => {
+        if (!isPreviewAdjustPanelControlActive()) {
+          positionPreviewAdjustPanel({ force: true });
+        }
+      });
+    });
   });
 
   window.addEventListener("resize", () => {
