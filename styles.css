@@ -1031,14 +1031,39 @@ button[disabled] {
   background: #fbfdff;
 }
 
-.cert-name-cell {
-  min-width: 200px;
+.certificates-table {
+  min-width: 1080px;
+}
+
+.certificates-table th,
+.certificates-table td {
+  overflow-wrap: anywhere;
+}
+
+.certificates-table .cert-col-code {
+  width: 132px;
+}
+
+.certificates-table .cert-col-participant,
+.certificates-table .cert-name-cell {
+  min-width: 220px;
+  width: 24%;
+}
+
+.certificates-table .cert-col-course {
+  min-width: 240px;
+  width: 26%;
+}
+
+.certificates-table .cert-col-secondary {
+  min-width: 118px;
 }
 
 .cert-name-title {
   display: block;
   margin-bottom: 2px;
   color: #143a67;
+  white-space: normal;
 }
 
 .table-mobile-meta {

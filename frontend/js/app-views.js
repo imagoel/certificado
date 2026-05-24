@@ -1233,7 +1233,6 @@ function getCertificateReportRow(item) {
     item.emitido_por_username || "-",
     item.secretaria_sigla || "-",
     item.secretaria_nome || "-",
-    item.arquivo_disponivel ? "Sim" : "Não",
     item.url_validacao || "-",
   ];
 }
@@ -1250,7 +1249,6 @@ function buildCertificateCsvReport(report) {
     "Emitido por",
     "Secretaria",
     "Nome da secretaria",
-    "PNG salvo",
     "URL de validação",
   ];
   const rows = report.items.map(getCertificateReportRow);
