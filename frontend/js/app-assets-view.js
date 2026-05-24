@@ -257,10 +257,7 @@ async function applySavedTemplateSelection(templateId, options = {}) {
     savedTemplate = null;
     savedTemplateImage = null;
     if (!silentStatus) {
-      const fallbackMessage = templateCatalogState.items.length
-        ? ""
-        : "A secretaria ativa ainda não tem moldes cadastrados. Você pode usar um arquivo temporário nesta emissão.";
-      setTemplateSelectStatus(fallbackMessage, "info");
+      setTemplateSelectStatus("", "info");
     }
     await renderLastCertificate();
     return;
@@ -330,10 +327,7 @@ async function loadAvailableTemplates() {
     savedTemplateImage = null;
     if (templateLibraryWrap) templateLibraryWrap.hidden = false;
     if (templateSelect) populateTemplateOptions(templateSelect, [], "", true);
-    setTemplateSelectStatus(
-      "Selecione uma secretaria para usar um molde cadastrado ou enviar um arquivo temporário.",
-      "info"
-    );
+    setTemplateSelectStatus("", "info");
     return;
   }
 
@@ -394,10 +388,7 @@ async function applySavedSecretariaAssetSelection(type, assetId, options = {}) {
   if (!normalizedId) {
     setSavedSecretariaAsset(type, null, null);
     if (!silentStatus) {
-      const fallbackMessage = catalog.items.length
-        ? ""
-        : `A secretaria ativa ainda não tem ${ui.pluralLabel} cadastradas. Você pode usar uma ${ui.label} temporária nesta emissão.`;
-      ui.setSelectStatus(fallbackMessage, "info");
+      ui.setSelectStatus("", "info");
     }
     await renderLastCertificate();
     return;
@@ -465,14 +456,10 @@ async function loadAvailableSecretariaAssetType(type) {
     populateSecretariaAssetOptions(type, [], "", true);
     if (type === "assinatura") {
       syncExtraSignatureCatalogs([], {
-        statusMessage:
-          "Selecione uma secretaria para usar assinaturas extras cadastradas ou enviar arquivos temporarios.",
+        statusMessage: "",
       });
     }
-    ui.setSelectStatus(
-      `Selecione uma secretaria para usar ${ui.pluralLabel} cadastradas ou enviar um arquivo temporário.`,
-      "info"
-    );
+    ui.setSelectStatus("", "info");
     return;
   }
 
@@ -531,8 +518,7 @@ async function loadAvailableSeloAssets() {
     catalog.items = [];
     catalog.selectedId = "";
     syncSeloCatalogs([], {
-      statusMessage:
-        "Selecione uma secretaria para usar selos cadastrados ou enviar arquivos temporarios.",
+      statusMessage: "",
     });
     return;
   }

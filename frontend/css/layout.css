@@ -1,26 +1,29 @@
 
 .stack-section {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .app-session {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
 }
 
 .session-meta {
-  min-width: 280px;
+  min-width: min(620px, 52vw);
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: stretch;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: end;
 }
 
 .session-user {
+  grid-column: 1 / -1;
   margin: 0;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #f8fbff;
@@ -29,8 +32,9 @@
 }
 
 .session-secretaria {
+  grid-column: 1 / -1;
   margin: 0;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fffaf0;
@@ -43,9 +47,14 @@
   gap: 4px;
 }
 
+#logout-btn {
+  min-width: 92px;
+  align-self: end;
+}
+
 .section-switcher {
   display: flex;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
 }
 
@@ -54,7 +63,24 @@
   color: #1a4f8b;
 }
 
-.section-tab.is-active {
-  background: #1a4f8b;
-  color: #fff;
+  .section-tab.is-active {
+    background: #1a4f8b;
+    color: #fff;
+  }
+
+@media (min-width: 1240px) {
+  #generator-section {
+    grid-template-columns: minmax(610px, 0.92fr) minmax(540px, 1.08fr);
+    align-items: start;
+  }
+
+  #generator-section > .panel,
+  #generator-section > .preview-wrap {
+    min-width: 0;
+  }
+
+  #preview-wrap {
+    position: sticky;
+    top: 12px;
+  }
 }

@@ -25,6 +25,7 @@ function renderSession(session) {
   }
   populateSecretariaOptions(secretariaSelect, secretarias, session.secretaria_ativa_id, false);
   if (secretariaWrap) secretariaWrap.hidden = secretarias.length <= 1;
+  if (sessionSecretaria) sessionSecretaria.hidden = secretarias.length > 1;
   populateSecretariaOptions(
     certFilterSecretariaSelect,
     secretarias,

@@ -1,17 +1,17 @@
 
 .form {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .form-fieldset {
   margin: 0;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #fbfdff;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -30,7 +30,7 @@
 .form-fieldset-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
+  gap: 9px 12px;
 }
 
 .form-fieldset-grid-single {
@@ -61,7 +61,7 @@ label {
 }
 
 .field-help {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.4;
@@ -70,7 +70,7 @@ label {
 input,
 textarea {
   width: 100%;
-  padding: 9px 11px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font: inherit;
@@ -84,7 +84,7 @@ textarea {
 
 select {
   width: 100%;
-  padding: 9px 11px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fff;
@@ -115,7 +115,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 input[type="file"] {
-  padding: 7px;
+  padding: 6px;
   background: #f9fbff;
 }
 
@@ -211,8 +211,8 @@ input[type="file"] {
 
 .actions {
   display: flex;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 7px;
+  margin-top: 5px;
   flex-wrap: wrap;
 }
 
@@ -223,7 +223,7 @@ input[type="file"] {
 button {
   border: 0;
   border-radius: 8px;
-  padding: 9px 13px;
+  padding: 8px 12px;
   background: var(--accent);
   color: #fff;
   font-weight: 600;
@@ -246,7 +246,7 @@ button[disabled] {
 }
 
 .batch-controls {
-  margin-top: 6px;
+  margin-top: 4px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -254,22 +254,18 @@ button[disabled] {
 }
 
 .batch-controls h2 {
-  margin: 8px 0;
+  margin: 2px 0 6px;
   font-size: 1rem;
   color: #1a4f8b;
 }
 
-.generator-assets-intro {
-  margin-bottom: 0;
-}
-
 .generator-asset-block {
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
 
 .generator-asset-block h2 {
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .generator-asset-block .status {
@@ -282,15 +278,15 @@ button[disabled] {
 
 .signature-extra-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .signature-extra-card {
   display: grid;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
-  padding: 10px;
+  padding: 9px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #f8fbff;
@@ -304,14 +300,14 @@ button[disabled] {
 
 .asset-upload-group {
   display: grid;
-  gap: 4px;
+  gap: 5px;
   margin-top: 0;
   padding-top: 0;
 }
 
 .field-stack {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
 }
 
@@ -425,17 +421,29 @@ button[disabled] {
 }
 
 .hint {
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.45;
 }
 
+.hint:empty {
+  display: none;
+}
+
+.batch-compact-hint {
+  max-width: 92ch;
+}
+
 .status {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   min-height: 1.2rem;
   font-size: 0.88rem;
   color: var(--muted);
+}
+
+.status:empty {
+  display: none;
 }
 
 .status.info {

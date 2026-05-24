@@ -3,16 +3,17 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   overflow: visible;
+  box-shadow: 0 10px 26px rgba(26, 79, 139, 0.04);
 }
 
 .preview-toolbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .preview-toolbar h2 {
@@ -23,7 +24,7 @@
 
 .preview-toggle {
   flex: 0 0 auto;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: #f7fbff;

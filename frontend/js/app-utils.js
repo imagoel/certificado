@@ -896,7 +896,7 @@ function getPreviewAdjustTargetRect(target) {
 
 function setPreviewAdjustStatus(message) {
   if (!previewAdjustStatus) return;
-  previewAdjustStatus.textContent = message || "Clique em um item destacado para abrir os ajustes perto dele.";
+  previewAdjustStatus.textContent = message || "";
 }
 
 function syncPreviewAdjustRange(sourceInput, targetInput, valueElement) {
@@ -1086,7 +1086,7 @@ function selectPreviewAdjustTarget(target) {
   updatePreviewHotspots();
 
   const label = getPreviewAdjustTargetLabel(target);
-  setPreviewAdjustStatus(`Ajustando: ${label}. Use o painel que abriu perto do item para mover ou alterar o tamanho.`);
+  setPreviewAdjustStatus(`Ajustando: ${label}`);
   if (previewAdjustXInput) previewAdjustXInput.focus({ preventScroll: true });
 }
 
@@ -1263,14 +1263,7 @@ function syncExtraSignatureCatalogs(items = [], options = {}) {
 
     populateSecretariaAssetOptions(type, availableItems, catalog.selectedId, true);
     if (ui.wrap) ui.wrap.hidden = false;
-    if (statusMessage || !availableItems.length) {
-      const message =
-        statusMessage ||
-        "A secretaria ativa ainda nao tem assinaturas cadastradas para usar nos itens extras.";
-      ui.setSelectStatus(message, statusType);
-    } else {
-      ui.setSelectStatus("", "info");
-    }
+    ui.setSelectStatus(statusMessage || "", statusMessage ? statusType : "info");
   });
 }
 
@@ -1293,14 +1286,7 @@ function syncSeloCatalogs(items = [], options = {}) {
 
     populateSecretariaAssetOptions(type, availableItems, catalog.selectedId, true);
     if (ui.wrap) ui.wrap.hidden = false;
-    if (statusMessage || !availableItems.length) {
-      const message =
-        statusMessage ||
-        "A secretaria ativa ainda nao tem selos cadastrados. Voce pode enviar arquivos temporarios nesta emissao.";
-      ui.setSelectStatus(message, statusType);
-    } else {
-      ui.setSelectStatus("", "info");
-    }
+    ui.setSelectStatus(statusMessage || "", statusMessage ? statusType : "info");
   });
 }
 

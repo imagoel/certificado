@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260524-1" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260524-1" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260524-1" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260524-1" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260524-1" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260524-1" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260524-1" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260524-1" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260524-2" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -67,7 +67,6 @@
       <section class="panel app-session">
         <div>
           <h1>Gerador de Certificados</h1>
-          <p class="subtitle">Ambiente interno para emitir, consultar e administrar certificados.</p>
         </div>
 
         <div class="session-meta">
@@ -95,7 +94,6 @@
           <form id="cert-form" class="form">
             <fieldset class="form-fieldset">
               <legend>Dados do certificado</legend>
-              <p class="fieldset-hint">Preencha as informações principais para emissão do certificado.</p>
 
               <div class="form-fieldset-grid">
                 <div class="field-stack">
@@ -122,7 +120,6 @@
 
             <fieldset class="form-fieldset">
               <legend>Textos customizáveis</legend>
-              <p class="fieldset-hint">Opcionalmente, ajuste as frases que aparecem no corpo do certificado.</p>
 
               <div class="form-fieldset-grid form-fieldset-grid-single">
                 <div class="field-stack">
@@ -136,8 +133,6 @@
                 </div>
               </div>
             </fieldset>
-
-            <p class="hint generator-assets-intro">Os itens padrão da secretaria são carregados automaticamente. Você pode trocar a seleção ou enviar um arquivo temporário apenas nesta emissão.</p>
 
             <section id="template-library-wrap" class="batch-controls generator-asset-block">
               <h2>Molde</h2>
@@ -154,7 +149,6 @@
                   <input id="template-hide-title" type="checkbox" />
                   Molde temporário já contém o título "Certificado"
                 </label>
-                <p class="field-help">Use apenas quando a palavra Certificado já estiver desenhada no arquivo enviado.</p>
                 <div class="actions asset-inline-actions">
                   <button id="template-remove" type="button" class="secondary-btn" disabled hidden>Remover molde temporário</button>
                 </div>
@@ -200,7 +194,6 @@
 
             <section id="assinaturas-extras-wrap" class="batch-controls generator-asset-block signature-extras-block">
               <h2>Itens extras</h2>
-              <p class="hint">Use assinatura 2 e 3 quando o molde já tiver mais campos de assinatura. Cada item sai como bloco completo: imagem, linha e texto abaixo.</p>
 
               <div class="signature-extra-grid">
                 <div class="signature-extra-card">
@@ -242,8 +235,7 @@
             </section>
 
             <section id="selos-extras-wrap" class="batch-controls generator-asset-block signature-extras-block">
-              <h2>Selos / Icones extras</h2>
-              <p class="hint">Use estes slots para marcas, selos e icones do rodape. Cada selo pode ser escolhido do cadastro da secretaria ou enviado temporariamente nesta emissao.</p>
+              <h2>Selos / Ícones extras</h2>
 
               <div class="signature-extra-grid">
                 <div class="signature-extra-card">
@@ -434,7 +426,7 @@
 
             <section class="batch-controls">
               <h2>Geração em lote por planilha</h2>
-              <p class="hint">Colunas aceitas: <strong>nome</strong>, <strong>sobrenome</strong>, <strong>curso</strong>, <strong>data</strong>, <strong>carga_h</strong>, <strong>linha1</strong>, <strong>linha2</strong>, <strong>arquivo</strong>. Se vierem <code>nome</code> e <code>sobrenome</code> em colunas separadas, o sistema junta automaticamente. Se a planilha tiver apenas <code>nome</code>, os demais dados são herdados dos campos preenchidos acima no formulário. O código e o QR Code são gerados automaticamente pela API; o certificado final é montado no navegador e salvo no backend. Suporta <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>.</p>
+              <p class="hint batch-compact-hint">Aceita <code>.xlsx</code>, <code>.xls</code> e <code>.csv</code>. Colunas: <code>nome</code>, <code>sobrenome</code>, <code>curso</code>, <code>data</code>, <code>carga_h</code>, <code>linha1</code>, <code>linha2</code>, <code>arquivo</code>.</p>
 
               <label for="planilha">Planilha de alunos</label>
               <input
@@ -491,13 +483,13 @@
         <section id="preview-wrap" class="preview-wrap is-showing-hotspots">
           <div class="preview-toolbar">
             <div>
-              <h2>Previa do certificado</h2>
-              <p id="preview-adjust-status" class="hint" aria-live="polite">Clique em um item destacado para abrir os ajustes perto dele.</p>
+              <h2>Prévia do certificado</h2>
+              <p id="preview-adjust-status" class="hint" aria-live="polite"></p>
             </div>
 
             <label class="checkbox-field preview-toggle">
               <input id="preview-show-hotspots" type="checkbox" checked />
-              Mostrar areas ajustaveis
+              Mostrar áreas ajustáveis
             </label>
           </div>
 
@@ -1177,18 +1169,18 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/app-state.js?v=20260524-1"></script>
-  <script src="frontend/js/app-utils.js?v=20260524-1"></script>
-  <script src="frontend/js/app-session-view.js?v=20260524-1"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260524-1"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260524-1"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260524-1"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260524-1"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260524-1"></script>
-  <script src="frontend/js/app-canvas.js?v=20260524-1"></script>
-  <script src="frontend/js/app-assets.js?v=20260524-1"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260524-1"></script>
-  <script src="frontend/js/app-batch.js?v=20260524-1"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260524-1"></script>
+  <script src="frontend/js/app-state.js?v=20260524-2"></script>
+  <script src="frontend/js/app-utils.js?v=20260524-2"></script>
+  <script src="frontend/js/app-session-view.js?v=20260524-2"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260524-2"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260524-2"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260524-2"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260524-2"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260524-2"></script>
+  <script src="frontend/js/app-canvas.js?v=20260524-2"></script>
+  <script src="frontend/js/app-assets.js?v=20260524-2"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260524-2"></script>
+  <script src="frontend/js/app-batch.js?v=20260524-2"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260524-2"></script>
 </body>
 </html>
