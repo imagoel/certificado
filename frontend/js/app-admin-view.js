@@ -141,6 +141,9 @@ function resetSecretariaAssetForm() {
   if (secretariaAssetActiveInput) secretariaAssetActiveInput.checked = true;
   if (secretariaAssetDefaultInput) secretariaAssetDefaultInput.checked = false;
   if (secretariaAssetOrderInput) secretariaAssetOrderInput.value = "0";
+  if (secretariaAssetTypeSelect) {
+    secretariaAssetTypeSelect.value = adminUiState.assetTypeFilter || "logo";
+  }
   syncSecretariaAssetFormState();
   setSecretariaAssetAdminStatus("", "info");
 }
@@ -154,6 +157,7 @@ function buildStatusPill(active, activeLabel = "Ativo", inactiveLabel = "Inativo
 
 function fillUserForm(usuario) {
   if (!usuario) return;
+  switchAdminModule("users");
   if (userEditIdInput) userEditIdInput.value = String(usuario.id);
   if (userNameInput) userNameInput.value = usuario.nome || "";
   if (userUsernameInput) {
@@ -177,6 +181,7 @@ function fillUserForm(usuario) {
 
 function fillSecretariaForm(secretaria) {
   if (!secretaria) return;
+  switchAdminModule("secretarias");
   if (secretariaEditIdInput) secretariaEditIdInput.value = String(secretaria.id);
   if (secretariaSiglaInput) secretariaSiglaInput.value = secretaria.sigla || "";
   if (secretariaNameInput) secretariaNameInput.value = secretaria.nome || "";
@@ -188,6 +193,7 @@ function fillSecretariaForm(secretaria) {
 
 function fillTemplateAdminForm(template) {
   if (!template) return;
+  switchAdminModule("templates");
   if (templateAdminEditIdInput) templateAdminEditIdInput.value = String(template.id);
   if (templateAdminSecretariaSelect) {
     templateAdminSecretariaSelect.value = String(template.secretaria_id || "");
@@ -210,6 +216,8 @@ function fillTemplateAdminForm(template) {
 
 function fillSecretariaAssetForm(asset) {
   if (!asset) return;
+  switchAdminModule("assets");
+  setSecretariaAssetTypeFilter(asset.tipo || "logo");
   if (secretariaAssetEditIdInput) secretariaAssetEditIdInput.value = String(asset.id);
   if (secretariaAssetSecretariaSelect) {
     secretariaAssetSecretariaSelect.value = String(asset.secretaria_id || "");

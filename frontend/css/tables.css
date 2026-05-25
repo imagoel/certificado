@@ -18,6 +18,30 @@
   box-shadow: 0 18px 34px rgba(26, 79, 139, 0.08);
 }
 
+.admin-table-card {
+  box-shadow: 0 16px 30px rgba(26, 79, 139, 0.07);
+}
+
+.admin-type-filter {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-type-filter-btn {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(232, 241, 255, 0.88);
+  color: #1a4f8b;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.admin-type-filter-btn.is-active {
+  background: #1a4f8b;
+  color: #fff;
+}
+
 .modal-dialog {
   width: min(500px, calc(100vw - 28px));
   border: 0;
@@ -114,6 +138,48 @@
 .certificates-table .cert-col-actions {
   min-width: 132px;
   width: 132px;
+}
+
+.user-admin-table {
+  min-width: 920px;
+}
+
+.secretaria-admin-table {
+  min-width: 620px;
+}
+
+.template-admin-table,
+.asset-admin-table {
+  min-width: 980px;
+}
+
+.user-admin-table th:nth-child(1),
+.user-admin-table td:nth-child(1) {
+  min-width: 210px;
+}
+
+.user-admin-table th:nth-child(4),
+.user-admin-table td:nth-child(4) {
+  min-width: 220px;
+}
+
+.template-admin-table th:nth-child(2),
+.template-admin-table td:nth-child(2),
+.asset-admin-table th:nth-child(3),
+.asset-admin-table td:nth-child(3) {
+  min-width: 220px;
+}
+
+.user-admin-table th:last-child,
+.user-admin-table td:last-child,
+.secretaria-admin-table th:last-child,
+.secretaria-admin-table td:last-child,
+.template-admin-table th:last-child,
+.template-admin-table td:last-child,
+.asset-admin-table th:last-child,
+.asset-admin-table td:last-child {
+  width: 136px;
+  min-width: 136px;
 }
 
 .audit-table {

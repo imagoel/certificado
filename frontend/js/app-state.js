@@ -64,10 +64,12 @@ const generatorSection = document.getElementById("generator-section");
 const certificatesSection = document.getElementById("certificates-section");
 const auditSection = document.getElementById("audit-section");
 const adminSection = document.getElementById("admin-section");
+const adminModuleTabs = Array.from(document.querySelectorAll("[data-admin-module-tab]"));
 const userAdminPanel = document.getElementById("user-admin-panel");
 const secretariaAdminPanel = document.getElementById("secretaria-admin-panel");
 const templateManagementPanel = document.getElementById("template-management-panel");
 const visualAssetManagementPanel = document.getElementById("visual-asset-management-panel");
+const adminAssetFilterBtns = Array.from(document.querySelectorAll("[data-admin-asset-filter]"));
 const sectionTabs = Array.from(document.querySelectorAll("[data-section]"));
 const auditTab = document.getElementById("tab-audit");
 const adminTab = document.getElementById("tab-admin");
@@ -501,6 +503,10 @@ const adminState = {
   secretarias: [],
   templates: [],
   secretariaAssets: [],
+};
+const adminUiState = {
+  module: "users",
+  assetTypeFilter: "logo",
 };
 
 const templateCatalogState = {

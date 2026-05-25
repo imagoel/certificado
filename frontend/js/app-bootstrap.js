@@ -439,6 +439,21 @@ sectionTabs.forEach((button) => {
   });
 });
 
+adminModuleTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    switchAdminModule(button.dataset.adminModuleTab || getDefaultAdminModule());
+  });
+});
+
+adminAssetFilterBtns.forEach((button) => {
+  button.addEventListener("click", () => {
+    setSecretariaAssetTypeFilter(button.dataset.adminAssetFilter || "logo", {
+      syncForm: true,
+    });
+    renderSecretariaAssetsTable();
+  });
+});
+
 if (certListForm) {
   certListForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -814,6 +829,8 @@ if (secretariaAssetResetBtn) {
 if (secretariaAssetTypeSelect) {
   secretariaAssetTypeSelect.addEventListener("change", () => {
     syncSecretariaAssetTypeUi();
+    setSecretariaAssetTypeFilter(secretariaAssetTypeSelect.value || "logo");
+    renderSecretariaAssetsTable();
   });
 }
 
@@ -1113,6 +1130,8 @@ syncUserFormState();
 syncSecretariaFormState();
 syncTemplateAdminFormState();
 syncSecretariaAssetFormState();
+setSecretariaAssetTypeFilter(adminUiState.assetTypeFilter, { syncForm: true });
+syncAdminModuleUi();
 syncGenerateSubmitButton();
 syncAdvancedAssetControls();
 updateControlLabels();

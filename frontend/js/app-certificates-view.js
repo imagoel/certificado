@@ -335,10 +335,20 @@ function renderTemplatesTable() {
 function renderSecretariaAssetsTable() {
   if (!secretariaAssetListBody) return;
 
-  if (!adminState.secretariaAssets.length) {
+  const filteredAssets = adminState.secretariaAssets.filter(
+    (asset) => asset.tipo === adminUiState.assetTypeFilter
+  );
+
+  if (!filteredAssets.length) {
+    const emptyMessages = {
+      logo: "Nenhuma logo cadastrada ate o momento.",
+      assinatura: "Nenhuma assinatura cadastrada ate o momento.",
+      instituicao: "Nenhuma instituicao cadastrada ate o momento.",
+      selo: "Nenhum selo cadastrado ate o momento.",
+    };
     secretariaAssetListBody.innerHTML = `
       <tr>
-        <td colspan="7" class="empty-state">Nenhuma logo, assinatura ou instituição cadastrada até o momento.</td>
+        <td colspan="7" class="empty-state">${emptyMessages[adminUiState.assetTypeFilter] || emptyMessages.logo}</td>
       </tr>
     `;
     return;
@@ -346,7 +356,7 @@ function renderSecretariaAssetsTable() {
 
   secretariaAssetListBody.innerHTML = "";
 
-  adminState.secretariaAssets.forEach((asset) => {
+  filteredAssets.forEach((asset) => {
     const row = document.createElement("tr");
 
     const secretariaCell = document.createElement("td");

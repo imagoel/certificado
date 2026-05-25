@@ -4,6 +4,10 @@
     width: calc(100% - 24px);
   }
 
+  .admin-split-layout {
+    grid-template-columns: 1fr;
+  }
+
   .certificates-filter-grid,
   .audit-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -67,6 +71,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-form-shell-wide {
+    max-width: none;
+  }
+
 }
 
 @media (max-width: 700px) {
@@ -85,6 +93,17 @@
 
   .listing-section {
     width: 100%;
+  }
+
+  .admin-module-tabs,
+  .admin-type-filter {
+    gap: 6px;
+  }
+
+  .admin-module-tab,
+  .admin-type-filter-btn {
+    flex: 1 1 140px;
+    justify-content: center;
   }
 
   .panel,

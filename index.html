@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260524-7" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260524-7" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260524-7" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260524-7" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260524-7" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260524-7" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260524-7" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260525-1" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260525-1" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260525-1" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260525-1" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260525-1" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260525-1" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260525-1" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260525-1" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -792,8 +792,14 @@
         </section>
       </section>
 
-      <section id="admin-section" class="stack-section" hidden>
-        <section id="user-admin-panel" class="panel">
+      <section id="admin-section" class="stack-section listing-section admin-section" hidden>
+        <nav class="admin-module-tabs" aria-label="Modulos da administracao">
+          <button type="button" class="admin-module-tab" data-admin-module-tab="users">Usuarios</button>
+          <button type="button" class="admin-module-tab" data-admin-module-tab="secretarias">Secretarias</button>
+          <button type="button" class="admin-module-tab" data-admin-module-tab="templates">Moldes</button>
+          <button type="button" class="admin-module-tab" data-admin-module-tab="assets">Itens visuais</button>
+        </nav>
+        <section id="user-admin-panel" class="panel admin-module" data-admin-module="users">
           <div class="panel-header">
             <div>
               <h2>Usuários</h2>
@@ -801,7 +807,9 @@
             </div>
           </div>
 
-          <form id="user-form" class="form">
+          <div class="admin-split-layout">
+            <div class="admin-form-shell">
+              <form id="user-form" class="form admin-compact-form">
             <input id="user-edit-id" type="hidden" />
 
             <div class="grid-two">
@@ -858,10 +866,12 @@
               <button id="user-form-reset" type="button" class="secondary-btn">Limpar</button>
             </div>
             <p id="user-form-status" class="status" aria-live="polite"></p>
-          </form>
+              </form>
+            </div>
 
-          <div class="table-wrap">
-            <table class="data-table">
+            <div class="admin-table-shell">
+              <div class="table-wrap listing-table-card admin-table-card">
+                <table class="data-table user-admin-table">
               <thead>
                 <tr>
                   <th>Nome</th>
@@ -878,11 +888,13 @@
                   <td colspan="7" class="empty-state">Carregando usuários...</td>
                 </tr>
               </tbody>
-            </table>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="secretaria-admin-panel" class="panel">
+        <section id="secretaria-admin-panel" class="panel admin-module" data-admin-module="secretarias">
           <div class="panel-header">
             <div>
               <h2>Secretarias</h2>
@@ -890,7 +902,9 @@
             </div>
           </div>
 
-          <form id="secretaria-form" class="form">
+          <div class="admin-split-layout">
+            <div class="admin-form-shell">
+              <form id="secretaria-form" class="form admin-compact-form">
             <input id="secretaria-edit-id" type="hidden" />
 
             <div class="grid-two">
@@ -915,10 +929,12 @@
               <button id="secretaria-form-reset" type="button" class="secondary-btn">Limpar</button>
             </div>
             <p id="secretaria-form-status" class="status" aria-live="polite"></p>
-          </form>
+              </form>
+            </div>
 
-          <div class="table-wrap">
-            <table class="data-table">
+            <div class="admin-table-shell">
+              <div class="table-wrap listing-table-card admin-table-card">
+                <table class="data-table secretaria-admin-table">
               <thead>
                 <tr>
                   <th>Sigla</th>
@@ -932,11 +948,13 @@
                   <td colspan="4" class="empty-state">Carregando secretarias...</td>
                 </tr>
               </tbody>
-            </table>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="template-management-panel" class="panel">
+        <section id="template-management-panel" class="panel admin-module" data-admin-module="templates">
           <div class="panel-header">
             <div>
               <h2>Moldes</h2>
@@ -944,7 +962,9 @@
             </div>
           </div>
 
-          <form id="template-admin-form" class="form">
+          <div class="admin-stack-layout">
+            <div class="admin-form-shell admin-form-shell-wide">
+              <form id="template-admin-form" class="form admin-compact-form">
             <input id="template-admin-edit-id" type="hidden" />
 
             <div class="grid-two">
@@ -996,10 +1016,12 @@
               <button id="template-admin-reset" type="button" class="secondary-btn">Limpar</button>
             </div>
             <p id="template-admin-status" class="status" aria-live="polite"></p>
-          </form>
+              </form>
+            </div>
 
-          <div class="table-wrap">
-            <table class="data-table">
+            <div class="admin-table-shell">
+              <div class="table-wrap listing-table-card admin-table-card">
+                <table class="data-table template-admin-table">
               <thead>
                 <tr>
                   <th>Secretaria</th>
@@ -1016,11 +1038,13 @@
                   <td colspan="7" class="empty-state">Carregando moldes...</td>
                 </tr>
               </tbody>
-            </table>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="visual-asset-management-panel" class="panel">
+        <section id="visual-asset-management-panel" class="panel admin-module" data-admin-module="assets">
           <div class="panel-header">
             <div>
               <h2>Logos, Assinaturas, Instituições e Selos</h2>
@@ -1028,7 +1052,9 @@
             </div>
           </div>
 
-          <form id="secretaria-asset-form" class="form">
+          <div class="admin-stack-layout">
+            <div class="admin-form-shell admin-form-shell-wide">
+              <form id="secretaria-asset-form" class="form admin-compact-form">
             <input id="secretaria-asset-edit-id" type="hidden" />
 
             <div class="grid-three">
@@ -1089,10 +1115,19 @@
               <button id="secretaria-asset-reset" type="button" class="secondary-btn">Limpar</button>
             </div>
             <p id="secretaria-asset-status" class="status" aria-live="polite"></p>
-          </form>
+              </form>
+            </div>
 
-          <div class="table-wrap">
-            <table class="data-table">
+            <div class="admin-table-shell">
+              <div class="admin-type-filter" aria-label="Filtrar itens visuais por tipo">
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="logo">Logo</button>
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="assinatura">Assinatura</button>
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="instituicao">Instituicao</button>
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="selo">Selo</button>
+              </div>
+
+              <div class="table-wrap listing-table-card admin-table-card">
+                <table class="data-table asset-admin-table">
               <thead>
                 <tr>
                   <th>Secretaria</th>
@@ -1109,7 +1144,9 @@
                   <td colspan="7" class="empty-state">Carregando logos, assinaturas e instituições...</td>
                 </tr>
               </tbody>
-            </table>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
       </section>
@@ -1221,18 +1258,18 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/app-state.js?v=20260524-7"></script>
-  <script src="frontend/js/app-utils.js?v=20260524-7"></script>
-  <script src="frontend/js/app-session-view.js?v=20260524-7"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260524-7"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260524-7"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260524-7"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260524-7"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260524-7"></script>
-  <script src="frontend/js/app-canvas.js?v=20260524-7"></script>
-  <script src="frontend/js/app-assets.js?v=20260524-7"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260524-7"></script>
-  <script src="frontend/js/app-batch.js?v=20260524-7"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260524-7"></script>
+  <script src="frontend/js/app-state.js?v=20260525-1"></script>
+  <script src="frontend/js/app-utils.js?v=20260525-1"></script>
+  <script src="frontend/js/app-session-view.js?v=20260525-1"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260525-1"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260525-1"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260525-1"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260525-1"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260525-1"></script>
+  <script src="frontend/js/app-canvas.js?v=20260525-1"></script>
+  <script src="frontend/js/app-assets.js?v=20260525-1"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260525-1"></script>
+  <script src="frontend/js/app-batch.js?v=20260525-1"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260525-1"></script>
 </body>
 </html>

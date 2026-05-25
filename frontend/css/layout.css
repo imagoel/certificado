@@ -18,6 +18,69 @@
   padding-inline: 0;
 }
 
+.admin-section {
+  max-width: 1520px;
+}
+
+.admin-module-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.admin-module-tab {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(232, 241, 255, 0.88);
+  color: #1a4f8b;
+}
+
+.admin-module-tab.is-active {
+  background: #1a4f8b;
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(26, 79, 139, 0.16);
+}
+
+.admin-module {
+  min-width: 0;
+}
+
+.admin-split-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 410px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.admin-stack-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-form-shell,
+.admin-table-shell {
+  min-width: 0;
+}
+
+.admin-form-shell {
+  padding: 12px 13px;
+  border: 1px solid rgba(104, 139, 183, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 14px 30px rgba(26, 79, 139, 0.06);
+}
+
+.admin-form-shell-wide {
+  max-width: 920px;
+}
+
+.admin-table-shell {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
 .app-session {
   display: flex;
   align-items: center;

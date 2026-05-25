@@ -1126,17 +1126,97 @@ function isAdminOnlySection(sectionName) {
   return sectionName === "audit";
 }
 
+function getAvailableAdminModules(session = sessionState) {
+  const modules = [];
+  if (isAdminSession(session)) {
+    modules.push("users", "secretarias");
+  }
+  if (canManageVisualAssets(session)) {
+    modules.push("templates", "assets");
+  }
+  return modules;
+}
+
+function getDefaultAdminModule(session = sessionState) {
+  const [firstModule] = getAvailableAdminModules(session);
+  return firstModule || "users";
+}
+
+function syncAdminAssetTypeFilterButtons() {
+  adminAssetFilterBtns.forEach((button) => {
+    const isActive = button.dataset.adminAssetFilter === adminUiState.assetTypeFilter;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+function setSecretariaAssetTypeFilter(type, options = {}) {
+  const { syncForm = false } = options;
+  const normalizedType = ["logo", "assinatura", "instituicao", "selo"].includes(type)
+    ? type
+    : "logo";
+  adminUiState.assetTypeFilter = normalizedType;
+  syncAdminAssetTypeFilterButtons();
+  if (
+    syncForm &&
+    secretariaAssetTypeSelect &&
+    !secretariaAssetTypeSelect.disabled &&
+    secretariaAssetTypeSelect.value !== normalizedType
+  ) {
+    secretariaAssetTypeSelect.value = normalizedType;
+    syncSecretariaAssetTypeUi();
+  }
+}
+
+function syncAdminModuleUi(session = sessionState) {
+  const availableModules = getAvailableAdminModules(session);
+  if (!availableModules.length) return;
+
+  if (!availableModules.includes(adminUiState.module)) {
+    adminUiState.module = getDefaultAdminModule(session);
+  }
+
+  const modulePanels = {
+    users: userAdminPanel,
+    secretarias: secretariaAdminPanel,
+    templates: templateManagementPanel,
+    assets: visualAssetManagementPanel,
+  };
+
+  Object.entries(modulePanels).forEach(([moduleName, panel]) => {
+    if (!panel) return;
+    panel.hidden = !availableModules.includes(moduleName) || adminUiState.module !== moduleName;
+  });
+
+  adminModuleTabs.forEach((button) => {
+    const moduleName = button.dataset.adminModuleTab || "";
+    const isVisible = availableModules.includes(moduleName);
+    const isActive = isVisible && moduleName === adminUiState.module;
+    button.hidden = !isVisible;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+
+  syncAdminAssetTypeFilterButtons();
+}
+
+function switchAdminModule(moduleName) {
+  const availableModules = getAvailableAdminModules();
+  if (!availableModules.length) return;
+  adminUiState.module = availableModules.includes(moduleName)
+    ? moduleName
+    : getDefaultAdminModule();
+  syncAdminModuleUi();
+}
+
 function syncAdminSectionVisibility(session = sessionState) {
   const admin = isAdminSession(session);
   const canManageAssets = canManageVisualAssets(session);
-  if (userAdminPanel) userAdminPanel.hidden = !admin;
-  if (secretariaAdminPanel) secretariaAdminPanel.hidden = !admin;
-  if (templateManagementPanel) templateManagementPanel.hidden = !canManageAssets;
-  if (visualAssetManagementPanel) visualAssetManagementPanel.hidden = !canManageAssets;
   if (adminTab) {
     adminTab.hidden = !canManageAssets;
     adminTab.textContent = admin ? "Administração" : "Moldes e marcas";
   }
+  syncAdminModuleUi(session);
 }
 
 function switchSection(sectionName) {
@@ -1151,6 +1231,10 @@ function switchSection(sectionName) {
     const isActive = button.dataset.section === currentSection;
     button.classList.toggle("is-active", isActive);
   });
+
+  if (currentSection === "admin") {
+    syncAdminModuleUi();
+  }
 }
 
 function populateSecretariaOptions(select, secretarias, selectedValue = "", includeAll = false) {

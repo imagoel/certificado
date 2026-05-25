@@ -44,6 +44,44 @@
   background: #f8fbff;
 }
 
+.admin-compact-form {
+  gap: 10px;
+}
+
+.admin-compact-form .grid-two,
+.admin-compact-form .grid-three {
+  gap: 9px 10px;
+}
+
+.admin-compact-form .field-help,
+.admin-compact-form .hint {
+  max-width: 70ch;
+  font-size: 0.84rem;
+}
+
+.admin-inline-checks {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-inline-checks .checkbox-field {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(191, 214, 243, 0.9);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.admin-compact-form > .checkbox-field,
+.admin-compact-form .grid-two > .checkbox-field {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(191, 214, 243, 0.9);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
 label {
   font-weight: 600;
 }
@@ -244,6 +282,16 @@ button {
 button[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.admin-module-tab {
+  background: rgba(232, 241, 255, 0.88);
+  color: #1a4f8b;
+}
+
+.admin-module-tab.is-active {
+  background: #1a4f8b;
+  color: #fff;
 }
 
 .batch-controls {
