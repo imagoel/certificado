@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260524-6" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260524-6" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260524-6" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260524-6" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260524-6" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260524-6" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260524-6" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260524-6" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260524-7" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260524-7" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -560,8 +560,8 @@
         </section>
       </section>
 
-      <section id="certificates-section" class="stack-section" hidden>
-        <section class="panel">
+      <section id="certificates-section" class="stack-section listing-section" hidden>
+        <section class="panel listing-panel">
           <div class="panel-header">
             <div>
               <h2>Certificados Gerados</h2>
@@ -580,38 +580,48 @@
             <button type="button" id="cert-quick-active-secretaria" class="quick-filter-btn">Secretaria ativa</button>
           </div>
 
-          <form id="cert-list-filters" class="filter-grid">
-            <div class="field-stack field-span-2">
+          <form id="cert-list-filters" class="filter-grid listing-filter-grid certificates-filter-grid">
+            <div class="field-stack listing-search-field">
               <label for="cert-filter-busca">Busca</label>
               <input id="cert-filter-busca" type="text" placeholder="Nome, curso ou código" />
             </div>
 
-            <div id="cert-filter-secretaria-wrap" class="field-stack">
+            <div id="cert-filter-secretaria-wrap" class="field-stack listing-select-field">
               <label for="cert-filter-secretaria">Secretaria</label>
               <select id="cert-filter-secretaria">
                 <option value="">Todas</option>
               </select>
             </div>
 
-            <div class="field-stack">
-              <label for="cert-filter-concluido-de">Concluído de</label>
-              <input id="cert-filter-concluido-de" type="date" />
-            </div>
+            <fieldset class="filter-date-pair">
+              <legend>Concluído</legend>
+              <div class="filter-date-fields">
+                <label class="field-stack" for="cert-filter-concluido-de">
+                  De
+                  <input id="cert-filter-concluido-de" type="date" />
+                </label>
 
-            <div class="field-stack">
-              <label for="cert-filter-concluido-ate">Concluído até</label>
-              <input id="cert-filter-concluido-ate" type="date" />
-            </div>
+                <label class="field-stack" for="cert-filter-concluido-ate">
+                  Até
+                  <input id="cert-filter-concluido-ate" type="date" />
+                </label>
+              </div>
+            </fieldset>
 
-            <div class="field-stack">
-              <label for="cert-filter-emitido-de">Emitido de</label>
-              <input id="cert-filter-emitido-de" type="date" />
-            </div>
+            <fieldset class="filter-date-pair">
+              <legend>Emitido</legend>
+              <div class="filter-date-fields">
+                <label class="field-stack" for="cert-filter-emitido-de">
+                  De
+                  <input id="cert-filter-emitido-de" type="date" />
+                </label>
 
-            <div class="field-stack">
-              <label for="cert-filter-emitido-ate">Emitido até</label>
-              <input id="cert-filter-emitido-ate" type="date" />
-            </div>
+                <label class="field-stack" for="cert-filter-emitido-ate">
+                  Até
+                  <input id="cert-filter-emitido-ate" type="date" />
+                </label>
+              </div>
+            </fieldset>
 
             <div class="actions actions-end">
               <button type="submit">Filtrar</button>
@@ -621,7 +631,7 @@
 
           <p id="cert-list-status" class="status" aria-live="polite"></p>
 
-          <div class="table-wrap">
+          <div class="table-wrap listing-table-card">
             <table class="data-table certificates-table">
               <thead>
                 <tr>
@@ -651,8 +661,8 @@
         </section>
       </section>
 
-      <section id="audit-section" class="stack-section" hidden>
-        <section class="panel">
+      <section id="audit-section" class="stack-section listing-section" hidden>
+        <section class="panel listing-panel">
           <div class="panel-header">
             <div>
               <h2>Auditoria</h2>
@@ -672,13 +682,13 @@
             <button type="button" id="audit-quick-active-secretaria" class="quick-filter-btn">Secretaria ativa</button>
           </div>
 
-          <form id="audit-form" class="filter-grid audit-grid">
-            <div class="field-stack field-span-2">
+          <form id="audit-form" class="filter-grid audit-grid listing-filter-grid audit-filter-grid">
+            <div class="field-stack listing-search-field">
               <label for="audit-search">Busca</label>
               <input id="audit-search" type="text" placeholder="Usuário, certificado ou descrição" />
             </div>
 
-            <div class="field-stack">
+            <div class="field-stack listing-select-field">
               <label for="audit-event">Evento</label>
               <select id="audit-event">
                 <option value="">Todos relevantes</option>
@@ -724,22 +734,27 @@
               </select>
             </div>
 
-            <div id="audit-secretaria-wrap" class="field-stack">
+            <div id="audit-secretaria-wrap" class="field-stack listing-select-field">
               <label for="audit-secretaria">Secretaria</label>
               <select id="audit-secretaria">
                 <option value="">Todas</option>
               </select>
             </div>
 
-            <div class="field-stack">
-              <label for="audit-created-de">De</label>
-              <input id="audit-created-de" type="date" />
-            </div>
+            <fieldset class="filter-date-pair">
+              <legend>Período</legend>
+              <div class="filter-date-fields">
+                <label class="field-stack" for="audit-created-de">
+                  De
+                  <input id="audit-created-de" type="date" />
+                </label>
 
-            <div class="field-stack">
-              <label for="audit-created-ate">Até</label>
-              <input id="audit-created-ate" type="date" />
-            </div>
+                <label class="field-stack" for="audit-created-ate">
+                  Até
+                  <input id="audit-created-ate" type="date" />
+                </label>
+              </div>
+            </fieldset>
 
             <div class="actions actions-end">
               <button type="submit">Filtrar</button>
@@ -749,8 +764,8 @@
 
           <p id="audit-status" class="status" aria-live="polite"></p>
 
-          <div class="table-wrap">
-            <table class="data-table">
+          <div class="table-wrap listing-table-card">
+            <table class="data-table audit-table">
               <thead>
                 <tr>
                   <th>Quando</th>
@@ -1206,18 +1221,18 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/app-state.js?v=20260524-6"></script>
-  <script src="frontend/js/app-utils.js?v=20260524-6"></script>
-  <script src="frontend/js/app-session-view.js?v=20260524-6"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260524-6"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260524-6"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260524-6"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260524-6"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260524-6"></script>
-  <script src="frontend/js/app-canvas.js?v=20260524-6"></script>
-  <script src="frontend/js/app-assets.js?v=20260524-6"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260524-6"></script>
-  <script src="frontend/js/app-batch.js?v=20260524-6"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260524-6"></script>
+  <script src="frontend/js/app-state.js?v=20260524-7"></script>
+  <script src="frontend/js/app-utils.js?v=20260524-7"></script>
+  <script src="frontend/js/app-session-view.js?v=20260524-7"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260524-7"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260524-7"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260524-7"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260524-7"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260524-7"></script>
+  <script src="frontend/js/app-canvas.js?v=20260524-7"></script>
+  <script src="frontend/js/app-assets.js?v=20260524-7"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260524-7"></script>
+  <script src="frontend/js/app-batch.js?v=20260524-7"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260524-7"></script>
 </body>
 </html>

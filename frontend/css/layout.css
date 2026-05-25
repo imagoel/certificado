@@ -4,6 +4,20 @@
   gap: 12px;
 }
 
+.listing-section {
+  width: calc(100% - 48px);
+  max-width: 1480px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.listing-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-inline: 0;
+}
+
 .app-session {
   display: flex;
   align-items: center;
