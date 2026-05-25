@@ -260,6 +260,37 @@ button[disabled] {
   color: #1a4f8b;
 }
 
+.asset-section {
+  display: grid;
+  gap: 8px;
+}
+
+.asset-card-grid {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+}
+
+.asset-card-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.asset-card-grid-four {
+  grid-template-columns: repeat(4, minmax(128px, 1fr));
+}
+
+.asset-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.asset-card h3 {
+  margin: 0;
+  color: #1a4f8b;
+  font-size: 0.96rem;
+}
+
 .generator-asset-block {
   display: grid;
   gap: 6px;

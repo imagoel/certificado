@@ -47,6 +47,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .asset-card-grid-four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
 }
 
 @media (max-width: 700px) {
@@ -135,6 +139,8 @@
   .grid-two,
   .grid-three,
   .signature-extra-grid,
+  .asset-card-grid-three,
+  .asset-card-grid-four,
   .audit-grid {
     grid-template-columns: 1fr;
   }

@@ -94,7 +94,7 @@
 
 @media (min-width: 1240px) {
   #generator-section {
-    grid-template-columns: minmax(560px, 0.42fr) minmax(650px, 0.58fr);
+    grid-template-columns: minmax(680px, 3fr) minmax(420px, 2fr);
     align-items: start;
   }
 

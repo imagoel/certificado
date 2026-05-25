@@ -34,6 +34,8 @@
 
 .preview-canvas-frame {
   position: relative;
+  display: grid;
+  justify-items: center;
 }
 
 .preview-hotspots {
