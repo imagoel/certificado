@@ -174,8 +174,17 @@
     flex-direction: column;
   }
 
-  .preview-toggle {
+  .preview-toolbar-actions {
     width: 100%;
+    justify-content: flex-start;
+  }
+
+  .preview-reset-btn {
+    flex: 1 1 150px;
+  }
+
+  .preview-toggle {
+    flex: 1 1 180px;
     justify-content: center;
   }
 

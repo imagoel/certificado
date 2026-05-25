@@ -73,6 +73,10 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     previewAdjustCloseBtn.addEventListener("click", clearPreviewAdjustTarget);
   }
 
+  if (previewResetLayoutBtn) {
+    previewResetLayoutBtn.addEventListener("click", resetPreviewLayoutDefaults);
+  }
+
   [
     previewAdjustLabelInput,
     previewAdjustXInput,

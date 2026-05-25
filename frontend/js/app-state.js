@@ -197,6 +197,7 @@ const previewWrap = document.getElementById("preview-wrap");
 const previewCanvasFrame = document.getElementById("preview-canvas-frame");
 const previewHotspots = document.getElementById("preview-hotspots");
 const previewShowHotspotsInput = document.getElementById("preview-show-hotspots");
+const previewResetLayoutBtn = document.getElementById("preview-reset-layout");
 const previewAdjustStatus = document.getElementById("preview-adjust-status");
 const previewAdjustPanel = document.getElementById("preview-adjust-panel");
 const previewAdjustTitle = document.getElementById("preview-adjust-title");
@@ -315,6 +316,12 @@ const defaultTextoLinha1 = "Certificamos que";
 const defaultTextoLinha2 = "concluiu com êxito o curso";
 const MAX_CARGA_HORARIA = 2000;
 const CERTIFICATE_CANVAS_WIDTH = 1200;
+const DEFAULT_LOGO_LAYOUT = Object.freeze({
+  x: 600,
+  y: 95,
+  maxW: 150,
+  maxH: 95,
+});
 const DEFAULT_ASSINATURA_LAYOUT = Object.freeze({
   x: 330,
   y: 662,
@@ -385,6 +392,12 @@ const QR_CONTROL_LIMITS = Object.freeze({
   sizeMin: 60,
   sizeMax: 220,
 });
+const DEFAULT_QR_LAYOUT = Object.freeze({
+  x: 160,
+  y: 175,
+  maxW: 120,
+  maxH: 120,
+});
 const DEFAULT_ASSINATURA_LABEL = "Assinatura do Responsável";
 const SELO_SLOT_KEYS = ["selo1", "selo2", "selo3", "selo4"];
 const PREVIEW_ADJUST_TARGET_KEYS = [
@@ -411,7 +424,7 @@ const assets = {
 };
 
 const layout = {
-  logo: { x: 600, y: 95, maxW: 150, maxH: 95 },
+  logo: { ...DEFAULT_LOGO_LAYOUT },
   assinatura: { ...DEFAULT_ASSINATURA_LAYOUT },
   assinatura2: { ...DEFAULT_ASSINATURA2_LAYOUT },
   assinatura3: { ...DEFAULT_ASSINATURA3_LAYOUT },
@@ -420,7 +433,7 @@ const layout = {
   selo2: { ...DEFAULT_SELO_LAYOUTS.selo2 },
   selo3: { ...DEFAULT_SELO_LAYOUTS.selo3 },
   selo4: { ...DEFAULT_SELO_LAYOUTS.selo4 },
-  qr: { x: 160, y: 175, maxW: 120, maxH: 120 },
+  qr: { ...DEFAULT_QR_LAYOUT },
 };
 
 const fieldAliases = {

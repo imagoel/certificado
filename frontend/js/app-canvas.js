@@ -392,6 +392,27 @@ function syncAdvancedControlVisibility() {
   updatePreviewHotspots();
 }
 
+function resetPreviewLayoutDefaults() {
+  if (isBatchRunning) return;
+
+  Object.assign(layout.logo, DEFAULT_LOGO_LAYOUT);
+  Object.assign(layout.assinatura, DEFAULT_ASSINATURA_LAYOUT);
+  Object.assign(layout.assinatura2, DEFAULT_ASSINATURA2_LAYOUT);
+  Object.assign(layout.assinatura3, DEFAULT_ASSINATURA3_LAYOUT);
+  Object.assign(layout.instituicao, DEFAULT_INSTITUICAO_LAYOUT);
+  Object.assign(layout.selo1, DEFAULT_SELO_LAYOUTS.selo1);
+  Object.assign(layout.selo2, DEFAULT_SELO_LAYOUTS.selo2);
+  Object.assign(layout.selo3, DEFAULT_SELO_LAYOUTS.selo3);
+  Object.assign(layout.selo4, DEFAULT_SELO_LAYOUTS.selo4);
+  Object.assign(layout.qr, DEFAULT_QR_LAYOUT);
+
+  syncAdvancedAssetControls();
+  updateControlLabels();
+  syncAdvancedControlVisibility();
+  setPreviewAdjustStatus("Posições restauradas.");
+  void renderLastCertificate();
+}
+
 function applySeloLayoutFromControls(slotKey, xInput, yInput, sizeInput) {
   if (!layout[slotKey]) return;
   if (xInput) layout[slotKey].x = Number(xInput.value);
