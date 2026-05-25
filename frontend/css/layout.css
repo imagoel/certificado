@@ -8,34 +8,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: clamp(18px, 3vw, 42px);
+  padding-block: 6px 4px;
 }
 
 .session-meta {
-  min-width: min(620px, 52vw);
-  display: grid;
-  gap: 6px;
-  justify-items: stretch;
-  grid-template-columns: minmax(260px, 1fr) auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
   align-items: end;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .session-user {
-  grid-column: 1 / -1;
+  order: 2;
   margin: 0;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
+  padding: 9px 11px;
+  border: 0;
   border-radius: 8px;
-  background: #f8fbff;
+  background: rgba(255, 255, 255, 0.62);
   font-weight: 600;
   color: var(--muted);
 }
 
 .session-secretaria {
-  grid-column: 1 / -1;
+  order: 1;
   margin: 0;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
+  padding: 9px 11px;
+  border: 0;
   border-radius: 8px;
   background: #fffaf0;
   color: #7a5a11;
@@ -43,11 +44,25 @@
 }
 
 .secretaria-wrap {
-  display: grid;
-  gap: 4px;
+  order: 1;
+  flex: 1 1 520px;
+  max-width: 640px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.secretaria-wrap label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.secretaria-wrap select {
+  min-width: 0;
 }
 
 #logout-btn {
+  order: 3;
   min-width: 92px;
   align-self: end;
 }
@@ -56,6 +71,7 @@
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
+  padding-block: 0 4px;
 }
 
 .section-tab {
@@ -63,14 +79,22 @@
   color: #1a4f8b;
 }
 
-  .section-tab.is-active {
-    background: #1a4f8b;
-    color: #fff;
-  }
+.section-tab.is-active {
+  background: #1a4f8b;
+  color: #fff;
+}
+
+#generator-section > .panel {
+  padding: 13px 14px;
+  border: 1px solid rgba(104, 139, 183, 0.34);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.54);
+  box-shadow: 0 16px 34px rgba(26, 79, 139, 0.07);
+}
 
 @media (min-width: 1240px) {
   #generator-section {
-    grid-template-columns: minmax(610px, 0.92fr) minmax(540px, 1.08fr);
+    grid-template-columns: minmax(560px, 0.42fr) minmax(650px, 0.58fr);
     align-items: start;
   }
 
@@ -81,6 +105,6 @@
 
   #preview-wrap {
     position: sticky;
-    top: 12px;
+    top: 10px;
   }
 }

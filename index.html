@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260524-2" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260524-2" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260524-2" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260524-2" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260524-2" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260524-2" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260524-2" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260524-2" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260524-4" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260524-4" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260524-4" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260524-4" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260524-4" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260524-4" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260524-4" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260524-4" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -74,7 +74,7 @@
           <p id="session-secretaria" class="session-secretaria"></p>
 
           <div id="secretaria-wrap" class="secretaria-wrap" hidden>
-            <label for="secretaria-select">Secretaria ativa</label>
+            <label for="secretaria-select">Secretaria</label>
             <select id="secretaria-select"></select>
           </div>
 
@@ -142,18 +142,21 @@
               </select>
               <p id="template-select-status" class="status" aria-live="polite"></p>
 
-              <div class="asset-upload-group">
-                <label for="template" class="sr-only">Arquivo temporário do molde</label>
-                <input id="template" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="template-select-status template-status" />
-                <label class="checkbox-field">
-                  <input id="template-hide-title" type="checkbox" />
-                  Molde temporário já contém o título "Certificado"
-                </label>
-                <div class="actions asset-inline-actions">
-                  <button id="template-remove" type="button" class="secondary-btn" disabled hidden>Remover molde temporário</button>
+              <details class="temporary-upload">
+                <summary>+ Usar arquivo temporário</summary>
+                <div class="asset-upload-group">
+                  <label for="template" class="sr-only">Arquivo temporário do molde</label>
+                  <input id="template" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="template-select-status template-status" />
+                  <label class="checkbox-field">
+                    <input id="template-hide-title" type="checkbox" />
+                    Molde temporário já contém o título "Certificado"
+                  </label>
+                  <div class="actions asset-inline-actions">
+                    <button id="template-remove" type="button" class="secondary-btn" disabled hidden>Remover molde temporário</button>
+                  </div>
+                  <p id="template-status" class="status" aria-live="polite"></p>
                 </div>
-                <p id="template-status" class="status" aria-live="polite"></p>
-              </div>
+              </details>
             </section>
 
             <section id="logo-library-wrap" class="batch-controls generator-asset-block">
@@ -164,14 +167,17 @@
               </select>
               <p id="logo-select-status" class="status" aria-live="polite"></p>
 
-              <div class="asset-upload-group">
-                <label for="logo" class="sr-only">Arquivo temporário da logo</label>
-                <input id="logo" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="logo-select-status logo-status" />
-                <div class="actions asset-inline-actions">
-                  <button id="logo-remove" type="button" class="secondary-btn" disabled hidden>Remover logo temporária</button>
+              <details class="temporary-upload">
+                <summary>+ Usar arquivo temporário</summary>
+                <div class="asset-upload-group">
+                  <label for="logo" class="sr-only">Arquivo temporário da logo</label>
+                  <input id="logo" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="logo-select-status logo-status" />
+                  <div class="actions asset-inline-actions">
+                    <button id="logo-remove" type="button" class="secondary-btn" disabled hidden>Remover logo temporária</button>
+                  </div>
+                  <p id="logo-status" class="status" aria-live="polite"></p>
                 </div>
-                <p id="logo-status" class="status" aria-live="polite"></p>
-              </div>
+              </details>
             </section>
 
             <section id="assinatura-library-wrap" class="batch-controls generator-asset-block">
@@ -182,14 +188,17 @@
               </select>
               <p id="assinatura-select-status" class="status" aria-live="polite"></p>
 
-              <div class="asset-upload-group">
-                <label for="assinatura" class="sr-only">Arquivo temporário da assinatura</label>
-                <input id="assinatura" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura-select-status assinatura-status" />
-                <div class="actions asset-inline-actions">
-                  <button id="assinatura-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura temporária</button>
+              <details class="temporary-upload">
+                <summary>+ Usar arquivo temporário</summary>
+                <div class="asset-upload-group">
+                  <label for="assinatura" class="sr-only">Arquivo temporário da assinatura</label>
+                  <input id="assinatura" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura-select-status assinatura-status" />
+                  <div class="actions asset-inline-actions">
+                    <button id="assinatura-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura temporária</button>
+                  </div>
+                  <p id="assinatura-status" class="status" aria-live="polite"></p>
                 </div>
-                <p id="assinatura-status" class="status" aria-live="polite"></p>
-              </div>
+              </details>
             </section>
 
             <section id="assinaturas-extras-wrap" class="batch-controls generator-asset-block signature-extras-block">
@@ -204,14 +213,17 @@
                   </select>
                   <p id="assinatura2-select-status" class="status" aria-live="polite"></p>
 
-                  <div class="asset-upload-group">
-                    <label for="assinatura2" class="sr-only">Arquivo temporário da assinatura 2</label>
-                    <input id="assinatura2" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura2-select-status assinatura2-status" />
-                    <div class="actions asset-inline-actions">
-                      <button id="assinatura2-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura 2 temporária</button>
+                  <details class="temporary-upload">
+                    <summary>+ Usar arquivo temporário</summary>
+                    <div class="asset-upload-group">
+                      <label for="assinatura2" class="sr-only">Arquivo temporário da assinatura 2</label>
+                      <input id="assinatura2" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura2-select-status assinatura2-status" />
+                      <div class="actions asset-inline-actions">
+                        <button id="assinatura2-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura 2 temporária</button>
+                      </div>
+                      <p id="assinatura2-status" class="status" aria-live="polite"></p>
                     </div>
-                    <p id="assinatura2-status" class="status" aria-live="polite"></p>
-                  </div>
+                  </details>
                 </div>
 
                 <div class="signature-extra-card">
@@ -222,14 +234,17 @@
                   </select>
                   <p id="assinatura3-select-status" class="status" aria-live="polite"></p>
 
-                  <div class="asset-upload-group">
-                    <label for="assinatura3" class="sr-only">Arquivo temporário da assinatura 3</label>
-                    <input id="assinatura3" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura3-select-status assinatura3-status" />
-                    <div class="actions asset-inline-actions">
-                      <button id="assinatura3-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura 3 temporária</button>
+                  <details class="temporary-upload">
+                    <summary>+ Usar arquivo temporário</summary>
+                    <div class="asset-upload-group">
+                      <label for="assinatura3" class="sr-only">Arquivo temporário da assinatura 3</label>
+                      <input id="assinatura3" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="assinatura3-select-status assinatura3-status" />
+                      <div class="actions asset-inline-actions">
+                        <button id="assinatura3-remove" type="button" class="secondary-btn" disabled hidden>Remover assinatura 3 temporária</button>
+                      </div>
+                      <p id="assinatura3-status" class="status" aria-live="polite"></p>
                     </div>
-                    <p id="assinatura3-status" class="status" aria-live="polite"></p>
-                  </div>
+                  </details>
                 </div>
               </div>
             </section>
@@ -246,14 +261,17 @@
                   </select>
                   <p id="selo1-select-status" class="status" aria-live="polite"></p>
 
-                  <div class="asset-upload-group">
-                    <label for="selo1" class="sr-only">Arquivo temporario do selo 1</label>
-                    <input id="selo1" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo1-select-status selo1-status" />
-                    <div class="actions asset-inline-actions">
-                      <button id="selo1-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 1 temporario</button>
+                  <details class="temporary-upload">
+                    <summary>+ Usar arquivo temporário</summary>
+                    <div class="asset-upload-group">
+                      <label for="selo1" class="sr-only">Arquivo temporario do selo 1</label>
+                      <input id="selo1" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo1-select-status selo1-status" />
+                      <div class="actions asset-inline-actions">
+                        <button id="selo1-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 1 temporario</button>
+                      </div>
+                      <p id="selo1-status" class="status" aria-live="polite"></p>
                     </div>
-                    <p id="selo1-status" class="status" aria-live="polite"></p>
-                  </div>
+                  </details>
                 </div>
 
                 <div class="signature-extra-card">
@@ -264,14 +282,17 @@
                   </select>
                   <p id="selo2-select-status" class="status" aria-live="polite"></p>
 
-                  <div class="asset-upload-group">
-                    <label for="selo2" class="sr-only">Arquivo temporario do selo 2</label>
-                    <input id="selo2" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo2-select-status selo2-status" />
-                    <div class="actions asset-inline-actions">
-                      <button id="selo2-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 2 temporario</button>
+                  <details class="temporary-upload">
+                    <summary>+ Usar arquivo temporário</summary>
+                    <div class="asset-upload-group">
+                      <label for="selo2" class="sr-only">Arquivo temporario do selo 2</label>
+                      <input id="selo2" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo2-select-status selo2-status" />
+                      <div class="actions asset-inline-actions">
+                        <button id="selo2-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 2 temporario</button>
+                      </div>
+                      <p id="selo2-status" class="status" aria-live="polite"></p>
                     </div>
-                    <p id="selo2-status" class="status" aria-live="polite"></p>
-                  </div>
+                  </details>
                 </div>
 
                 <div class="signature-extra-card">
@@ -282,14 +303,17 @@
                   </select>
                   <p id="selo3-select-status" class="status" aria-live="polite"></p>
 
-                  <div class="asset-upload-group">
-                    <label for="selo3" class="sr-only">Arquivo temporario do selo 3</label>
-                    <input id="selo3" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo3-select-status selo3-status" />
-                    <div class="actions asset-inline-actions">
-                      <button id="selo3-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 3 temporario</button>
+                  <details class="temporary-upload">
+                    <summary>+ Usar arquivo temporário</summary>
+                    <div class="asset-upload-group">
+                      <label for="selo3" class="sr-only">Arquivo temporario do selo 3</label>
+                      <input id="selo3" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo3-select-status selo3-status" />
+                      <div class="actions asset-inline-actions">
+                        <button id="selo3-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 3 temporario</button>
+                      </div>
+                      <p id="selo3-status" class="status" aria-live="polite"></p>
                     </div>
-                    <p id="selo3-status" class="status" aria-live="polite"></p>
-                  </div>
+                  </details>
                 </div>
 
                 <div class="signature-extra-card">
@@ -300,14 +324,17 @@
                   </select>
                   <p id="selo4-select-status" class="status" aria-live="polite"></p>
 
-                  <div class="asset-upload-group">
-                    <label for="selo4" class="sr-only">Arquivo temporario do selo 4</label>
-                    <input id="selo4" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo4-select-status selo4-status" />
-                    <div class="actions asset-inline-actions">
-                      <button id="selo4-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 4 temporario</button>
+                  <details class="temporary-upload">
+                    <summary>+ Usar arquivo temporário</summary>
+                    <div class="asset-upload-group">
+                      <label for="selo4" class="sr-only">Arquivo temporario do selo 4</label>
+                      <input id="selo4" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="selo4-select-status selo4-status" />
+                      <div class="actions asset-inline-actions">
+                        <button id="selo4-remove" type="button" class="secondary-btn" disabled hidden>Remover selo 4 temporario</button>
+                      </div>
+                      <p id="selo4-status" class="status" aria-live="polite"></p>
                     </div>
-                    <p id="selo4-status" class="status" aria-live="polite"></p>
-                  </div>
+                  </details>
                 </div>
               </div>
             </section>
@@ -320,14 +347,17 @@
               </select>
               <p id="instituicao-select-status" class="status" aria-live="polite"></p>
 
-              <div class="asset-upload-group">
-                <label for="instituicao" class="sr-only">Arquivo temporário da instituição</label>
-                <input id="instituicao" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="instituicao-select-status instituicao-status" />
-                <div class="actions asset-inline-actions">
-                  <button id="instituicao-remove" type="button" class="secondary-btn" disabled hidden>Remover instituição temporária</button>
+              <details class="temporary-upload">
+                <summary>+ Usar arquivo temporário</summary>
+                <div class="asset-upload-group">
+                  <label for="instituicao" class="sr-only">Arquivo temporário da instituição</label>
+                  <input id="instituicao" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="instituicao-select-status instituicao-status" />
+                  <div class="actions asset-inline-actions">
+                    <button id="instituicao-remove" type="button" class="secondary-btn" disabled hidden>Remover instituição temporária</button>
+                  </div>
+                  <p id="instituicao-status" class="status" aria-live="polite"></p>
                 </div>
-                <p id="instituicao-status" class="status" aria-live="polite"></p>
-              </div>
+              </details>
             </section>
 
             <div id="layout-controls-store" hidden aria-hidden="true">
@@ -1169,18 +1199,18 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/app-state.js?v=20260524-2"></script>
-  <script src="frontend/js/app-utils.js?v=20260524-2"></script>
-  <script src="frontend/js/app-session-view.js?v=20260524-2"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260524-2"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260524-2"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260524-2"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260524-2"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260524-2"></script>
-  <script src="frontend/js/app-canvas.js?v=20260524-2"></script>
-  <script src="frontend/js/app-assets.js?v=20260524-2"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260524-2"></script>
-  <script src="frontend/js/app-batch.js?v=20260524-2"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260524-2"></script>
+  <script src="frontend/js/app-state.js?v=20260524-4"></script>
+  <script src="frontend/js/app-utils.js?v=20260524-4"></script>
+  <script src="frontend/js/app-session-view.js?v=20260524-4"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260524-4"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260524-4"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260524-4"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260524-4"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260524-4"></script>
+  <script src="frontend/js/app-canvas.js?v=20260524-4"></script>
+  <script src="frontend/js/app-assets.js?v=20260524-4"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260524-4"></script>
+  <script src="frontend/js/app-batch.js?v=20260524-4"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260524-4"></script>
 </body>
 </html>

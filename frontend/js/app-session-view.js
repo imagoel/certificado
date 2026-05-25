@@ -11,7 +11,7 @@ function renderSession(session) {
   setLoginStatus("", "info");
 
   if (sessionUser && session && session.usuario) {
-    sessionUser.textContent = `${session.usuario.nome} (${session.usuario.papel})`;
+    sessionUser.textContent = session.usuario.nome || session.usuario.username || "Usuário";
   }
 
   const secretarias = Array.isArray(session.secretarias) ? session.secretarias : [];
@@ -20,7 +20,7 @@ function renderSession(session) {
   );
   if (sessionSecretaria) {
     sessionSecretaria.textContent = secretariaAtiva
-      ? `Secretaria ativa: ${secretariaAtiva.sigla} - ${secretariaAtiva.nome}`
+      ? `Secretaria: ${secretariaAtiva.sigla} - ${secretariaAtiva.nome}`
       : "Nenhuma secretaria ativa selecionada.";
   }
   populateSecretariaOptions(secretariaSelect, secretarias, session.secretaria_ativa_id, false);

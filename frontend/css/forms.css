@@ -1,22 +1,22 @@
 
 .form {
   display: grid;
-  gap: 7px;
+  gap: 12px;
 }
 
 .form-fieldset {
   margin: 0;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fbfdff;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   display: grid;
-  gap: 8px;
+  gap: 9px;
   min-width: 0;
 }
 
 .form-fieldset legend {
-  padding: 0 8px;
+  padding: 0;
   font-weight: 700;
   color: #1a4f8b;
 }
@@ -73,6 +73,7 @@ textarea {
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
   font: inherit;
   font-size: 16px;
 }
@@ -87,7 +88,7 @@ select {
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.92);
   font: inherit;
   font-size: 16px;
 }
@@ -116,7 +117,7 @@ input[type="checkbox"]:focus-visible {
 
 input[type="file"] {
   padding: 6px;
-  background: #f9fbff;
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .asset-controls {
@@ -246,26 +247,26 @@ button[disabled] {
 }
 
 .batch-controls {
-  margin-top: 4px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #f8fbff;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .batch-controls h2 {
-  margin: 2px 0 6px;
+  margin: 0 0 6px;
   font-size: 1rem;
   color: #1a4f8b;
 }
 
 .generator-asset-block {
   display: grid;
-  gap: 5px;
+  gap: 6px;
 }
 
 .generator-asset-block h2 {
-  margin-bottom: 0;
+  margin: 3px 0 0;
 }
 
 .generator-asset-block .status {
@@ -278,18 +279,18 @@ button[disabled] {
 
 .signature-extra-grid {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .signature-extra-card {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
-  padding: 9px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #f8fbff;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .signature-extra-card h3 {
@@ -301,8 +302,31 @@ button[disabled] {
 .asset-upload-group {
   display: grid;
   gap: 5px;
-  margin-top: 0;
-  padding-top: 0;
+  margin-top: 3px;
+  padding: 8px 0 0;
+}
+
+.temporary-upload {
+  margin-top: -2px;
+}
+
+.temporary-upload summary {
+  display: inline-flex;
+  width: fit-content;
+  cursor: pointer;
+  list-style: none;
+  color: #1a4f8b;
+  font-weight: 700;
+  font-size: 0.93rem;
+  line-height: 1.2;
+}
+
+.temporary-upload summary::-webkit-details-marker {
+  display: none;
+}
+
+.temporary-upload[open] summary {
+  color: #526781;
 }
 
 .field-stack {
@@ -318,7 +342,7 @@ button[disabled] {
 .batch-preview {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(26, 79, 139, 0.12);
 }
 
 .batch-preview h3 {
