@@ -314,8 +314,6 @@ const instituicaoXVal = document.getElementById("instituicaoXVal");
 const instituicaoYVal = document.getElementById("instituicaoYVal");
 const instituicaoSizeVal = document.getElementById("instituicaoSizeVal");
 
-const defaultTextoLinha1 = "Certificamos que";
-const defaultTextoLinha2 = "concluiu com êxito o curso";
 const MAX_CARGA_HORARIA = 2000;
 const CERTIFICATE_CANVAS_WIDTH = 1200;
 const DEFAULT_LOGO_LAYOUT = Object.freeze({

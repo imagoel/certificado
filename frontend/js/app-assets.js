@@ -198,10 +198,8 @@ function getPreviewCertificateData() {
   const nome = sanitizeText(nomeInput ? nomeInput.value : "") || "Nome do participante";
   const curso = sanitizeText(cursoInput ? cursoInput.value : "") || "Nome do curso";
   const data = sanitizeText(dataInput ? dataInput.value : "") || toDateInputValue(new Date());
-  const linha1 =
-    sanitizeText(textoLinha1Input ? textoLinha1Input.value : "") || defaultTextoLinha1;
-  const linha2 =
-    sanitizeText(textoLinha2Input ? textoLinha2Input.value : "") || defaultTextoLinha2;
+  const linha1 = sanitizeText(textoLinha1Input ? textoLinha1Input.value : "");
+  const linha2 = sanitizeText(textoLinha2Input ? textoLinha2Input.value : "");
   const cargaResult = getFormCargaHorariaResult();
 
   return {

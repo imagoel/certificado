@@ -117,3 +117,21 @@ def test_certificate_csv_report_contract_does_not_reintroduce_png_column():
         if line.strip()
     ]
     assert len(row_values) == len(EXPECTED_CERTIFICATE_CSV_HEADERS)
+
+
+def test_custom_certificate_lines_can_stay_blank_without_default_fallback():
+    app_assets_source = (FRONTEND_JS_DIR / "app-assets.js").read_text(encoding="utf-8")
+    app_bootstrap_source = (FRONTEND_JS_DIR / "app-bootstrap.js").read_text(encoding="utf-8")
+    app_batch_source = (FRONTEND_JS_DIR / "app-batch.js").read_text(encoding="utf-8")
+    app_spreadsheets_source = (FRONTEND_JS_DIR / "app-spreadsheets.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "|| defaultTextoLinha1" not in app_assets_source
+    assert "|| defaultTextoLinha2" not in app_assets_source
+    assert "|| defaultTextoLinha1" not in app_bootstrap_source
+    assert "|| defaultTextoLinha2" not in app_bootstrap_source
+    assert "defaultTextoLinha1" not in app_batch_source
+    assert "defaultTextoLinha2" not in app_batch_source
+    assert "defaultTextoLinha1" not in app_spreadsheets_source
+    assert "defaultTextoLinha2" not in app_spreadsheets_source

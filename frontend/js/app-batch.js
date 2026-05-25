@@ -66,8 +66,8 @@ function getBatchDefaults() {
       const input = cargaHInput;
       return input ? input.value : "";
     })(),
-    linha1: textoLinha1Input ? textoLinha1Input.value : defaultTextoLinha1,
-    linha2: textoLinha2Input ? textoLinha2Input.value : defaultTextoLinha2,
+    linha1: sanitizeText(textoLinha1Input ? textoLinha1Input.value : ""),
+    linha2: sanitizeText(textoLinha2Input ? textoLinha2Input.value : ""),
   };
 }
 

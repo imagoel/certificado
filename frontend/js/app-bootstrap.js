@@ -36,8 +36,8 @@ if (!form || !downloadBtn || !canvas || !ctx) {
         curso,
         data,
         cargaH,
-        linha1: textoLinha1 || defaultTextoLinha1,
-        linha2: textoLinha2 || defaultTextoLinha2,
+        linha1: textoLinha1,
+        linha2: textoLinha2,
       };
 
       setBatchStatus("Verificando possíveis certificados já emitidos...", "info");
@@ -334,7 +334,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     textoLinha1Input.addEventListener("input", () => {
       if (isBatchRunning) return;
       if (lastData) {
-        lastData.linha1 = textoLinha1Input.value.trim() || defaultTextoLinha1;
+        lastData.linha1 = textoLinha1Input.value.trim();
       }
       void renderLastCertificate();
     });
@@ -344,7 +344,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
     textoLinha2Input.addEventListener("input", () => {
       if (isBatchRunning) return;
       if (lastData) {
-        lastData.linha2 = textoLinha2Input.value.trim() || defaultTextoLinha2;
+        lastData.linha2 = textoLinha2Input.value.trim();
       }
       void renderLastCertificate();
     });

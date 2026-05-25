@@ -196,8 +196,8 @@ function mapRowToCertificate(row, rowNumber, defaults = {}, options = {}) {
   const defaultCurso = sanitizeText(defaults.curso);
   const defaultData = normalizeSpreadsheetDate(defaults.data);
   const defaultCargaHoraria = normalizeCargaHorariaResult(defaults.carga_h).value;
-  const defaultLinha1 = sanitizeText(defaults.linha1) || defaultTextoLinha1;
-  const defaultLinha2 = sanitizeText(defaults.linha2) || defaultTextoLinha2;
+  const defaultLinha1 = sanitizeText(defaults.linha1);
+  const defaultLinha2 = sanitizeText(defaults.linha2);
 
   const nome =
     buildFullName(mapped.nome, mapped.sobrenome) ||
