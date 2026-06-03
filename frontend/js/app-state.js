@@ -245,14 +245,23 @@ const assinaturaXInput = document.getElementById("assinaturaX");
 const assinaturaYInput = document.getElementById("assinaturaY");
 const assinaturaSizeInput = document.getElementById("assinaturaSize");
 const assinaturaLabelInput = document.getElementById("assinaturaLabel");
+const assinaturaImageXInput = document.getElementById("assinaturaImageX");
+const assinaturaImageYInput = document.getElementById("assinaturaImageY");
+const assinaturaImageSizeInput = document.getElementById("assinaturaImageSize");
 const assinatura2XInput = document.getElementById("assinatura2X");
 const assinatura2YInput = document.getElementById("assinatura2Y");
 const assinatura2SizeInput = document.getElementById("assinatura2Size");
 const assinatura2LabelInput = document.getElementById("assinatura2Label");
+const assinatura2ImageXInput = document.getElementById("assinatura2ImageX");
+const assinatura2ImageYInput = document.getElementById("assinatura2ImageY");
+const assinatura2ImageSizeInput = document.getElementById("assinatura2ImageSize");
 const assinatura3XInput = document.getElementById("assinatura3X");
 const assinatura3YInput = document.getElementById("assinatura3Y");
 const assinatura3SizeInput = document.getElementById("assinatura3Size");
 const assinatura3LabelInput = document.getElementById("assinatura3Label");
+const assinatura3ImageXInput = document.getElementById("assinatura3ImageX");
+const assinatura3ImageYInput = document.getElementById("assinatura3ImageY");
+const assinatura3ImageSizeInput = document.getElementById("assinatura3ImageSize");
 const selo1XInput = document.getElementById("selo1X");
 const selo1YInput = document.getElementById("selo1Y");
 const selo1SizeInput = document.getElementById("selo1Size");
@@ -292,12 +301,21 @@ const qrSizeVal = document.getElementById("qrSizeVal");
 const assinaturaXVal = document.getElementById("assinaturaXVal");
 const assinaturaYVal = document.getElementById("assinaturaYVal");
 const assinaturaSizeVal = document.getElementById("assinaturaSizeVal");
+const assinaturaImageXVal = document.getElementById("assinaturaImageXVal");
+const assinaturaImageYVal = document.getElementById("assinaturaImageYVal");
+const assinaturaImageSizeVal = document.getElementById("assinaturaImageSizeVal");
 const assinatura2XVal = document.getElementById("assinatura2XVal");
 const assinatura2YVal = document.getElementById("assinatura2YVal");
 const assinatura2SizeVal = document.getElementById("assinatura2SizeVal");
+const assinatura2ImageXVal = document.getElementById("assinatura2ImageXVal");
+const assinatura2ImageYVal = document.getElementById("assinatura2ImageYVal");
+const assinatura2ImageSizeVal = document.getElementById("assinatura2ImageSizeVal");
 const assinatura3XVal = document.getElementById("assinatura3XVal");
 const assinatura3YVal = document.getElementById("assinatura3YVal");
 const assinatura3SizeVal = document.getElementById("assinatura3SizeVal");
+const assinatura3ImageXVal = document.getElementById("assinatura3ImageXVal");
+const assinatura3ImageYVal = document.getElementById("assinatura3ImageYVal");
+const assinatura3ImageSizeVal = document.getElementById("assinatura3ImageSizeVal");
 const selo1XVal = document.getElementById("selo1XVal");
 const selo1YVal = document.getElementById("selo1YVal");
 const selo1SizeVal = document.getElementById("selo1SizeVal");
@@ -327,6 +345,10 @@ const DEFAULT_ASSINATURA_LAYOUT = Object.freeze({
   y: 662,
   maxW: 230,
   maxH: 80,
+  imageOffsetX: 0,
+  imageOffsetY: 0,
+  imageMaxW: 230,
+  imageMaxH: 80,
 });
 const DEFAULT_ASSINATURA2_LAYOUT = Object.freeze({
   x: CERTIFICATE_CANVAS_WIDTH / 2,
@@ -400,12 +422,20 @@ const DEFAULT_QR_LAYOUT = Object.freeze({
 });
 const DEFAULT_ASSINATURA_LABEL = "Assinatura do Responsável";
 const SELO_SLOT_KEYS = ["selo1", "selo2", "selo3", "selo4"];
+const SIGNATURE_IMAGE_TARGETS = Object.freeze({
+  assinaturaImage: "assinatura",
+  assinatura2Image: "assinatura2",
+  assinatura3Image: "assinatura3",
+});
 const PREVIEW_ADJUST_TARGET_KEYS = [
   "logo",
   "qr",
   "assinatura",
+  "assinaturaImage",
   "assinatura2",
+  "assinatura2Image",
   "assinatura3",
+  "assinatura3Image",
   "instituicao",
   ...SELO_SLOT_KEYS,
 ];

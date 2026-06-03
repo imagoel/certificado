@@ -729,12 +729,19 @@ function isInstitutionSlotActive() {
 function getPreviewAdjustTargetLabel(target) {
   if (target === "logo") return "Logo";
   if (target === "qr") return "QR Code";
+  if (target === "assinaturaImage") return "Imagem da assinatura";
   if (target === "assinatura") return "Assinatura";
+  if (target === "assinatura2Image") return "Imagem da assinatura 2";
   if (target === "assinatura2") return "Assinatura 2";
+  if (target === "assinatura3Image") return "Imagem da assinatura 3";
   if (target === "assinatura3") return "Assinatura 3";
   if (target === "instituicao") return "Instituicao";
   if (isSeloSlot(target)) return `Selo ${getSeloSlotNumber(target)}`;
   return "Item";
+}
+
+function getPreviewHotspotLabel(target) {
+  return isSignatureImagePreviewTarget(target) ? "Imagem" : getPreviewAdjustTargetLabel(target);
 }
 
 function getPreviewAdjustTargetControlElement(target) {
@@ -755,6 +762,14 @@ function isSignaturePreviewTarget(target) {
   return target === "assinatura" || target === "assinatura2" || target === "assinatura3";
 }
 
+function getSignatureSlotFromImageTarget(target) {
+  return SIGNATURE_IMAGE_TARGETS[target] || "";
+}
+
+function isSignatureImagePreviewTarget(target) {
+  return Boolean(getSignatureSlotFromImageTarget(target));
+}
+
 function getPreviewAdjustTargetInputs(target) {
   if (target === "logo") {
     return { x: logoXInput, y: logoYInput, size: logoSizeInput };
@@ -770,6 +785,13 @@ function getPreviewAdjustTargetInputs(target) {
       label: assinaturaLabelInput,
     };
   }
+  if (target === "assinaturaImage") {
+    return {
+      x: assinaturaImageXInput,
+      y: assinaturaImageYInput,
+      size: assinaturaImageSizeInput,
+    };
+  }
   if (target === "assinatura2") {
     return {
       x: assinatura2XInput,
@@ -778,12 +800,26 @@ function getPreviewAdjustTargetInputs(target) {
       label: assinatura2LabelInput,
     };
   }
+  if (target === "assinatura2Image") {
+    return {
+      x: assinatura2ImageXInput,
+      y: assinatura2ImageYInput,
+      size: assinatura2ImageSizeInput,
+    };
+  }
   if (target === "assinatura3") {
     return {
       x: assinatura3XInput,
       y: assinatura3YInput,
       size: assinatura3SizeInput,
       label: assinatura3LabelInput,
+    };
+  }
+  if (target === "assinatura3Image") {
+    return {
+      x: assinatura3ImageXInput,
+      y: assinatura3ImageYInput,
+      size: assinatura3ImageSizeInput,
     };
   }
   if (target === "instituicao") {
@@ -809,6 +845,9 @@ function isPreviewAdjustTargetActive(target) {
   if (target === "qr") return true;
   if (target === "assinatura" || target === "assinatura2" || target === "assinatura3") {
     return isSignatureSlotActive(target);
+  }
+  if (isSignatureImagePreviewTarget(target)) {
+    return Boolean(getActiveSignatureImage(getSignatureSlotFromImageTarget(target)));
   }
   if (target === "instituicao") return isInstitutionSlotActive();
   if (isSeloSlot(target)) return Boolean(getActiveSeloImage(target));
@@ -850,6 +889,22 @@ function getSignaturePreviewRect(slotKey) {
   }, 240, 86);
 }
 
+function getSignatureImagePreviewRect(slotKey) {
+  if (!getActiveSignatureImage(slotKey)) return null;
+  const slotLayout = layout[slotKey] || layout.assinatura;
+  return normalizeCanvasRect(
+    getCenteredCanvasRect(
+      slotLayout.x + (slotLayout.imageOffsetX || 0),
+      slotLayout.y + (slotLayout.imageOffsetY || 0),
+      slotLayout.imageMaxW || slotLayout.maxW,
+      slotLayout.imageMaxH || slotLayout.maxH,
+      8
+    ),
+    88,
+    44
+  );
+}
+
 function getInstitutionPreviewRect() {
   const lineWidth = Math.max(220, Math.min(320, layout.instituicao.maxW + 70));
   const lineY = layout.instituicao.y + 38;
@@ -881,6 +936,9 @@ function getPreviewAdjustTargetRect(target) {
   }
   if (target === "assinatura" || target === "assinatura2" || target === "assinatura3") {
     return getSignaturePreviewRect(target);
+  }
+  if (isSignatureImagePreviewTarget(target)) {
+    return getSignatureImagePreviewRect(getSignatureSlotFromImageTarget(target));
   }
   if (target === "instituicao") return getInstitutionPreviewRect();
   if (isSeloSlot(target)) {
@@ -1053,6 +1111,7 @@ function updatePreviewHotspots() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "preview-hotspot";
+    button.classList.toggle("is-nested-hotspot", isSignatureImagePreviewTarget(target));
     button.dataset.previewTarget = target;
     button.setAttribute("aria-label", `Ajustar ${getPreviewAdjustTargetLabel(target)}`);
     button.setAttribute("aria-pressed", target === selectedPreviewAdjustTarget ? "true" : "false");
@@ -1064,7 +1123,7 @@ function updatePreviewHotspots() {
 
     const label = document.createElement("span");
     label.className = "preview-hotspot-label";
-    label.textContent = getPreviewAdjustTargetLabel(target);
+    label.textContent = getPreviewHotspotLabel(target);
     button.appendChild(label);
     button.addEventListener("click", () => selectPreviewAdjustTarget(target));
 

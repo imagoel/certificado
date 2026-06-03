@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260525-2" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260525-2" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260525-2" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260525-2" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260525-2" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260525-2" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260525-2" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260525-2" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260603-2" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260603-2" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260603-2" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260603-2" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260603-2" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260603-2" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260603-2" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260603-2" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -383,6 +383,12 @@
                 <span id="assinaturaYVal">662 px</span>
                 <input id="assinaturaSize" type="range" min="120" max="360" step="1" value="230" />
                 <span id="assinaturaSizeVal">230 px</span>
+                <input id="assinaturaImageX" type="range" min="-220" max="220" step="1" value="0" />
+                <span id="assinaturaImageXVal">0 px</span>
+                <input id="assinaturaImageY" type="range" min="-180" max="120" step="1" value="0" />
+                <span id="assinaturaImageYVal">0 px</span>
+                <input id="assinaturaImageSize" type="range" min="80" max="360" step="1" value="230" />
+                <span id="assinaturaImageSizeVal">230 px</span>
               </div>
 
               <div id="assinatura2-adjust-fieldset">
@@ -393,6 +399,12 @@
                 <span id="assinatura2YVal">662 px</span>
                 <input id="assinatura2Size" type="range" min="120" max="360" step="1" value="230" />
                 <span id="assinatura2SizeVal">230 px</span>
+                <input id="assinatura2ImageX" type="range" min="-220" max="220" step="1" value="0" />
+                <span id="assinatura2ImageXVal">0 px</span>
+                <input id="assinatura2ImageY" type="range" min="-180" max="120" step="1" value="0" />
+                <span id="assinatura2ImageYVal">0 px</span>
+                <input id="assinatura2ImageSize" type="range" min="80" max="360" step="1" value="230" />
+                <span id="assinatura2ImageSizeVal">230 px</span>
               </div>
 
               <div id="assinatura3-adjust-fieldset">
@@ -403,6 +415,12 @@
                 <span id="assinatura3YVal">662 px</span>
                 <input id="assinatura3Size" type="range" min="120" max="360" step="1" value="230" />
                 <span id="assinatura3SizeVal">230 px</span>
+                <input id="assinatura3ImageX" type="range" min="-220" max="220" step="1" value="0" />
+                <span id="assinatura3ImageXVal">0 px</span>
+                <input id="assinatura3ImageY" type="range" min="-180" max="120" step="1" value="0" />
+                <span id="assinatura3ImageYVal">0 px</span>
+                <input id="assinatura3ImageSize" type="range" min="80" max="360" step="1" value="230" />
+                <span id="assinatura3ImageSizeVal">230 px</span>
               </div>
 
               <div id="selos-adjust-fieldset">
@@ -1258,18 +1276,18 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/app-state.js?v=20260525-2"></script>
-  <script src="frontend/js/app-utils.js?v=20260525-2"></script>
-  <script src="frontend/js/app-session-view.js?v=20260525-2"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260525-2"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260525-2"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260525-2"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260525-2"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260525-2"></script>
-  <script src="frontend/js/app-canvas.js?v=20260525-2"></script>
-  <script src="frontend/js/app-assets.js?v=20260525-2"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260525-2"></script>
-  <script src="frontend/js/app-batch.js?v=20260525-2"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260525-2"></script>
+  <script src="frontend/js/app-state.js?v=20260603-2"></script>
+  <script src="frontend/js/app-utils.js?v=20260603-2"></script>
+  <script src="frontend/js/app-session-view.js?v=20260603-2"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260603-2"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260603-2"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260603-2"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260603-2"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260603-2"></script>
+  <script src="frontend/js/app-canvas.js?v=20260603-2"></script>
+  <script src="frontend/js/app-assets.js?v=20260603-2"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260603-2"></script>
+  <script src="frontend/js/app-batch.js?v=20260603-2"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260603-2"></script>
 </body>
 </html>

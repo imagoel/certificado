@@ -300,12 +300,27 @@ if (!form || !downloadBtn || !canvas || !ctx) {
   if (assinaturaXInput) assinaturaXInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaYInput) assinaturaYInput.addEventListener("input", applyLayoutFromControls);
   if (assinaturaSizeInput) assinaturaSizeInput.addEventListener("input", applyLayoutFromControls);
+  if (assinaturaImageXInput) assinaturaImageXInput.addEventListener("input", applyLayoutFromControls);
+  if (assinaturaImageYInput) assinaturaImageYInput.addEventListener("input", applyLayoutFromControls);
+  if (assinaturaImageSizeInput) {
+    assinaturaImageSizeInput.addEventListener("input", applyLayoutFromControls);
+  }
   if (assinatura2XInput) assinatura2XInput.addEventListener("input", applyLayoutFromControls);
   if (assinatura2YInput) assinatura2YInput.addEventListener("input", applyLayoutFromControls);
   if (assinatura2SizeInput) assinatura2SizeInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura2ImageXInput) assinatura2ImageXInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura2ImageYInput) assinatura2ImageYInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura2ImageSizeInput) {
+    assinatura2ImageSizeInput.addEventListener("input", applyLayoutFromControls);
+  }
   if (assinatura3XInput) assinatura3XInput.addEventListener("input", applyLayoutFromControls);
   if (assinatura3YInput) assinatura3YInput.addEventListener("input", applyLayoutFromControls);
   if (assinatura3SizeInput) assinatura3SizeInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura3ImageXInput) assinatura3ImageXInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura3ImageYInput) assinatura3ImageYInput.addEventListener("input", applyLayoutFromControls);
+  if (assinatura3ImageSizeInput) {
+    assinatura3ImageSizeInput.addEventListener("input", applyLayoutFromControls);
+  }
   if (selo1XInput) selo1XInput.addEventListener("input", applyLayoutFromControls);
   if (selo1YInput) selo1YInput.addEventListener("input", applyLayoutFromControls);
   if (selo1SizeInput) selo1SizeInput.addEventListener("input", applyLayoutFromControls);

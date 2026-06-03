@@ -109,10 +109,10 @@ function drawSignatureBlock(slotKey) {
   if (activeImage) {
     drawCenteredImage(
       activeImage,
-      slotLayout.x,
-      slotLayout.y,
-      slotLayout.maxW,
-      slotLayout.maxH
+      slotLayout.x + (slotLayout.imageOffsetX || 0),
+      slotLayout.y + (slotLayout.imageOffsetY || 0),
+      slotLayout.imageMaxW || slotLayout.maxW,
+      slotLayout.imageMaxH || slotLayout.maxH
     );
   }
 
@@ -186,6 +186,14 @@ function syncAdvancedAssetControls() {
     ASSINATURA_CONTROL_LIMITS.sizeMax,
     layout.assinatura.maxW
   );
+  configureRangeInput(assinaturaImageXInput, -220, 220, layout.assinatura.imageOffsetX || 0);
+  configureRangeInput(assinaturaImageYInput, -180, 120, layout.assinatura.imageOffsetY || 0);
+  configureRangeInput(
+    assinaturaImageSizeInput,
+    80,
+    360,
+    layout.assinatura.imageMaxW || layout.assinatura.maxW
+  );
   configureRangeInput(
     qrXInput,
     QR_CONTROL_LIMITS.xMin,
@@ -222,6 +230,14 @@ function syncAdvancedAssetControls() {
     EXTRA_ASSINATURA_CONTROL_LIMITS.sizeMax,
     layout.assinatura2.maxW
   );
+  configureRangeInput(assinatura2ImageXInput, -220, 220, layout.assinatura2.imageOffsetX || 0);
+  configureRangeInput(assinatura2ImageYInput, -180, 120, layout.assinatura2.imageOffsetY || 0);
+  configureRangeInput(
+    assinatura2ImageSizeInput,
+    80,
+    360,
+    layout.assinatura2.imageMaxW || layout.assinatura2.maxW
+  );
   configureRangeInput(
     assinatura3XInput,
     EXTRA_ASSINATURA_CONTROL_LIMITS.xMin,
@@ -239,6 +255,14 @@ function syncAdvancedAssetControls() {
     EXTRA_ASSINATURA_CONTROL_LIMITS.sizeMin,
     EXTRA_ASSINATURA_CONTROL_LIMITS.sizeMax,
     layout.assinatura3.maxW
+  );
+  configureRangeInput(assinatura3ImageXInput, -220, 220, layout.assinatura3.imageOffsetX || 0);
+  configureRangeInput(assinatura3ImageYInput, -180, 120, layout.assinatura3.imageOffsetY || 0);
+  configureRangeInput(
+    assinatura3ImageSizeInput,
+    80,
+    360,
+    layout.assinatura3.imageMaxW || layout.assinatura3.maxW
   );
   configureRangeInput(
     selo1XInput,
@@ -342,12 +366,27 @@ function updateControlLabels() {
   if (assinaturaXVal) assinaturaXVal.textContent = `${layout.assinatura.x} px`;
   if (assinaturaYVal) assinaturaYVal.textContent = `${layout.assinatura.y} px`;
   if (assinaturaSizeVal) assinaturaSizeVal.textContent = `${layout.assinatura.maxW} px`;
+  if (assinaturaImageXVal) assinaturaImageXVal.textContent = `${layout.assinatura.imageOffsetX || 0} px`;
+  if (assinaturaImageYVal) assinaturaImageYVal.textContent = `${layout.assinatura.imageOffsetY || 0} px`;
+  if (assinaturaImageSizeVal) {
+    assinaturaImageSizeVal.textContent = `${layout.assinatura.imageMaxW || layout.assinatura.maxW} px`;
+  }
   if (assinatura2XVal) assinatura2XVal.textContent = `${layout.assinatura2.x} px`;
   if (assinatura2YVal) assinatura2YVal.textContent = `${layout.assinatura2.y} px`;
   if (assinatura2SizeVal) assinatura2SizeVal.textContent = `${layout.assinatura2.maxW} px`;
+  if (assinatura2ImageXVal) assinatura2ImageXVal.textContent = `${layout.assinatura2.imageOffsetX || 0} px`;
+  if (assinatura2ImageYVal) assinatura2ImageYVal.textContent = `${layout.assinatura2.imageOffsetY || 0} px`;
+  if (assinatura2ImageSizeVal) {
+    assinatura2ImageSizeVal.textContent = `${layout.assinatura2.imageMaxW || layout.assinatura2.maxW} px`;
+  }
   if (assinatura3XVal) assinatura3XVal.textContent = `${layout.assinatura3.x} px`;
   if (assinatura3YVal) assinatura3YVal.textContent = `${layout.assinatura3.y} px`;
   if (assinatura3SizeVal) assinatura3SizeVal.textContent = `${layout.assinatura3.maxW} px`;
+  if (assinatura3ImageXVal) assinatura3ImageXVal.textContent = `${layout.assinatura3.imageOffsetX || 0} px`;
+  if (assinatura3ImageYVal) assinatura3ImageYVal.textContent = `${layout.assinatura3.imageOffsetY || 0} px`;
+  if (assinatura3ImageSizeVal) {
+    assinatura3ImageSizeVal.textContent = `${layout.assinatura3.imageMaxW || layout.assinatura3.maxW} px`;
+  }
   if (selo1XVal) selo1XVal.textContent = `${layout.selo1.x} px`;
   if (selo1YVal) selo1YVal.textContent = `${layout.selo1.y} px`;
   if (selo1SizeVal) selo1SizeVal.textContent = `${layout.selo1.maxW} px`;
@@ -423,6 +462,19 @@ function applySeloLayoutFromControls(slotKey, xInput, yInput, sizeInput) {
   }
 }
 
+function applySignatureImageLayoutFromControls(slotKey, xInput, yInput, sizeInput) {
+  if (!layout[slotKey]) return;
+  if (xInput) layout[slotKey].imageOffsetX = Number(xInput.value);
+  if (yInput) layout[slotKey].imageOffsetY = Number(yInput.value);
+  if (sizeInput) {
+    layout[slotKey].imageMaxW = Number(sizeInput.value);
+    layout[slotKey].imageMaxH = scaleHeightByWidth(
+      layout[slotKey].imageMaxW,
+      assinaturaAspectRatio
+    );
+  }
+}
+
 function applyLayoutFromControls() {
   if (isBatchRunning) return;
   if (logoXInput) layout.logo.x = Number(logoXInput.value);
@@ -446,6 +498,12 @@ function applyLayoutFromControls() {
       assinaturaAspectRatio
     );
   }
+  applySignatureImageLayoutFromControls(
+    "assinatura",
+    assinaturaImageXInput,
+    assinaturaImageYInput,
+    assinaturaImageSizeInput
+  );
   if (assinatura2XInput) layout.assinatura2.x = Number(assinatura2XInput.value);
   if (assinatura2YInput) layout.assinatura2.y = Number(assinatura2YInput.value);
   if (assinatura2SizeInput) {
@@ -455,6 +513,12 @@ function applyLayoutFromControls() {
       assinaturaAspectRatio
     );
   }
+  applySignatureImageLayoutFromControls(
+    "assinatura2",
+    assinatura2ImageXInput,
+    assinatura2ImageYInput,
+    assinatura2ImageSizeInput
+  );
   if (assinatura3XInput) layout.assinatura3.x = Number(assinatura3XInput.value);
   if (assinatura3YInput) layout.assinatura3.y = Number(assinatura3YInput.value);
   if (assinatura3SizeInput) {
@@ -464,6 +528,12 @@ function applyLayoutFromControls() {
       assinaturaAspectRatio
     );
   }
+  applySignatureImageLayoutFromControls(
+    "assinatura3",
+    assinatura3ImageXInput,
+    assinatura3ImageYInput,
+    assinatura3ImageSizeInput
+  );
   applySeloLayoutFromControls("selo1", selo1XInput, selo1YInput, selo1SizeInput);
   applySeloLayoutFromControls("selo2", selo2XInput, selo2YInput, selo2SizeInput);
   applySeloLayoutFromControls("selo3", selo3XInput, selo3YInput, selo3SizeInput);
