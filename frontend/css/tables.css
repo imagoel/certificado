@@ -19,19 +19,24 @@
 }
 
 .admin-table-card {
+  border-color: rgba(104, 139, 183, 0.28);
+  background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 16px 30px rgba(26, 79, 139, 0.07);
 }
 
 .admin-type-filter {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .admin-type-filter-btn {
-  padding: 7px 11px;
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 1px solid rgba(128, 159, 196, 0.22);
   border-radius: 999px;
-  background: rgba(232, 241, 255, 0.88);
+  background: rgba(232, 241, 255, 0.74);
   color: #1a4f8b;
   font-size: 0.88rem;
   font-weight: 700;
@@ -81,6 +86,61 @@
 
 .data-table tbody tr:hover {
   background: #fbfdff;
+}
+
+.admin-table-card .data-table th,
+.admin-table-card .data-table td {
+  padding: 9px 10px;
+  vertical-align: middle;
+}
+
+.admin-table-card .data-table th {
+  border-bottom-color: rgba(128, 159, 196, 0.26);
+  background: rgba(247, 251, 255, 0.72);
+}
+
+.admin-table-card .data-table tbody tr {
+  transition: background 0.14s ease;
+}
+
+.admin-table-card .inline-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-table-card .inline-actions button {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: none;
+  font-size: 0.88rem;
+}
+
+.admin-table-card .inline-actions .secondary-btn {
+  border-color: rgba(82, 103, 129, 0.18);
+  background: #edf4ff;
+  color: #1a4f8b;
+}
+
+.admin-table-card .inline-actions .secondary-btn:hover,
+.admin-table-card .inline-actions .secondary-btn:focus-visible {
+  border-color: rgba(26, 79, 139, 0.32);
+  background: #e4f0ff;
+}
+
+.admin-table-card .inline-actions .danger-btn {
+  border-color: rgba(179, 41, 41, 0.2);
+  background: #fff1f1;
+  color: #b32929;
+}
+
+.admin-table-card .inline-actions .danger-btn:hover,
+.admin-table-card .inline-actions .danger-btn:focus-visible {
+  border-color: rgba(179, 41, 41, 0.36);
+  background: #ffe8e8;
 }
 
 .certificates-table {
@@ -173,13 +233,17 @@
 .user-admin-table th:last-child,
 .user-admin-table td:last-child,
 .secretaria-admin-table th:last-child,
-.secretaria-admin-table td:last-child,
+.secretaria-admin-table td:last-child {
+  width: 148px;
+  min-width: 148px;
+}
+
 .template-admin-table th:last-child,
 .template-admin-table td:last-child,
 .asset-admin-table th:last-child,
 .asset-admin-table td:last-child {
-  width: 136px;
-  min-width: 136px;
+  width: 190px;
+  min-width: 190px;
 }
 
 .audit-table {

@@ -45,7 +45,7 @@
 }
 
 .admin-compact-form {
-  gap: 10px;
+  gap: 9px;
 }
 
 .admin-compact-form .grid-two,
@@ -53,9 +53,19 @@
   gap: 9px 10px;
 }
 
+.admin-compact-form label {
+  font-size: 0.94rem;
+}
+
+.admin-compact-form input,
+.admin-compact-form select {
+  min-height: 38px;
+  padding-block: 7px;
+}
+
 .admin-compact-form .field-help,
 .admin-compact-form .hint {
-  max-width: 70ch;
+  max-width: 64ch;
   font-size: 0.84rem;
 }
 
@@ -282,16 +292,6 @@ button {
 button[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-.admin-module-tab {
-  background: rgba(232, 241, 255, 0.88);
-  color: #1a4f8b;
-}
-
-.admin-module-tab.is-active {
-  background: #1a4f8b;
-  color: #fff;
 }
 
 .batch-controls {
