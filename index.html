@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260610-2" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260610-2" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260610-2" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260610-2" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260610-2" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260610-2" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260610-2" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260610-2" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260610-3" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260610-3" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260610-3" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260610-3" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260610-3" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260610-3" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260610-3" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260610-3" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -811,34 +811,22 @@
       </section>
 
       <section id="admin-section" class="stack-section listing-section admin-section" hidden>
-        <header class="admin-workspace-header">
-          <div class="admin-workspace-copy">
-            <span class="admin-kicker">Área administrativa</span>
-            <h2>Administração</h2>
-            <p>Gerencie acessos, secretarias e a biblioteca visual usada no gerador.</p>
-          </div>
+        <nav class="admin-module-tabs" aria-label="Módulos da administração">
+          <button type="button" class="admin-module-tab" data-admin-module-tab="users">Usuários</button>
+          <button type="button" class="admin-module-tab" data-admin-module-tab="secretarias">Secretarias</button>
+          <button type="button" class="admin-module-tab" data-admin-module-tab="templates">Moldes</button>
+          <button type="button" class="admin-module-tab" data-admin-module-tab="assets">Itens visuais</button>
+        </nav>
 
-          <nav class="admin-module-tabs" aria-label="Módulos da administração">
-            <button type="button" class="admin-module-tab" data-admin-module-tab="users">Usuários</button>
-            <button type="button" class="admin-module-tab" data-admin-module-tab="secretarias">Secretarias</button>
-            <button type="button" class="admin-module-tab" data-admin-module-tab="templates">Moldes</button>
-            <button type="button" class="admin-module-tab" data-admin-module-tab="assets">Itens visuais</button>
-          </nav>
-        </header>
         <section id="user-admin-panel" class="panel admin-module" data-admin-module="users">
           <div class="panel-header">
             <div>
               <h2>Usuários</h2>
-              <p class="subtitle">Operadores, papéis e vínculos por secretaria.</p>
             </div>
           </div>
 
           <div class="admin-split-layout">
             <div class="admin-form-shell">
-              <div class="admin-form-heading">
-                <h3>Novo usuário</h3>
-                <p>Defina acesso, papel e secretarias vinculadas.</p>
-              </div>
               <form id="user-form" class="form admin-compact-form">
             <input id="user-edit-id" type="hidden" />
 
@@ -869,26 +857,19 @@
               </div>
             </div>
 
-            <div class="grid-two">
-              <label class="checkbox-field">
-                <input id="user-active" type="checkbox" checked />
-                Usuário ativo
-              </label>
+            <label class="checkbox-field">
+              <input id="user-active" type="checkbox" checked />
+              Usuário ativo
+            </label>
 
-              <div class="field-stack">
-                <label for="user-secretarias">Secretarias vinculadas</label>
-                <p id="user-secretarias-help" class="field-help">
-                  Marque uma ou mais secretarias para o operador. Admin global acessa todas sem
-                  precisar de vínculo.
-                </p>
-                <div
-                  id="user-secretarias-checklist"
-                  class="checkbox-list"
-                  role="group"
-                  aria-describedby="user-secretarias-help"
-                ></div>
-                <select id="user-secretarias" multiple size="6"></select>
-              </div>
+            <div class="field-stack">
+              <label for="user-secretarias">Secretarias vinculadas</label>
+              <div
+                id="user-secretarias-checklist"
+                class="checkbox-list"
+                role="group"
+              ></div>
+              <select id="user-secretarias" multiple size="6"></select>
             </div>
 
             <div class="actions">
@@ -900,12 +881,6 @@
             </div>
 
             <div class="admin-table-shell">
-              <div class="admin-table-toolbar">
-                <div>
-                  <h3>Usuários cadastrados</h3>
-                  <p>Ajuste permissões sem sair deste módulo.</p>
-                </div>
-              </div>
               <div class="table-wrap listing-table-card admin-table-card">
                 <table class="data-table user-admin-table">
               <thead>
@@ -934,16 +909,11 @@
           <div class="panel-header">
             <div>
               <h2>Secretarias</h2>
-              <p class="subtitle">Unidades disponíveis para emissão e administração.</p>
             </div>
           </div>
 
           <div class="admin-split-layout">
             <div class="admin-form-shell">
-              <div class="admin-form-heading">
-                <h3>Nova secretaria</h3>
-                <p>Use uma sigla curta e um nome claro para os operadores.</p>
-              </div>
               <form id="secretaria-form" class="form admin-compact-form">
             <input id="secretaria-edit-id" type="hidden" />
 
@@ -973,12 +943,6 @@
             </div>
 
             <div class="admin-table-shell">
-              <div class="admin-table-toolbar">
-                <div>
-                  <h3>Secretarias cadastradas</h3>
-                  <p>Controle quais aparecem como opções no sistema.</p>
-                </div>
-              </div>
               <div class="table-wrap listing-table-card admin-table-card">
                 <table class="data-table secretaria-admin-table">
               <thead>
@@ -1004,16 +968,11 @@
           <div class="panel-header">
             <div>
               <h2>Moldes</h2>
-              <p class="subtitle">Fundos oficiais que o operador seleciona no gerador.</p>
             </div>
           </div>
 
           <div class="admin-stack-layout">
             <div class="admin-form-shell admin-form-shell-wide">
-              <div class="admin-form-heading">
-                <h3>Cadastro de molde</h3>
-                <p>Envie imagens aprovadas e defina o molde padrão de cada secretaria.</p>
-              </div>
               <form id="template-admin-form" class="form admin-compact-form">
             <input id="template-admin-edit-id" type="hidden" />
 
@@ -1045,7 +1004,6 @@
               <input id="template-admin-hide-title" type="checkbox" />
               Este molde já contém o título "Certificado"
             </label>
-            <p class="field-help">Marque esta opção quando o arquivo do molde já tiver a palavra Certificado para evitar duplicidade na emissão.</p>
 
             <div class="grid-two">
               <div class="field-stack">
@@ -1059,8 +1017,6 @@
               </div>
             </div>
 
-            <p class="hint">No cadastro inicial o arquivo é obrigatório. Em edição, envie um novo arquivo apenas se quiser substituir o molde atual.</p>
-
             <div class="actions">
               <button type="submit">Salvar Molde</button>
               <button id="template-admin-reset" type="button" class="secondary-btn">Limpar</button>
@@ -1070,12 +1026,6 @@
             </div>
 
             <div class="admin-table-shell">
-              <div class="admin-table-toolbar">
-                <div>
-                  <h3>Moldes cadastrados</h3>
-                  <p>Abra, edite ou remova fundos por secretaria.</p>
-                </div>
-              </div>
               <div class="table-wrap listing-table-card admin-table-card">
                 <table class="data-table template-admin-table">
               <thead>
@@ -1104,16 +1054,11 @@
           <div class="panel-header">
             <div>
               <h2>Itens visuais</h2>
-              <p class="subtitle">Logos, assinaturas, instituições e selos aprovados.</p>
             </div>
           </div>
 
           <div class="admin-split-layout admin-assets-layout">
             <div class="admin-form-shell admin-form-shell-wide">
-              <div class="admin-form-heading">
-                <h3>Cadastro de item</h3>
-                <p>Escolha o tipo, envie o arquivo e marque se ele será padrão.</p>
-              </div>
               <form id="secretaria-asset-form" class="form admin-compact-form">
             <input id="secretaria-asset-edit-id" type="hidden" />
 
@@ -1168,8 +1113,6 @@
               </div>
             </div>
 
-            <p class="hint">No cadastro inicial o arquivo é obrigatório. Em edição, envie um novo arquivo apenas se quiser substituir o item atual.</p>
-
             <div class="actions">
               <button type="submit">Salvar Item</button>
               <button id="secretaria-asset-reset" type="button" class="secondary-btn">Limpar</button>
@@ -1179,18 +1122,11 @@
             </div>
 
             <div class="admin-table-shell">
-              <div class="admin-table-toolbar admin-table-toolbar-stacked">
-                <div>
-                  <h3>Biblioteca visual</h3>
-                  <p>Filtre por tipo para revisar somente os itens relevantes.</p>
-                </div>
-
-                <div class="admin-type-filter" aria-label="Filtrar itens visuais por tipo">
-                  <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="logo">Logo</button>
-                  <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="assinatura">Assinatura</button>
-                  <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="instituicao">Instituição</button>
-                  <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="selo">Selo</button>
-                </div>
+              <div class="admin-type-filter" aria-label="Filtrar itens visuais por tipo">
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="logo">Logo</button>
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="assinatura">Assinatura</button>
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="instituicao">Instituição</button>
+                <button type="button" class="admin-type-filter-btn" data-admin-asset-filter="selo">Selo</button>
               </div>
 
               <div class="table-wrap listing-table-card admin-table-card">
@@ -1325,39 +1261,39 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/state/app-dom.js?v=20260610-2"></script>
-  <script src="frontend/js/state/app-layout-state.js?v=20260610-2"></script>
-  <script src="frontend/js/state/app-runtime-state.js?v=20260610-2"></script>
-  <script src="frontend/js/state/app-catalog-state.js?v=20260610-2"></script>
-  <script src="frontend/js/state/app-list-state.js?v=20260610-2"></script>
-  <script src="frontend/js/app-utils.js?v=20260610-2"></script>
-  <script src="frontend/js/app-api.js?v=20260610-2"></script>
-  <script src="frontend/js/app-filters.js?v=20260610-2"></script>
-  <script src="frontend/js/app-status.js?v=20260610-2"></script>
-  <script src="frontend/js/app-asset-utils.js?v=20260610-2"></script>
-  <script src="frontend/js/app-preview-adjust.js?v=20260610-2"></script>
-  <script src="frontend/js/app-navigation.js?v=20260610-2"></script>
-  <script src="frontend/js/app-ui.js?v=20260610-2"></script>
-  <script src="frontend/js/app-session-view.js?v=20260610-2"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260610-2"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260610-2"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260610-2"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260610-2"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260610-2"></script>
-  <script src="frontend/js/app-canvas.js?v=20260610-2"></script>
-  <script src="frontend/js/app-assets.js?v=20260610-2"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260610-2"></script>
-  <script src="frontend/js/app-batch.js?v=20260610-2"></script>
-  <script src="frontend/js/events/generator-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/preview-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/asset-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/batch-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/section-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/listing-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/admin-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/session-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/dialog-events.js?v=20260610-2"></script>
-  <script src="frontend/js/events/startup.js?v=20260610-2"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260610-2"></script>
+  <script src="frontend/js/state/app-dom.js?v=20260610-3"></script>
+  <script src="frontend/js/state/app-layout-state.js?v=20260610-3"></script>
+  <script src="frontend/js/state/app-runtime-state.js?v=20260610-3"></script>
+  <script src="frontend/js/state/app-catalog-state.js?v=20260610-3"></script>
+  <script src="frontend/js/state/app-list-state.js?v=20260610-3"></script>
+  <script src="frontend/js/app-utils.js?v=20260610-3"></script>
+  <script src="frontend/js/app-api.js?v=20260610-3"></script>
+  <script src="frontend/js/app-filters.js?v=20260610-3"></script>
+  <script src="frontend/js/app-status.js?v=20260610-3"></script>
+  <script src="frontend/js/app-asset-utils.js?v=20260610-3"></script>
+  <script src="frontend/js/app-preview-adjust.js?v=20260610-3"></script>
+  <script src="frontend/js/app-navigation.js?v=20260610-3"></script>
+  <script src="frontend/js/app-ui.js?v=20260610-3"></script>
+  <script src="frontend/js/app-session-view.js?v=20260610-3"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260610-3"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260610-3"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260610-3"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260610-3"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260610-3"></script>
+  <script src="frontend/js/app-canvas.js?v=20260610-3"></script>
+  <script src="frontend/js/app-assets.js?v=20260610-3"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260610-3"></script>
+  <script src="frontend/js/app-batch.js?v=20260610-3"></script>
+  <script src="frontend/js/events/generator-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/preview-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/asset-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/batch-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/section-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/listing-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/admin-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/session-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/dialog-events.js?v=20260610-3"></script>
+  <script src="frontend/js/events/startup.js?v=20260610-3"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260610-3"></script>
 </body>
 </html>

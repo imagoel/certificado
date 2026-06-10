@@ -20,50 +20,17 @@
 
 .admin-section {
   max-width: 1580px;
-  gap: 14px;
-}
-
-.admin-workspace-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: center;
-  padding: 10px 4px 6px;
-}
-
-.admin-workspace-copy {
-  min-width: 0;
-}
-
-.admin-workspace-copy h2 {
-  margin: 0;
-  font-size: clamp(1.45rem, 1.6vw, 1.9rem);
-  line-height: 1.08;
-}
-
-.admin-workspace-copy p {
-  max-width: 680px;
-  margin: 5px 0 0;
-  color: var(--muted);
-}
-
-.admin-kicker {
-  display: block;
-  margin-bottom: 4px;
-  color: #1a4f8b;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: 10px;
 }
 
 .admin-module-tabs {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  min-width: min(100%, 520px);
-  margin: 0;
+  justify-content: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 2px;
   padding: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.46);
@@ -87,12 +54,12 @@
 
 .admin-module {
   min-width: 0;
-  padding: 0 4px 4px;
+  padding: 0;
   margin-bottom: 0;
 }
 
 .admin-module > .panel-header {
-  margin: 2px 0 12px;
+  margin: 0 0 10px;
 }
 
 .admin-module > .panel-header h2 {
@@ -106,13 +73,13 @@
 
 .admin-split-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+  grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
 
 .admin-assets-layout {
-  grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
 }
 
 .admin-stack-layout {
@@ -140,47 +107,8 @@
 
 .admin-table-shell {
   display: grid;
-  gap: 9px;
+  gap: 8px;
   align-content: start;
-}
-
-.admin-form-heading,
-.admin-table-toolbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-}
-
-.admin-form-heading {
-  margin-bottom: 11px;
-  padding-bottom: 9px;
-  border-bottom: 1px solid rgba(128, 159, 196, 0.2);
-}
-
-.admin-form-heading h3,
-.admin-table-toolbar h3 {
-  margin: 0;
-  color: #143a67;
-  font-size: 1rem;
-  line-height: 1.15;
-}
-
-.admin-form-heading p,
-.admin-table-toolbar p {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.35;
-}
-
-.admin-table-toolbar {
-  padding: 0 2px;
-}
-
-.admin-table-toolbar-stacked {
-  align-items: center;
 }
 
 .admin-assets-layout .admin-form-shell-wide {

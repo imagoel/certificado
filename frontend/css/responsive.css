@@ -64,20 +64,9 @@
     justify-content: flex-start;
   }
 
-  .admin-workspace-header {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
   .admin-module-tabs {
     justify-content: flex-start;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .admin-table-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
+    width: fit-content;
   }
 
   .admin-type-filter {
@@ -129,10 +118,6 @@
   .admin-type-filter-btn {
     flex: 1 1 140px;
     justify-content: center;
-  }
-
-  .admin-workspace-header {
-    padding-inline: 0;
   }
 
   .panel,
