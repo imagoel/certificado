@@ -19,8 +19,19 @@ EXPECTED_FRONTEND_STYLESHEET_ORDER = [
 
 
 EXPECTED_FRONTEND_SCRIPT_ORDER = [
-    "frontend/js/app-state.js",
+    "frontend/js/state/app-dom.js",
+    "frontend/js/state/app-layout-state.js",
+    "frontend/js/state/app-runtime-state.js",
+    "frontend/js/state/app-catalog-state.js",
+    "frontend/js/state/app-list-state.js",
     "frontend/js/app-utils.js",
+    "frontend/js/app-api.js",
+    "frontend/js/app-filters.js",
+    "frontend/js/app-status.js",
+    "frontend/js/app-asset-utils.js",
+    "frontend/js/app-preview-adjust.js",
+    "frontend/js/app-navigation.js",
+    "frontend/js/app-ui.js",
     "frontend/js/app-session-view.js",
     "frontend/js/app-admin-view.js",
     "frontend/js/app-certificates-view.js",
@@ -31,6 +42,16 @@ EXPECTED_FRONTEND_SCRIPT_ORDER = [
     "frontend/js/app-assets.js",
     "frontend/js/app-spreadsheets.js",
     "frontend/js/app-batch.js",
+    "frontend/js/events/generator-events.js",
+    "frontend/js/events/preview-events.js",
+    "frontend/js/events/asset-events.js",
+    "frontend/js/events/batch-events.js",
+    "frontend/js/events/section-events.js",
+    "frontend/js/events/listing-events.js",
+    "frontend/js/events/admin-events.js",
+    "frontend/js/events/session-events.js",
+    "frontend/js/events/dialog-events.js",
+    "frontend/js/events/startup.js",
     "frontend/js/app-bootstrap.js",
 ]
 
@@ -63,7 +84,9 @@ def _frontend_stylesheet_paths() -> list[str]:
 
 
 def _frontend_source() -> str:
-    return "\n".join(path.read_text(encoding="utf-8") for path in sorted(FRONTEND_JS_DIR.glob("*.js")))
+    return "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(FRONTEND_JS_DIR.rglob("*.js"))
+    )
 
 
 def test_frontend_stylesheets_are_loaded_in_expected_order():
