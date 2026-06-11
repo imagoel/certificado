@@ -106,12 +106,20 @@ function registerDialogEvents() {
           downloadBtn.disabled = true;
         }
 
+        const currentCertPage = certListState.page || 1;
+        const remainingCertTotal = Math.max(0, (certListState.total || 0) - 1);
+        const maxPageAfterDelete = Math.max(
+          1,
+          Math.ceil(remainingCertTotal / certListState.perPage)
+        );
+        const nextCertPage = Math.min(currentCertPage, maxPageAfterDelete);
+
         closeDeleteCertificateDialog();
         setCertListStatus(
           (payload && payload.message) || `Certificado ${codigo} excluido com sucesso.`,
           "success"
         );
-        await loadCertificates(1);
+        await loadCertificates(nextCertPage);
         if (isAdminSession()) {
           await loadAuditEvents(1);
         }

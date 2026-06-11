@@ -3,6 +3,7 @@ async function refreshProtectedData(options = {}) {
 
   await loadAvailableTemplates();
   await loadAvailableSecretariaAssets();
+  await loadLayoutPresets();
   await loadCertificates(options.page || certListState.page || 1);
   if (canManageVisualAssets()) {
     await loadAdminData();

@@ -160,6 +160,10 @@ function clearSessionUi(message = "") {
   adminUiState.assetTypeFilter = "logo";
   templateCatalogState.items = [];
   templateCatalogState.selectedId = "";
+  layoutPresetState.items = [];
+  layoutPresetState.selectedId = "";
+  layoutPresetState.isSaving = false;
+  layoutPresetState.isApplying = false;
   secretariaAssetCatalogState.logo.items = [];
   secretariaAssetCatalogState.logo.selectedId = "";
   secretariaAssetCatalogState.assinatura.items = [];
@@ -226,6 +230,8 @@ function clearSessionUi(message = "") {
   }
   if (templateLibraryWrap) templateLibraryWrap.hidden = false;
   setTemplateSelectStatus("", "info");
+  syncLayoutPresetSelectUi();
+  setLayoutPresetStatus("", "info");
   populateSecretariaAssetOptions("logo", [], "", true);
   populateSecretariaAssetOptions("assinatura", [], "", true);
   populateSecretariaAssetOptions("assinatura2", [], "", true);

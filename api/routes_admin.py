@@ -21,7 +21,15 @@ from common import (
     validate_role_and_secretarias,
 )
 from database import get_db
-from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, SecretariaAsset, Usuario
+from models import (
+    AuditEvent,
+    Certificate,
+    CertificateLayoutPreset,
+    CertificateTemplate,
+    Secretaria,
+    SecretariaAsset,
+    Usuario,
+)
 from schemas import (
     ActionResponse,
     CertificateAdminDeleteRequest,
@@ -317,6 +325,11 @@ def admin_delete_secretaria(
     secretaria_id_original = secretaria.id
     templates = list(secretaria.moldes)
     assets = list(secretaria.assets)
+    layout_presets = (
+        db.query(CertificateLayoutPreset)
+        .filter(CertificateLayoutPreset.secretaria_id == secretaria.id)
+        .all()
+    )
 
     for template in templates:
         file_path = None
@@ -351,6 +364,9 @@ def admin_delete_secretaria(
                     detail=f"Nao foi possivel remover um arquivo de asset da secretaria: {error}",
                 ) from error
         db.delete(asset)
+
+    for preset in layout_presets:
+        db.delete(preset)
 
     secretaria.usuarios.clear()
     db.query(AuditEvent).filter(AuditEvent.secretaria_id == secretaria.id).update(

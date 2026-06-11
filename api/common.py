@@ -14,9 +14,18 @@ from sqlalchemy.orm import Session
 from bootstrap import run_startup_bootstrap
 from database import SessionLocal, get_db
 from migrations import ensure_database_schema
-from models import AuditEvent, Certificate, CertificateTemplate, Secretaria, SecretariaAsset, Usuario
+from models import (
+    AuditEvent,
+    Certificate,
+    CertificateLayoutPreset,
+    CertificateTemplate,
+    Secretaria,
+    SecretariaAsset,
+    Usuario,
+)
 from schemas import (
     AuditEventResponse,
+    CertificateLayoutPresetResponse,
     CertificateResponse,
     CertificateTemplateResponse,
     SecretariaAssetResponse,
@@ -390,6 +399,21 @@ def build_secretaria_asset_response(
         criado_em=asset.criado_em,
         criado_por_usuario_id=asset.criado_por_usuario_id,
         criado_por_username=asset.criado_por.username if asset.criado_por else None,
+    )
+
+
+def build_layout_preset_response(preset: CertificateLayoutPreset) -> CertificateLayoutPresetResponse:
+    return CertificateLayoutPresetResponse(
+        id=preset.id,
+        secretaria_id=preset.secretaria_id,
+        secretaria_sigla=preset.secretaria.sigla if preset.secretaria else None,
+        secretaria_nome=preset.secretaria.nome if preset.secretaria else None,
+        nome=preset.nome,
+        payload=preset.payload or {},
+        criado_em=preset.criado_em,
+        atualizado_em=preset.atualizado_em,
+        criado_por_usuario_id=preset.criado_por_usuario_id,
+        criado_por_username=preset.criado_por.username if preset.criado_por else None,
     )
 
 

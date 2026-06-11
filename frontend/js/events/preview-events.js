@@ -11,6 +11,23 @@ function registerPreviewEvents() {
     previewResetLayoutBtn.addEventListener("click", resetPreviewLayoutDefaults);
   }
 
+  if (layoutPresetSelect) {
+    layoutPresetSelect.addEventListener("change", handleLayoutPresetSelectionChange);
+  }
+
+  if (layoutPresetApplyBtn) {
+    layoutPresetApplyBtn.addEventListener("click", () => {
+      void applySelectedLayoutPreset();
+    });
+  }
+
+  if (layoutPresetForm) {
+    layoutPresetForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void saveCurrentLayoutPreset();
+    });
+  }
+
   [
     previewAdjustLabelInput,
     previewAdjustXInput,

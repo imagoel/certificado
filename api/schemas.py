@@ -1,6 +1,6 @@
 import os
 from datetime import date, datetime
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -113,6 +113,29 @@ class SecretariaAssetResponse(BaseModel):
     ordem: int = 0
     arquivo_url: str
     criado_em: datetime
+    criado_por_usuario_id: Optional[int] = None
+    criado_por_username: Optional[str] = None
+
+
+class CertificateLayoutPresetCreate(BaseModel):
+    nome: str = Field(min_length=2, max_length=120)
+    payload: dict[str, Any]
+
+
+class CertificateLayoutPresetUpdate(BaseModel):
+    nome: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    payload: Optional[dict[str, Any]] = None
+
+
+class CertificateLayoutPresetResponse(BaseModel):
+    id: int
+    secretaria_id: int
+    secretaria_sigla: Optional[str] = None
+    secretaria_nome: Optional[str] = None
+    nome: str
+    payload: dict[str, Any]
+    criado_em: datetime
+    atualizado_em: datetime
     criado_por_usuario_id: Optional[int] = None
     criado_por_username: Optional[str] = None
 

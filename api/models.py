@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    JSON,
     String,
     Table,
     Text,
@@ -45,6 +46,9 @@ class Secretaria(Base):
     certificados: Mapped[list["Certificate"]] = relationship(back_populates="secretaria")
     moldes: Mapped[list["CertificateTemplate"]] = relationship(back_populates="secretaria")
     assets: Mapped[list["SecretariaAsset"]] = relationship(back_populates="secretaria")
+    layout_presets: Mapped[list["CertificateLayoutPreset"]] = relationship(
+        back_populates="secretaria"
+    )
     auditorias: Mapped[list["AuditEvent"]] = relationship(back_populates="secretaria")
 
 
@@ -75,6 +79,10 @@ class Usuario(Base):
     assets_criados: Mapped[list["SecretariaAsset"]] = relationship(
         back_populates="criado_por",
         foreign_keys="SecretariaAsset.criado_por_usuario_id",
+    )
+    layout_presets_criados: Mapped[list["CertificateLayoutPreset"]] = relationship(
+        back_populates="criado_por",
+        foreign_keys="CertificateLayoutPreset.criado_por_usuario_id",
     )
     auditorias: Mapped[list["AuditEvent"]] = relationship(back_populates="usuario")
 
@@ -174,6 +182,35 @@ class SecretariaAsset(Base):
     secretaria: Mapped[Secretaria] = relationship(back_populates="assets")
     criado_por: Mapped[Usuario | None] = relationship(
         back_populates="assets_criados",
+        foreign_keys=[criado_por_usuario_id],
+    )
+
+
+class CertificateLayoutPreset(Base):
+    __tablename__ = "certificate_layout_presets"
+    __table_args__ = (
+        UniqueConstraint("secretaria_id", "nome", name="uq_layout_presets_secretaria_nome"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    secretaria_id: Mapped[int] = mapped_column(
+        ForeignKey("secretarias.id"), index=True, nullable=False
+    )
+    nome: Mapped[str] = mapped_column(String(120), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    criado_por_usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id"), nullable=True
+    )
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        nullable=False,
+    )
+
+    secretaria: Mapped[Secretaria] = relationship(back_populates="layout_presets")
+    criado_por: Mapped[Usuario | None] = relationship(
+        back_populates="layout_presets_criados",
         foreign_keys=[criado_por_usuario_id],
     )
 

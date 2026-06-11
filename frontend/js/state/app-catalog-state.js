@@ -48,3 +48,10 @@ const secretariaAssetCatalogState = {
   selo3: { items: [], selectedId: "" },
   selo4: { items: [], selectedId: "" },
 };
+
+const layoutPresetState = {
+  items: [],
+  selectedId: "",
+  isSaving: false,
+  isApplying: false,
+};
