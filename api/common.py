@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import time
@@ -317,6 +318,112 @@ def resolve_media_path(relative_path: str) -> Path:
     if not str(candidate).startswith(str(CERTIFICADOS_MEDIA_DIR)):
         raise HTTPException(status_code=400, detail="Caminho de arquivo invalido.")
     return candidate
+
+
+class CertificatePngReplacement:
+    def __init__(
+        self,
+        *,
+        relative_path: str,
+        final_path: Path,
+        temp_path: Path,
+        backup_path: Path | None,
+        old_path: Path | None,
+    ) -> None:
+        self.relative_path = relative_path
+        self.final_path = final_path
+        self.temp_path = temp_path
+        self.backup_path = backup_path
+        self.old_path = old_path
+
+    def rollback(self) -> None:
+        if self.temp_path.exists():
+            self.temp_path.unlink(missing_ok=True)
+
+        if self.final_path.exists():
+            self.final_path.unlink(missing_ok=True)
+
+        if self.backup_path and self.backup_path.exists():
+            self.backup_path.replace(self.final_path)
+
+    def commit(self) -> None:
+        try:
+            if self.backup_path and self.backup_path.exists():
+                self.backup_path.unlink(missing_ok=True)
+
+            if (
+                self.old_path
+                and self.old_path != self.final_path
+                and self.old_path.exists()
+                and self.old_path.is_file()
+            ):
+                self.old_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def parse_render_snapshot_payload(raw_value: str | dict | None) -> dict | None:
+    if raw_value is None:
+        return None
+
+    if isinstance(raw_value, dict):
+        return raw_value
+
+    raw_text = str(raw_value).strip()
+    if not raw_text:
+        return None
+
+    try:
+        payload = json.loads(raw_text)
+    except json.JSONDecodeError as error:
+        raise HTTPException(status_code=422, detail="Snapshot de renderizacao invalido.") from error
+
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="Snapshot de renderizacao deve ser um objeto.")
+
+    return payload
+
+
+def replace_certificate_png_safely(cert: Certificate, content: bytes) -> CertificatePngReplacement:
+    relative_path = build_file_relative_path(cert.codigo).replace("\\", "/")
+    final_path = resolve_media_path(relative_path)
+    final_path.parent.mkdir(parents=True, exist_ok=True)
+
+    old_path = None
+    if cert.arquivo_relpath:
+        try:
+            old_path = resolve_media_path(cert.arquivo_relpath)
+        except HTTPException:
+            old_path = None
+
+    temp_path = final_path.with_name(f".{final_path.name}.{uuid4().hex}.tmp")
+    backup_path = final_path.with_name(f".{final_path.name}.{uuid4().hex}.bak")
+    active_backup_path = None
+
+    try:
+        temp_path.write_bytes(content)
+        if final_path.exists():
+            final_path.replace(backup_path)
+            active_backup_path = backup_path
+        temp_path.replace(final_path)
+    except OSError as error:
+        temp_path.unlink(missing_ok=True)
+        if active_backup_path and active_backup_path.exists():
+            if final_path.exists():
+                final_path.unlink(missing_ok=True)
+            active_backup_path.replace(final_path)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Nao foi possivel substituir o PNG do certificado: {error}",
+        ) from error
+
+    return CertificatePngReplacement(
+        relative_path=relative_path,
+        final_path=final_path,
+        temp_path=temp_path,
+        backup_path=active_backup_path,
+        old_path=old_path,
+    )
 
 
 def resolve_template_media_path(relative_path: str) -> Path:
@@ -774,6 +881,10 @@ def to_response(
         secretaria_nome=cert.secretaria.nome if cert.secretaria else None,
         emitido_por_usuario_id=cert.emitido_por_usuario_id,
         emitido_por_username=cert.emitido_por.username if cert.emitido_por else None,
+        render_snapshot=cert.render_snapshot,
+        atualizado_em=cert.atualizado_em,
+        atualizado_por_usuario_id=cert.atualizado_por_usuario_id,
+        atualizado_por_username=cert.atualizado_por.username if cert.atualizado_por else None,
         excluido_em=cert.excluido_em,
         exclusao_expira_em=cert.exclusao_expira_em,
         excluido_por_usuario_id=cert.excluido_por_usuario_id,

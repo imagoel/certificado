@@ -44,6 +44,38 @@
   background: #f8fbff;
 }
 
+.certificate-edit-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(26, 79, 139, 0.22);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(232, 241, 255, 0.92), rgba(255, 255, 255, 0.72));
+  box-shadow: 0 12px 26px rgba(26, 79, 139, 0.08);
+}
+
+.certificate-edit-banner strong {
+  display: block;
+  color: #143a67;
+  font-size: 1rem;
+}
+
+.certificate-edit-banner .hint {
+  margin: 3px 0 0;
+}
+
+.certificate-edit-banner .edit-warning {
+  color: #9a6700;
+}
+
+.certificate-edit-actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
 .admin-compact-form {
   gap: 9px;
 }

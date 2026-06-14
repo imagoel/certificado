@@ -52,6 +52,9 @@ function registerSessionEvents() {
       if (!secretariaId) return;
 
       try {
+        if (editingCertificate) {
+          cancelCertificateEditMode({ silent: true });
+        }
         const session = await apiJsonRequest("/api/auth/select-secretaria", {
           method: "POST",
           body: JSON.stringify({ secretaria_id: secretariaId }),

@@ -73,6 +73,7 @@ function renderSession(session) {
 function clearSessionUi(message = "") {
   sessionState = null;
   closeDeleteCertificateDialog();
+  closeCertificateEditDialog();
   closeClearTrashDialog();
   closeBatchConfirmDialog();
   certListState.page = 1;
@@ -339,6 +340,10 @@ function setAuditStatus(message, type = "info") {
 
 function setDeleteCertStatus(message, type = "info") {
   setStatusMessage(deleteCertStatus, message, type);
+}
+
+function setEditCertStatus(message, type = "info") {
+  setStatusMessage(editCertStatus, message, type);
 }
 
 function setClearTrashStatus(message, type = "info") {

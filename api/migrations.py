@@ -38,6 +38,12 @@ def bridge_legacy_schema(connection) -> None:
         statements.append("ALTER TABLE certificados ADD COLUMN arquivo_mime VARCHAR(100)")
     if "arquivo_bytes" not in columns:
         statements.append("ALTER TABLE certificados ADD COLUMN arquivo_bytes INTEGER")
+    if "render_snapshot" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN render_snapshot JSON")
+    if "atualizado_em" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN atualizado_em DATETIME")
+    if "atualizado_por_usuario_id" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN atualizado_por_usuario_id INTEGER")
     if "secretaria_id" not in columns:
         statements.append("ALTER TABLE certificados ADD COLUMN secretaria_id INTEGER")
     if "emitido_por_usuario_id" not in columns:

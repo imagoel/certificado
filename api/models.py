@@ -72,6 +72,10 @@ class Usuario(Base):
         back_populates="emitido_por",
         foreign_keys="Certificate.emitido_por_usuario_id",
     )
+    certificados_atualizados: Mapped[list["Certificate"]] = relationship(
+        back_populates="atualizado_por",
+        foreign_keys="Certificate.atualizado_por_usuario_id",
+    )
     moldes_criados: Mapped[list["CertificateTemplate"]] = relationship(
         back_populates="criado_por",
         foreign_keys="CertificateTemplate.criado_por_usuario_id",
@@ -109,6 +113,11 @@ class Certificate(Base):
     arquivo_relpath: Mapped[str | None] = mapped_column(String(255), nullable=True)
     arquivo_mime: Mapped[str | None] = mapped_column(String(100), nullable=True)
     arquivo_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    render_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    atualizado_por_usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id"), nullable=True
+    )
     excluido_em: Mapped[datetime | None] = mapped_column(DateTime, index=True, nullable=True)
     exclusao_expira_em: Mapped[datetime | None] = mapped_column(DateTime, index=True, nullable=True)
     excluido_por_usuario_id: Mapped[int | None] = mapped_column(
@@ -119,6 +128,10 @@ class Certificate(Base):
     emitido_por: Mapped[Usuario | None] = relationship(
         back_populates="certificados_emitidos",
         foreign_keys=[emitido_por_usuario_id],
+    )
+    atualizado_por: Mapped[Usuario | None] = relationship(
+        back_populates="certificados_atualizados",
+        foreign_keys=[atualizado_por_usuario_id],
     )
     excluido_por: Mapped[Usuario | None] = relationship(
         foreign_keys=[excluido_por_usuario_id],

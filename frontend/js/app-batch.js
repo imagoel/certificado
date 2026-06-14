@@ -39,17 +39,22 @@ function buildIgnoredRowsSummary(invalidRows, limit = 5) {
 }
 
 function setBatchButtonsDisabled(disabled) {
-  if (batchPreviewBtn) batchPreviewBtn.disabled = disabled;
-  if (batchGenerateBtn) batchGenerateBtn.disabled = disabled;
+  const isEditing = Boolean(editingCertificate);
+  if (batchPreviewBtn) batchPreviewBtn.disabled = disabled || isEditing;
+  if (batchGenerateBtn) batchGenerateBtn.disabled = disabled || isEditing;
   syncGenerateSubmitButton();
 }
 
 function syncGenerateSubmitButton() {
   if (!generateSubmitBtn) return;
-  generateSubmitBtn.disabled = isBatchRunning || isSingleGenerationRunning;
-  generateSubmitBtn.textContent = isSingleGenerationRunning
-    ? "Gerando..."
-    : "Gerar Certificado";
+  const isEditing = Boolean(editingCertificate);
+  generateSubmitBtn.disabled =
+    isBatchRunning || isSingleGenerationRunning || isCertificateEditSaving || isEditing;
+  generateSubmitBtn.textContent = isEditing
+    ? "Em edicao"
+    : isSingleGenerationRunning
+      ? "Gerando..."
+      : "Gerar Certificado";
 }
 
 function getBatchDefaults() {
@@ -261,6 +266,7 @@ async function executeBatchGeneration(prepared) {
     const failedUploads = [];
     const successfulCertificates = [];
     const discardedCertificates = [];
+    const batchRenderSnapshot = buildLayoutPresetPayload();
 
     setBatchStatus("Registrando lote no backend...", "info");
     const registered = await registerBatchCertificates(certificates);
@@ -319,7 +325,9 @@ async function executeBatchGeneration(prepared) {
         "info"
       );
       try {
-        await uploadCertificateImage(cert.codigo, pngBlob, cert.fileName);
+        await uploadCertificateImage(cert.codigo, pngBlob, cert.fileName, {
+          renderSnapshot: batchRenderSnapshot,
+        });
         zip.file(cert.fileName, pngBlob);
         successfulCertificates.push(cert);
         unresolvedCertificates.delete(cert.codigo);
@@ -447,6 +455,10 @@ async function executeBatchGeneration(prepared) {
 async function handleBatchPreview() {
   if (!planilhaInput) return;
   if (isBatchRunning) return;
+  if (editingCertificate) {
+    setBatchStatus("Finalize ou cancele a edicao antes de usar o lote.", "info");
+    return;
+  }
   if (!sessionState) {
     await handleUnauthorized();
     return;
@@ -495,6 +507,10 @@ async function handleBatchPreview() {
 async function handleBatchGenerate() {
   if (!planilhaInput || !batchGenerateBtn) return;
   if (isBatchRunning) return;
+  if (editingCertificate) {
+    setBatchStatus("Finalize ou cancele a edicao antes de gerar lote.", "info");
+    return;
+  }
   if (!sessionState) {
     await handleUnauthorized();
     return;

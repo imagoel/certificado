@@ -17,6 +17,9 @@ let sessionState = null;
 let currentSection = "generator";
 let pendingDuplicateCertificate = null;
 let pendingDeleteCertificate = null;
+let editingCertificate = null;
+let pendingCertificateEditConfirmation = null;
+let isCertificateEditSaving = false;
 let pendingBatchGeneration = null;
 
 let selectedPreviewAdjustTarget = "";

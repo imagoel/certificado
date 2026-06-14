@@ -1,7 +1,7 @@
 import math
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -14,12 +14,16 @@ from common import (
     delete_certificate_permanently,
     get_secretarias_by_ids,
     normalize_secretaria_sigla,
+    parse_render_snapshot_payload,
     purge_expired_deleted_certificates,
     record_audit_event,
     require_admin_user,
+    replace_certificate_png_safely,
     resolve_template_media_path,
     sanitize_code,
+    to_response,
     utc_now,
+    validate_png_upload,
     validate_role_and_secretarias,
 )
 from database import get_db
@@ -35,6 +39,7 @@ from models import (
 from schemas import (
     ActionResponse,
     CertificateAdminDeleteRequest,
+    CertificateResponse,
     CertificateTrashClearRequest,
     PaginatedAuditEventResponse,
     SecretariaAdminCreate,
@@ -44,7 +49,7 @@ from schemas import (
     UserAdminResponse,
     UserAdminUpdate,
 )
-from security import hash_password, normalize_username, verify_password
+from security import calculate_certificate_hash, hash_password, normalize_username, verify_password
 
 
 router = APIRouter()
@@ -55,6 +60,16 @@ LOW_SIGNAL_AUDIT_EVENTS = (
     "troca_secretaria",
     "certificado_png_acessado",
 )
+
+
+def normalize_certificate_form_text(value: str, field_label: str) -> str:
+    text = (value or "").strip()
+    if len(text) < 2 or len(text) > 200:
+        raise HTTPException(
+            status_code=422,
+            detail=f"{field_label} deve ter entre 2 e 200 caracteres.",
+        )
+    return text
 
 
 @router.get("/api/admin/secretarias", response_model=list[SecretariaResponse])
@@ -451,6 +466,100 @@ def admin_list_audit_events(
         paginas=paginas,
         itens=[build_audit_response(event) for event in events],
     )
+
+
+@router.patch("/api/admin/certificados/{codigo}", response_model=CertificateResponse)
+async def admin_update_certificate(
+    codigo: str,
+    request: Request,
+    nome: str = Form(...),
+    curso: str = Form(...),
+    concluido: date = Form(...),
+    carga_h: int = Form(...),
+    render_snapshot: str | None = Form(default=None),
+    password: str = Form(...),
+    confirmacao_codigo: str = Form(...),
+    arquivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> CertificateResponse:
+    normalized_code = sanitize_code(codigo)
+    confirmation_code = sanitize_code(confirmacao_codigo)
+    if confirmation_code != normalized_code:
+        raise HTTPException(
+            status_code=422,
+            detail="Codigo de confirmacao divergente. Digite o codigo exato do certificado.",
+        )
+
+    if not verify_password(password, admin_user.senha_hash):
+        raise HTTPException(status_code=401, detail="Senha do administrador invalida.")
+
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
+
+    if cert.excluido_em:
+        raise HTTPException(status_code=409, detail="Certificado na lixeira nao pode ser editado.")
+
+    if cert.arquivo_pendente:
+        raise HTTPException(status_code=409, detail="Certificado pendente nao pode ser editado.")
+
+    clean_nome = normalize_certificate_form_text(nome, "Nome")
+    clean_curso = normalize_certificate_form_text(curso, "Curso")
+    if carga_h < 0 or carga_h > 2000:
+        raise HTTPException(
+            status_code=422,
+            detail="Carga horaria deve estar entre 0 e 2000 horas.",
+        )
+
+    snapshot = parse_render_snapshot_payload(render_snapshot)
+    content = await arquivo.read()
+    validate_png_upload(arquivo, content)
+    replacement = replace_certificate_png_safely(cert, content)
+
+    try:
+        cert.nome = clean_nome
+        cert.curso = clean_curso
+        cert.concluido = concluido
+        cert.carga_h = carga_h
+        cert.hash = calculate_certificate_hash(
+            codigo=cert.codigo,
+            nome=cert.nome,
+            cpf=cert.cpf,
+            curso=cert.curso,
+            carga_h=cert.carga_h,
+            concluido=cert.concluido.isoformat(),
+        )
+        cert.render_snapshot = snapshot
+        cert.atualizado_em = utc_now()
+        cert.atualizado_por_usuario_id = admin_user.id
+        cert.arquivo_relpath = replacement.relative_path
+        cert.arquivo_mime = "image/png"
+        cert.arquivo_bytes = len(content)
+        cert.arquivo_pendente = False
+
+        record_audit_event(
+            db,
+            evento="certificado_atualizado",
+            descricao=(
+                f"Certificado {cert.codigo} atualizado por {admin_user.username}. "
+                "Dados principais e PNG foram regenerados."
+            ),
+            usuario=admin_user,
+            secretaria=cert.secretaria,
+            certificado=cert,
+            entidade_tipo="certificado",
+            entidade_id=cert.id,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        replacement.rollback()
+        raise
+
+    replacement.commit()
+    db.refresh(cert)
+    return to_response(cert, request)
 
 
 @router.delete("/api/admin/certificados/lixeira", response_model=ActionResponse)
