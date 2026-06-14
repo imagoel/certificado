@@ -1,11 +1,16 @@
 
 function renderCertificateRows(items) {
   if (!certListBody) return;
+  const trashMode = Boolean(certListState.trashMode);
 
   if (!items.length) {
     certListBody.innerHTML = `
       <tr>
-        <td colspan="8" class="empty-state">Nenhum certificado encontrado com os filtros atuais.</td>
+        <td colspan="8" class="empty-state">${
+          trashMode
+            ? "Nenhum certificado na lixeira."
+            : "Nenhum certificado encontrado com os filtros atuais."
+        }</td>
       </tr>
     `;
     return;
@@ -38,6 +43,13 @@ function renderCertificateRows(items) {
       `Emitido em: ${formatDateTime(item.emitido_em)}`,
       `Emitido por: ${item.emitido_por_username || "-"}`,
     ];
+    if (trashMode) {
+      mobileMeta.push(
+        `Excluido em: ${formatDateTime(item.excluido_em)}`,
+        `Expira em: ${formatDateTime(item.exclusao_expira_em)}`,
+        `Excluido por: ${item.excluido_por_username || "-"}`
+      );
+    }
     mobileMeta.forEach((text) => {
       const metaLine = document.createElement("span");
       metaLine.className = "table-mobile-meta-item";
@@ -45,7 +57,16 @@ function renderCertificateRows(items) {
       nameMeta.appendChild(metaLine);
     });
 
-    nameCell.append(nameTitle, nameMeta);
+    if (trashMode) {
+      const trashMeta = document.createElement("span");
+      trashMeta.className = "cert-trash-meta";
+      trashMeta.textContent =
+        `Na lixeira desde ${formatDateTime(item.excluido_em)}. ` +
+        `Expira em ${formatDateTime(item.exclusao_expira_em)}.`;
+      nameCell.append(nameTitle, trashMeta, nameMeta);
+    } else {
+      nameCell.append(nameTitle, nameMeta);
+    }
 
     const courseCell = document.createElement("td");
     courseCell.className = "cert-col-course";
@@ -72,21 +93,40 @@ function renderCertificateRows(items) {
     const actionsWrap = document.createElement("div");
     actionsWrap.className = "inline-actions cert-actions";
 
-    actionsWrap.appendChild(
-      createIconButton("Validar certificado", "eye", () => {
-        window.open(item.url_validacao, "_blank", "noopener,noreferrer");
-      })
-    );
+    if (trashMode) {
+      const pngButton = createIconButton("Abrir PNG interno", "download", () => {
+        if (item.arquivo_admin_url) {
+          window.open(item.arquivo_admin_url, "_blank", "noopener,noreferrer");
+        }
+      });
+      pngButton.disabled = !item.arquivo_admin_url;
+      actionsWrap.appendChild(pngButton);
+      actionsWrap.appendChild(
+        createInlineButton("Restaurar", () => {
+          void restoreCertificate(item);
+        })
+      );
+    } else {
+      actionsWrap.appendChild(
+        createIconButton("Validar certificado", "eye", () => {
+          window.open(item.url_validacao, "_blank", "noopener,noreferrer");
+        })
+      );
 
-    const pngButton = createIconButton("Abrir PNG", "download", () => {
-      if (item.arquivo_admin_url || item.arquivo_url) {
-        window.open(item.arquivo_admin_url || item.arquivo_url, "_blank", "noopener,noreferrer");
-      }
-    });
-    pngButton.disabled = !(item.arquivo_admin_url || item.arquivo_url);
-    actionsWrap.appendChild(pngButton);
+      const pngButton = createIconButton("Abrir PNG", "download", () => {
+        if (item.arquivo_admin_url || item.arquivo_url) {
+          window.open(
+            item.arquivo_admin_url || item.arquivo_url,
+            "_blank",
+            "noopener,noreferrer"
+          );
+        }
+      });
+      pngButton.disabled = !(item.arquivo_admin_url || item.arquivo_url);
+      actionsWrap.appendChild(pngButton);
+    }
 
-    if (isAdminSession()) {
+    if (isAdminSession() && !trashMode) {
       const menu = document.createElement("details");
       menu.className = "action-menu";
 
@@ -99,7 +139,7 @@ function renderCertificateRows(items) {
       const menuContent = document.createElement("div");
       menuContent.className = "action-menu-content";
       const deleteButton = createInlineButton(
-        "Excluir",
+        "Mover para lixeira",
         () => {
           menu.open = false;
           openDeleteCertificateDialog(item);
@@ -126,6 +166,46 @@ function renderCertificateRows(items) {
 
     certListBody.appendChild(row);
   });
+}
+
+async function restoreCertificate(item) {
+  if (!item || !item.codigo || !isAdminSession()) return;
+
+  const confirmed = window.confirm(
+    `Restaurar o certificado ${item.codigo}? O link de validacao voltara a funcionar.`
+  );
+  if (!confirmed) return;
+
+  try {
+    setCertListStatus(`Restaurando ${item.codigo}...`, "info");
+    const payload = await apiJsonRequest(
+      `/api/admin/certificados/${encodeURIComponent(item.codigo)}/restaurar`,
+      { method: "POST" }
+    );
+    const currentPage = certListState.page || 1;
+    const remainingTotal = Math.max(0, (certListState.total || 0) - 1);
+    const maxPageAfterRestore = Math.max(
+      1,
+      Math.ceil(remainingTotal / certListState.perPage)
+    );
+
+    setCertListStatus(
+      (payload && payload.message) || `Certificado ${item.codigo} restaurado com sucesso.`,
+      "success"
+    );
+    await loadCertificates(Math.min(currentPage, maxPageAfterRestore));
+    await loadAuditEvents(1);
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setCertListStatus(
+      (error && error.message) || "Nao foi possivel restaurar o certificado.",
+      "error"
+    );
+  }
 }
 
 function renderUsersTable() {
@@ -482,6 +562,7 @@ function getCertificateReportQueryParams(page, perPage) {
     concluido_ate: certListState.filters.concluidoAte,
     emitido_de: certListState.filters.emitidoDe,
     emitido_ate: certListState.filters.emitidoAte,
+    lixeira: certListState.trashMode ? "true" : "",
   };
 }
 
@@ -500,6 +581,7 @@ function getCertificateReportFilters() {
           : "Todos";
 
   return [
+    { label: "Modo", value: certListState.trashMode ? "Lixeira" : "Ativos" },
     { label: "Busca", value: sanitizeText(certListState.filters.busca) || "Todas" },
     { label: "Secretaria", value: getSelectedOptionText(certFilterSecretariaSelect, "Todas") },
     { label: "Conclusão", value: periodLabel(concluidoStart, concluidoEnd) },

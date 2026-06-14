@@ -3,6 +3,7 @@ const certListState = {
   perPage: 10,
   total: 0,
   totalPages: 1,
+  trashMode: false,
   filters: {
     busca: "",
     secretariaId: "",

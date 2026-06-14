@@ -73,10 +73,12 @@ function renderSession(session) {
 function clearSessionUi(message = "") {
   sessionState = null;
   closeDeleteCertificateDialog();
+  closeClearTrashDialog();
   closeBatchConfirmDialog();
   certListState.page = 1;
   certListState.total = 0;
   certListState.totalPages = 1;
+  certListState.trashMode = false;
   certListState.filters.busca = "";
   certListState.filters.secretariaId = "";
   certListState.filters.concluidoDe = "";
@@ -115,6 +117,7 @@ function clearSessionUi(message = "") {
   }
   if (auditSecretariaWrap) auditSecretariaWrap.hidden = false;
   updateCertificateQuickFilterButtons();
+  syncCertificateTrashModeUi();
   updateAuditQuickFilterButtons();
   if (certListBody) {
     certListBody.innerHTML = `
@@ -338,6 +341,10 @@ function setDeleteCertStatus(message, type = "info") {
   setStatusMessage(deleteCertStatus, message, type);
 }
 
+function setClearTrashStatus(message, type = "info") {
+  setStatusMessage(clearTrashStatus, message, type);
+}
+
 function setBatchConfirmStatus(message, type = "info") {
   setStatusMessage(batchConfirmStatus, message, type);
 }
@@ -369,11 +376,30 @@ function openDeleteCertificateDialog(item) {
     deleteCertPasswordInput.value = "";
   }
   if (deleteCertMessage) {
-    deleteCertMessage.textContent = `Confirme o código ${item.codigo} e informe a senha do administrador para excluir ${item.nome}.`;
+    deleteCertMessage.textContent = `Confirme o código ${item.codigo} e informe a senha do administrador para mover ${item.nome} para a lixeira.`;
   }
   setDeleteCertStatus("", "info");
   if (typeof deleteCertDialog.showModal === "function") {
     deleteCertDialog.showModal();
+  }
+}
+
+function closeClearTrashDialog() {
+  if (clearTrashForm) clearTrashForm.reset();
+  setClearTrashStatus("", "info");
+  if (clearTrashDialog && typeof clearTrashDialog.close === "function" && clearTrashDialog.open) {
+    clearTrashDialog.close();
+  }
+}
+
+function openClearTrashDialog() {
+  if (!clearTrashDialog || !clearTrashForm || !isAdminSession()) return;
+
+  if (clearTrashConfirmationInput) clearTrashConfirmationInput.value = "";
+  if (clearTrashPasswordInput) clearTrashPasswordInput.value = "";
+  setClearTrashStatus("", "info");
+  if (typeof clearTrashDialog.showModal === "function") {
+    clearTrashDialog.showModal();
   }
 }
 

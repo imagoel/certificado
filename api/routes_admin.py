@@ -1,5 +1,4 @@
 import math
-from pathlib import Path
 from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -8,16 +7,19 @@ from sqlalchemy.orm import Session
 
 from common import (
     build_audit_response,
+    build_certificate_trash_expiration,
     build_secretaria_response,
     build_user_admin_response,
     clear_all_login_attempts_for_username,
+    delete_certificate_permanently,
     get_secretarias_by_ids,
     normalize_secretaria_sigla,
+    purge_expired_deleted_certificates,
     record_audit_event,
     require_admin_user,
-    resolve_media_path,
     resolve_template_media_path,
     sanitize_code,
+    utc_now,
     validate_role_and_secretarias,
 )
 from database import get_db
@@ -33,6 +35,7 @@ from models import (
 from schemas import (
     ActionResponse,
     CertificateAdminDeleteRequest,
+    CertificateTrashClearRequest,
     PaginatedAuditEventResponse,
     SecretariaAdminCreate,
     SecretariaAdminUpdate,
@@ -411,6 +414,7 @@ def admin_list_audit_events(
                 AuditEvent.usuario.has(Usuario.nome.ilike(term)),
                 AuditEvent.usuario.has(Usuario.username.ilike(term)),
                 AuditEvent.certificado.has(Certificate.codigo.ilike(term)),
+                AuditEvent.certificado_codigo_snapshot.ilike(term),
             )
         )
 
@@ -449,6 +453,93 @@ def admin_list_audit_events(
     )
 
 
+@router.delete("/api/admin/certificados/lixeira", response_model=ActionResponse)
+def admin_clear_certificate_trash(
+    payload: CertificateTrashClearRequest,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> ActionResponse:
+    purged_count = purge_expired_deleted_certificates(db)
+    if purged_count:
+        db.commit()
+
+    if payload.confirmacao != "LIMPAR LIXEIRA":
+        raise HTTPException(
+            status_code=422,
+            detail="Digite LIMPAR LIXEIRA para confirmar a exclusao definitiva.",
+        )
+
+    if not verify_password(payload.password, admin_user.senha_hash):
+        raise HTTPException(status_code=401, detail="Senha do administrador invalida.")
+
+    deleted_certificates = (
+        db.query(Certificate)
+        .filter(Certificate.excluido_em.isnot(None))
+        .order_by(Certificate.excluido_em.asc(), Certificate.id.asc())
+        .all()
+    )
+    removed_count = len(deleted_certificates)
+
+    for cert in deleted_certificates:
+        delete_certificate_permanently(db, cert, record_event=False)
+
+    record_audit_event(
+        db,
+        evento="certificado_lixeira_limpa",
+        descricao=(
+            f"Lixeira de certificados limpa por {admin_user.username}. "
+            f"{removed_count} certificado(s) removido(s) definitivamente."
+        ),
+        usuario=admin_user,
+        entidade_tipo="certificado_lixeira",
+        entidade_id=removed_count,
+    )
+    db.commit()
+
+    return ActionResponse(
+        message=f"Lixeira limpa. {removed_count} certificado(s) removido(s) definitivamente."
+    )
+
+
+@router.post("/api/admin/certificados/{codigo}/restaurar", response_model=ActionResponse)
+def admin_restore_certificate(
+    codigo: str,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> ActionResponse:
+    purged_count = purge_expired_deleted_certificates(db)
+    if purged_count:
+        db.commit()
+
+    normalized_code = sanitize_code(codigo)
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
+
+    if not cert.excluido_em:
+        raise HTTPException(status_code=409, detail="Certificado nao esta na lixeira.")
+
+    cert.excluido_em = None
+    cert.exclusao_expira_em = None
+    cert.excluido_por_usuario_id = None
+    record_audit_event(
+        db,
+        evento="certificado_restaurado",
+        descricao=f"Certificado {cert.codigo} ({cert.nome}) restaurado por {admin_user.username}.",
+        usuario=admin_user,
+        secretaria=cert.secretaria,
+        certificado=cert,
+        entidade_tipo="certificado",
+        entidade_id=cert.id,
+    )
+    db.commit()
+
+    return ActionResponse(
+        message=f"Certificado {cert.codigo} restaurado com sucesso.",
+        codigo=cert.codigo,
+    )
+
+
 @router.delete("/api/admin/certificados/{codigo}", response_model=ActionResponse)
 def admin_delete_certificate(
     codigo: str,
@@ -470,49 +561,30 @@ def admin_delete_certificate(
     if not cert:
         raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
 
-    cert_id = cert.id
-    cert_code = cert.codigo
-    cert_name = cert.nome
-    cert_secretaria = cert.secretaria
+    if cert.excluido_em:
+        raise HTTPException(status_code=409, detail="Certificado ja esta na lixeira.")
 
-    file_path: Path | None = None
-    if cert.arquivo_relpath:
-        try:
-            file_path = resolve_media_path(cert.arquivo_relpath)
-        except HTTPException:
-            file_path = None
+    deleted_at = utc_now()
+    cert.excluido_em = deleted_at
+    cert.exclusao_expira_em = build_certificate_trash_expiration(deleted_at)
+    cert.excluido_por_usuario_id = admin_user.id
 
-    if file_path and file_path.exists():
-        try:
-            file_path.unlink()
-        except OSError as error:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Nao foi possivel remover o arquivo do certificado: {error}",
-            ) from error
-
-    db.query(AuditEvent).filter(AuditEvent.certificado_id == cert_id).update(
-        {
-            AuditEvent.certificado_codigo_snapshot: cert_code,
-            AuditEvent.certificado_id: None,
-        },
-        synchronize_session=False,
-    )
-    db.delete(cert)
-    db.flush()
     record_audit_event(
         db,
         evento="certificado_excluido",
-        descricao=f"Certificado {cert_code} ({cert_name}) excluido por {admin_user.username}.",
+        descricao=(
+            f"Certificado {cert.codigo} ({cert.nome}) movido para a lixeira por "
+            f"{admin_user.username}."
+        ),
         usuario=admin_user,
-        secretaria=cert_secretaria,
-        certificado_codigo=cert_code,
+        secretaria=cert.secretaria,
+        certificado=cert,
         entidade_tipo="certificado",
-        entidade_id=cert_id,
+        entidade_id=cert.id,
     )
     db.commit()
 
     return ActionResponse(
-        message=f"Certificado {cert_code} excluido com sucesso.",
-        codigo=cert_code,
+        message=f"Certificado {cert.codigo} movido para a lixeira com sucesso.",
+        codigo=cert.codigo,
     )

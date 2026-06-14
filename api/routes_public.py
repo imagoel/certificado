@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from common import (
     build_certificate_file_url,
+    is_certificate_deleted,
     is_certificate_ready,
     sanitize_code,
     templates,
@@ -58,6 +59,8 @@ def validate_certificate_json(
     cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
     if not cert or cert.arquivo_pendente:
         return ValidationResponse(status="nao_encontrado", codigo=normalized_code, valido=False)
+    if is_certificate_deleted(cert):
+        return ValidationResponse(status="excluido", codigo=normalized_code, valido=False)
 
     valido = verify_certificate_hash(
         expected_hash=cert.hash,
@@ -99,6 +102,17 @@ def validate_certificate_html(
             {
                 "request": request,
                 "status": "nao_encontrado",
+                "codigo": normalized_code,
+                "certificado": None,
+                "arquivo_url": None,
+            },
+        )
+    if is_certificate_deleted(cert):
+        return templates.TemplateResponse(
+            "validacao.html",
+            {
+                "request": request,
+                "status": "excluido",
                 "codigo": normalized_code,
                 "certificado": None,
                 "arquivo_url": None,

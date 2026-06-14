@@ -59,6 +59,12 @@
   background: rgba(17, 32, 49, 0.45);
 }
 
+.danger-summary {
+  border-color: #fecaca;
+  background: #fff5f5;
+  color: #991b1b;
+}
+
 .modal-form {
   padding: 16px;
   background: #fff;
@@ -176,6 +182,13 @@
   margin-bottom: 2px;
   color: #143a67;
   white-space: normal;
+}
+
+.cert-trash-meta {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .table-mobile-meta {

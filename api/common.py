@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from threading import Lock
 from uuid import uuid4
@@ -46,6 +46,10 @@ DEFAULT_PREFIX = os.getenv("CODE_PREFIX", "ABC")
 DEFAULT_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "certificados"))
 CERTIFICADOS_MEDIA_DIR = Path(os.getenv("CERTIFICADOS_MEDIA_DIR", DEFAULT_MEDIA_DIR)).resolve()
 MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "8388608"))
+CERTIFICATE_TRASH_RETENTION_DAYS = max(
+    1,
+    int(os.getenv("CERTIFICATE_TRASH_RETENTION_DAYS", "30")),
+)
 DEFAULT_TEMPLATES_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "templates"))
 TEMPLATES_MEDIA_DIR = Path(
     os.getenv("TEMPLATES_MEDIA_DIR", DEFAULT_TEMPLATES_MEDIA_DIR)
@@ -227,7 +231,8 @@ def run_startup_tasks() -> None:
     db = SessionLocal()
     try:
         messages = run_startup_bootstrap(db)
-        if messages:
+        purged_count = purge_expired_deleted_certificates(db)
+        if messages or purged_count:
             db.commit()
             for message in messages:
                 print(message)
@@ -331,8 +336,16 @@ def has_certificate_file(cert: Certificate) -> bool:
     return file_path.exists() and file_path.is_file()
 
 
+def is_certificate_deleted(cert: Certificate) -> bool:
+    return bool(cert.excluido_em)
+
+
 def is_certificate_ready(cert: Certificate) -> bool:
-    return not bool(cert.arquivo_pendente) and has_certificate_file(cert)
+    return not bool(cert.arquivo_pendente) and not is_certificate_deleted(cert) and has_certificate_file(cert)
+
+
+def build_certificate_trash_expiration(deleted_at: datetime) -> datetime:
+    return deleted_at + timedelta(days=CERTIFICATE_TRASH_RETENTION_DAYS)
 
 
 def build_route_path(request: Request, route_name: str, **params) -> str:
@@ -659,6 +672,83 @@ def record_audit_event(
     return audit
 
 
+def delete_certificate_permanently(
+    db: Session,
+    cert: Certificate,
+    *,
+    usuario: Usuario | None = None,
+    evento: str = "certificado_exclusao_definitiva",
+    descricao: str | None = None,
+    record_event: bool = True,
+) -> None:
+    cert_id = cert.id
+    cert_code = cert.codigo
+    cert_secretaria = cert.secretaria
+
+    if cert.arquivo_relpath:
+        try:
+            file_path = resolve_media_path(cert.arquivo_relpath)
+        except HTTPException:
+            file_path = None
+        if file_path and file_path.exists():
+            try:
+                file_path.unlink()
+            except OSError as error:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Nao foi possivel remover o arquivo do certificado: {error}",
+                ) from error
+
+    db.query(AuditEvent).filter(AuditEvent.certificado_id == cert_id).update(
+        {
+            AuditEvent.certificado_codigo_snapshot: cert_code,
+            AuditEvent.certificado_id: None,
+        },
+        synchronize_session=False,
+    )
+    db.delete(cert)
+    db.flush()
+
+    if record_event:
+        record_audit_event(
+            db,
+            evento=evento,
+            descricao=descricao
+            or f"Certificado {cert_code} removido definitivamente da lixeira.",
+            usuario=usuario,
+            secretaria=cert_secretaria,
+            certificado_codigo=cert_code,
+            entidade_tipo="certificado",
+            entidade_id=cert_id,
+        )
+
+
+def purge_expired_deleted_certificates(db: Session, now: datetime | None = None) -> int:
+    reference_time = now or utc_now()
+    expired_certificates = (
+        db.query(Certificate)
+        .filter(
+            Certificate.excluido_em.isnot(None),
+            Certificate.exclusao_expira_em.isnot(None),
+            Certificate.exclusao_expira_em <= reference_time,
+        )
+        .all()
+    )
+
+    for cert in expired_certificates:
+        delete_certificate_permanently(
+            db,
+            cert,
+            evento="certificado_exclusao_definitiva",
+            descricao=(
+                f"Certificado {cert.codigo} removido definitivamente apos "
+                f"{CERTIFICATE_TRASH_RETENTION_DAYS} dias na lixeira."
+            ),
+        )
+
+    return len(expired_certificates)
+
+
 def code_exists(db: Session, codigo: str) -> bool:
     return db.query(Certificate.id).filter(Certificate.codigo == codigo).first() is not None
 
@@ -667,6 +757,7 @@ def to_response(
     cert: Certificate, request: Request, validation_url: str | None = None
 ) -> CertificateResponse:
     file_available = is_certificate_ready(cert)
+    internal_file_available = not bool(cert.arquivo_pendente) and has_certificate_file(cert)
     return CertificateResponse(
         id=cert.id,
         codigo=cert.codigo,
@@ -683,10 +774,14 @@ def to_response(
         secretaria_nome=cert.secretaria.nome if cert.secretaria else None,
         emitido_por_usuario_id=cert.emitido_por_usuario_id,
         emitido_por_username=cert.emitido_por.username if cert.emitido_por else None,
+        excluido_em=cert.excluido_em,
+        exclusao_expira_em=cert.exclusao_expira_em,
+        excluido_por_usuario_id=cert.excluido_por_usuario_id,
+        excluido_por_username=cert.excluido_por.username if cert.excluido_por else None,
         arquivo_disponivel=file_available,
         arquivo_url=build_certificate_file_url(request, cert.codigo) if file_available else None,
         arquivo_admin_url=build_internal_certificate_file_url(request, cert.codigo)
-        if file_available
+        if internal_file_available
         else None,
     )
 
@@ -743,7 +838,14 @@ def validate_template_upload(uploaded: UploadFile, content: bytes) -> None:
         )
 
 
-def build_certificate_file_response(cert: Certificate) -> FileResponse:
+def build_certificate_file_response(
+    cert: Certificate,
+    *,
+    allow_deleted: bool = False,
+) -> FileResponse:
+    if is_certificate_deleted(cert) and not allow_deleted:
+        raise HTTPException(status_code=404, detail="Arquivo de certificado nao encontrado.")
+
     if cert.arquivo_pendente or not cert.arquivo_relpath:
         raise HTTPException(status_code=404, detail="Arquivo de certificado nao encontrado.")
 
