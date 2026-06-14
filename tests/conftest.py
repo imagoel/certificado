@@ -18,6 +18,7 @@ if str(API_DIR) not in sys.path:
 MODULES_TO_RELOAD = [
     "database",
     "models",
+    "email_utils",
     "schemas",
     "security",
     "bootstrap",

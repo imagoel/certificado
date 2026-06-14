@@ -61,6 +61,7 @@ EXPECTED_CERTIFICATE_CSV_HEADERS = [
     "Código",
     "Participante",
     "CPF",
+    "Email",
     "Curso",
     "Carga horária",
     "Data de conclusão",
@@ -159,3 +160,29 @@ def test_custom_certificate_lines_can_stay_blank_without_default_fallback():
     assert "defaultTextoLinha2" not in app_batch_source
     assert "defaultTextoLinha1" not in app_spreadsheets_source
     assert "defaultTextoLinha2" not in app_spreadsheets_source
+
+
+def test_spreadsheet_email_aliases_and_validation_are_available():
+    source = _frontend_source()
+    runtime_state_source = (FRONTEND_JS_DIR / "state" / "app-runtime-state.js").read_text(
+        encoding="utf-8"
+    )
+    spreadsheets_source = (FRONTEND_JS_DIR / "app-spreadsheets.js").read_text(
+        encoding="utf-8"
+    )
+
+    for alias in [
+        '"email"',
+        '"e-mail"',
+        '"e_mail"',
+        '"emailaluno"',
+        '"emaildoaluno"',
+        '"emailparticipante"',
+        '"correio"',
+        '"correioeletronico"',
+    ]:
+        assert alias in runtime_state_source
+
+    assert "function normalizeOptionalEmailResult" in source
+    assert "linha ${rowNumber} (email invalido:" in spreadsheets_source
+    assert "emailResult.value" in spreadsheets_source

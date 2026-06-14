@@ -32,6 +32,9 @@ function registerGeneratorFormEvents() {
         await handleUnauthorized();
         return;
       }
+      if (error && error.field === "email" && emailInput && typeof emailInput.reportValidity === "function") {
+        emailInput.reportValidity();
+      }
       setBatchStatus(
         (error && error.message) || "Nao foi possivel verificar certificados semelhantes.",
         "error"
@@ -81,9 +84,12 @@ function registerGeneratorInputEvents() {
     });
   }
 
-  [nomeInput, cursoInput, dataInput, cargaHInput].forEach((input) => {
+  [nomeInput, cursoInput, emailInput, dataInput, cargaHInput].forEach((input) => {
     if (!input) return;
     input.addEventListener("input", () => {
+      if (input === emailInput && typeof input.setCustomValidity === "function") {
+        input.setCustomValidity("");
+      }
       if (editingCertificate && lastData) {
         syncEditingCertificateLastDataFromForm();
         void renderLastCertificate();

@@ -98,6 +98,7 @@ class Certificate(Base):
     codigo: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     nome: Mapped[str] = mapped_column(String(200), nullable=False)
     cpf: Mapped[str | None] = mapped_column(String(14), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
     curso: Mapped[str] = mapped_column(String(200), nullable=False)
     carga_h: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     concluido: Mapped[date] = mapped_column(Date, index=True, nullable=False)

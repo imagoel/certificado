@@ -191,6 +191,15 @@
   line-height: 1.35;
 }
 
+.cert-email-meta {
+  display: block;
+  margin-top: 1px;
+  color: #526981;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 .table-mobile-meta {
   display: none;
 }

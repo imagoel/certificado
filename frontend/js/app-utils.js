@@ -6,6 +6,33 @@ function sanitizeText(text) {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
 
+function normalizeOptionalEmailResult(value) {
+  const text = sanitizeText(value);
+  if (!text) return { value: "", invalid: false };
+
+  if (text.length > 254 || [".", "-", "@"].includes(text[0])) {
+    return { value: "", invalid: true };
+  }
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(text)) {
+    return { value: "", invalid: true };
+  }
+
+  const atIndex = text.lastIndexOf("@");
+  const local = text.slice(0, atIndex);
+  const domain = text.slice(atIndex + 1).toLowerCase();
+  if (!local || !domain || !domain.includes(".")) {
+    return { value: "", invalid: true };
+  }
+
+  return { value: `${local}@${domain}`, invalid: false };
+}
+
+function formatInvalidEmail(value) {
+  const text = sanitizeText(value);
+  return text ? `"${text}"` : "valor nao reconhecido";
+}
+
 function formatDate(dateStr) {
   if (!dateStr || !dateStr.includes("-")) return dateStr || "";
   const [year, month, day] = dateStr.split("-");

@@ -82,6 +82,7 @@ def list_certificates(
             or_(
                 Certificate.codigo.ilike(term),
                 Certificate.nome.ilike(term),
+                Certificate.email.ilike(term),
                 Certificate.curso.ilike(term),
             )
         )
@@ -217,6 +218,7 @@ def create_certificate(
         codigo=codigo,
         nome=payload.nome,
         cpf=payload.cpf,
+        email=payload.email,
         curso=payload.curso,
         carga_h=payload.carga_h,
         concluido=payload.concluido,
@@ -299,6 +301,7 @@ def create_certificates_batch(
             codigo=codigo,
             nome=item.nome,
             cpf=item.cpf,
+            email=item.email,
             curso=item.curso,
             carga_h=item.carga_h,
             concluido=item.concluido,

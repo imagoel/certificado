@@ -23,7 +23,7 @@ function normalizeHeader(value) {
 function resolveCanonicalField(rawHeader) {
   const normalized = normalizeHeader(rawHeader);
   for (const [field, aliases] of Object.entries(fieldAliases)) {
-    if (aliases.includes(normalized)) return field;
+    if (aliases.some((alias) => normalizeHeader(alias) === normalized)) return field;
   }
   return null;
 }
@@ -203,6 +203,13 @@ function mapRowToCertificate(row, rowNumber, defaults = {}, options = {}) {
     buildFullName(mapped.nome, mapped.sobrenome) ||
     (allowSingleCellFallback ? extractSingleCellValue(row) : "");
   const curso = sanitizeText(mapped.curso) || defaultCurso;
+  const emailResult = normalizeOptionalEmailResult(mapped.email);
+  if (emailResult.invalid) {
+    return {
+      error: `linha ${rowNumber} (email invalido: ${formatInvalidEmail(mapped.email)})`,
+    };
+  }
+
   const mappedDateResult = normalizeSpreadsheetDateResult(mapped.data);
   if (mappedDateResult.invalid) {
     return {
@@ -229,12 +236,13 @@ function mapRowToCertificate(row, rowNumber, defaults = {}, options = {}) {
 
   const linha1 = sanitizeText(mapped.linha1) || defaultLinha1;
   const linha2 = sanitizeText(mapped.linha2) || defaultLinha2;
+  const email = emailResult.value;
   const arquivoBase =
     sanitizeText(mapped.arquivo) ||
     `${String(rowNumber).padStart(4, "0")}_${sanitizeFileName(nome, "aluno")}`;
   const fileName = `${sanitizeFileName(arquivoBase, `certificado_${rowNumber}`)}.png`;
 
-  return { rowNumber, nome, curso, data, codigo: "", carga_h, linha1, linha2, fileName };
+  return { rowNumber, nome, email, curso, data, codigo: "", carga_h, linha1, linha2, fileName };
 }
 
 function buildSyntheticHeaders(columnCount) {

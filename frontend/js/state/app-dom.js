@@ -244,6 +244,7 @@ const layoutPresetSaveBtn = document.getElementById("layout-preset-save");
 const layoutPresetStatus = document.getElementById("layout-preset-status");
 const nomeInput = document.getElementById("nome");
 const cursoInput = document.getElementById("curso");
+const emailInput = document.getElementById("email");
 const dataInput = document.getElementById("data");
 const cargaHInput = document.getElementById("carga_h");
 const logoStatus = document.getElementById("logo-status");

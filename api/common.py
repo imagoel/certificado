@@ -870,6 +870,7 @@ def to_response(
         codigo=cert.codigo,
         nome=cert.nome,
         cpf=cert.cpf,
+        email=cert.email,
         curso=cert.curso,
         carga_h=cert.carga_h,
         concluido=cert.concluido,

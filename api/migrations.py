@@ -32,6 +32,8 @@ def bridge_legacy_schema(connection) -> None:
         return
 
     statements: list[str] = []
+    if "email" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN email VARCHAR(254)")
     if "arquivo_relpath" not in columns:
         statements.append("ALTER TABLE certificados ADD COLUMN arquivo_relpath VARCHAR(255)")
     if "arquivo_mime" not in columns:
