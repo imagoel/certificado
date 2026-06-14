@@ -138,6 +138,14 @@ function renderCertificateRows(items) {
 
       const menuContent = document.createElement("div");
       menuContent.className = "action-menu-content";
+      const editButton = createInlineButton(
+        "Editar",
+        () => {
+          menu.open = false;
+          void openCertificateEditMode(item);
+        },
+        "action-menu-item"
+      );
       const deleteButton = createInlineButton(
         "Mover para lixeira",
         () => {
@@ -146,6 +154,7 @@ function renderCertificateRows(items) {
         },
         "action-menu-item danger-action"
       );
+      menuContent.appendChild(editButton);
       menuContent.appendChild(deleteButton);
       menu.append(summary, menuContent);
       actionsWrap.appendChild(menu);

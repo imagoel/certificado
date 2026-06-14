@@ -11,6 +11,12 @@ function registerDialogEvents() {
     });
   }
 
+  if (editCertCancelBtn) {
+    editCertCancelBtn.addEventListener("click", () => {
+      closeCertificateEditDialog();
+    });
+  }
+
   if (duplicateCertCancelBtn) {
     duplicateCertCancelBtn.addEventListener("click", () => {
       closeDuplicateCertificateDialog();
@@ -74,6 +80,13 @@ function registerDialogEvents() {
     clearTrashDialog.addEventListener("cancel", (event) => {
       event.preventDefault();
       closeClearTrashDialog();
+    });
+  }
+
+  if (editCertDialog) {
+    editCertDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      closeCertificateEditDialog();
     });
   }
 
@@ -152,6 +165,33 @@ function registerDialogEvents() {
           "error"
         );
       }
+    });
+  }
+
+  if (editCertForm) {
+    editCertForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!pendingCertificateEditConfirmation || !editingCertificate || !isAdminSession()) {
+        setEditCertStatus("Nenhuma edicao pendente para confirmar.", "error");
+        return;
+      }
+
+      const codigo = sanitizeText(editingCertificate.codigo).toUpperCase();
+      const confirmacaoCodigo = sanitizeText(
+        editCertConfirmCodeInput ? editCertConfirmCodeInput.value : ""
+      ).toUpperCase();
+      const password = editCertPasswordInput ? editCertPasswordInput.value : "";
+
+      if (confirmacaoCodigo !== codigo) {
+        setEditCertStatus("Digite o codigo exato do certificado para confirmar.", "error");
+        return;
+      }
+      if (!password) {
+        setEditCertStatus("Informe a senha do administrador.", "error");
+        return;
+      }
+
+      await saveCertificateEdit(pendingCertificateEditConfirmation, password, confirmacaoCodigo);
     });
   }
 

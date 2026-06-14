@@ -1,7 +1,7 @@
 import math
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -11,7 +11,6 @@ from common import (
     DEFAULT_PREFIX,
     build_certificate_file_response,
     build_code,
-    build_file_relative_path,
     code_exists,
     ensure_certificate_access,
     get_accessible_secretarias,
@@ -19,9 +18,11 @@ from common import (
     is_admin,
     is_certificate_deleted,
     normalize_prefix,
+    parse_render_snapshot_payload,
     purge_expired_deleted_certificates,
     record_audit_event,
     require_active_secretaria,
+    replace_certificate_png_safely,
     resolve_media_path,
     sanitize_code,
     to_response,
@@ -344,6 +345,7 @@ async def upload_certificate_file(
     codigo: str,
     request: Request,
     arquivo: UploadFile = File(...),
+    render_snapshot: str | None = Form(default=None),
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> CertificateResponse:
@@ -358,27 +360,33 @@ async def upload_certificate_file(
 
     content = await arquivo.read()
     validate_png_upload(arquivo, content)
+    snapshot = parse_render_snapshot_payload(render_snapshot)
 
-    relative_path = build_file_relative_path(cert.codigo)
-    file_path = resolve_media_path(relative_path)
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    file_path.write_bytes(content)
+    replacement = replace_certificate_png_safely(cert, content)
 
-    cert.arquivo_relpath = relative_path.replace("\\", "/")
-    cert.arquivo_mime = "image/png"
-    cert.arquivo_bytes = len(content)
-    cert.arquivo_pendente = False
-    record_audit_event(
-        db,
-        evento="certificado_png_enviado",
-        descricao=f"PNG do certificado {cert.codigo} enviado ao servidor.",
-        usuario=usuario,
-        secretaria=cert.secretaria,
-        certificado=cert,
-        entidade_tipo="certificado",
-        entidade_id=cert.id,
-    )
-    db.commit()
+    try:
+        cert.arquivo_relpath = replacement.relative_path
+        cert.arquivo_mime = "image/png"
+        cert.arquivo_bytes = len(content)
+        cert.arquivo_pendente = False
+        cert.render_snapshot = snapshot
+        record_audit_event(
+            db,
+            evento="certificado_png_enviado",
+            descricao=f"PNG do certificado {cert.codigo} enviado ao servidor.",
+            usuario=usuario,
+            secretaria=cert.secretaria,
+            certificado=cert,
+            entidade_tipo="certificado",
+            entidade_id=cert.id,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        replacement.rollback()
+        raise
+
+    replacement.commit()
     db.refresh(cert)
     return to_response(cert, request)
 

@@ -52,6 +52,10 @@ class CertificateResponse(BaseModel):
     secretaria_nome: Optional[str] = None
     emitido_por_usuario_id: Optional[int] = None
     emitido_por_username: Optional[str] = None
+    render_snapshot: Optional[dict[str, Any]] = None
+    atualizado_em: Optional[datetime] = None
+    atualizado_por_usuario_id: Optional[int] = None
+    atualizado_por_username: Optional[str] = None
     excluido_em: Optional[datetime] = None
     exclusao_expira_em: Optional[datetime] = None
     excluido_por_usuario_id: Optional[int] = None

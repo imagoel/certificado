@@ -6,6 +6,7 @@ function initializeApp() {
   syncSecretariaAssetFormState();
   setSecretariaAssetTypeFilter(adminUiState.assetTypeFilter, { syncForm: true });
   syncAdminModuleUi();
+  syncCertificateEditUi();
   syncGenerateSubmitButton();
   syncAdvancedAssetControls();
   updateControlLabels();

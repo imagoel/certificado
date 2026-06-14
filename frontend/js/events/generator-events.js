@@ -6,43 +6,19 @@ function registerGeneratorFormEvents() {
       await handleUnauthorized();
       return;
     }
-
-    const nomeInput = document.getElementById("nome");
-    const cursoInput = document.getElementById("curso");
-    const dataInput = document.getElementById("data");
-
-    const nome = nomeInput ? nomeInput.value.trim() : "";
-    const curso = cursoInput ? cursoInput.value.trim() : "";
-    const data = dataInput ? dataInput.value : "";
-    const cargaResult = getFormCargaHorariaResult();
-    if (cargaResult.invalid) {
-      setBatchStatus(
-        `A carga horária deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`,
-        "error"
-      );
+    if (editingCertificate) {
+      setBatchStatus("Use Salvar alteracoes para concluir a edicao atual.", "info");
       return;
     }
-    const cargaH = cargaResult.value ?? 0;
-
-    if (!nome || !curso || !data) return;
 
     try {
-      const textoLinha1 = textoLinha1Input ? textoLinha1Input.value.trim() : "";
-      const textoLinha2 = textoLinha2Input ? textoLinha2Input.value.trim() : "";
-      const prepared = {
-        nome,
-        curso,
-        data,
-        cargaH,
-        linha1: textoLinha1,
-        linha2: textoLinha2,
-      };
+      const prepared = getCertificateFormPrepared();
 
-      setBatchStatus("Verificando possíveis certificados já emitidos...", "info");
+      setBatchStatus("Verificando possiveis certificados ja emitidos...", "info");
       const duplicates = await findPossibleDuplicateCertificates(prepared);
       if (duplicates.length) {
         setBatchStatus(
-          `Encontramos ${duplicates.length} certificado(s) semelhante(s) já emitido(s).`,
+          `Encontramos ${duplicates.length} certificado(s) semelhante(s) ja emitido(s).`,
           "error"
         );
         openDuplicateCertificateDialog(prepared, duplicates);
@@ -62,7 +38,20 @@ function registerGeneratorFormEvents() {
       );
     }
   });
+
+  if (certificateEditSaveBtn) {
+    certificateEditSaveBtn.addEventListener("click", () => {
+      openCertificateEditConfirmDialog();
+    });
+  }
+
+  if (certificateEditCancelBtn) {
+    certificateEditCancelBtn.addEventListener("click", () => {
+      cancelCertificateEditMode();
+    });
+  }
 }
+
 function registerGeneratorInputEvents() {
   [assinaturaLabelInput, assinatura2LabelInput, assinatura3LabelInput].forEach((input) => {
     if (!input) return;
@@ -95,11 +84,17 @@ function registerGeneratorInputEvents() {
   [nomeInput, cursoInput, dataInput, cargaHInput].forEach((input) => {
     if (!input) return;
     input.addEventListener("input", () => {
+      if (editingCertificate && lastData) {
+        syncEditingCertificateLastDataFromForm();
+        void renderLastCertificate();
+        return;
+      }
       if (isBatchRunning || lastData) return;
       void renderLastCertificate();
     });
   });
 }
+
 function registerDownloadEvents() {
   downloadBtn.addEventListener("click", () => {
     const link = document.createElement("a");

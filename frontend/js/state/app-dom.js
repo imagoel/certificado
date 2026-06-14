@@ -1,6 +1,12 @@
 const form = document.getElementById("cert-form");
 const generateSubmitBtn = form ? form.querySelector('button[type="submit"]') : null;
 const downloadBtn = document.getElementById("download");
+const certificateEditBanner = document.getElementById("certificate-edit-banner");
+const certificateEditTitle = document.getElementById("certificate-edit-title");
+const certificateEditMeta = document.getElementById("certificate-edit-meta");
+const certificateEditWarning = document.getElementById("certificate-edit-warning");
+const certificateEditSaveBtn = document.getElementById("certificate-edit-save");
+const certificateEditCancelBtn = document.getElementById("certificate-edit-cancel");
 const logoInput = document.getElementById("logo");
 const assinaturaInput = document.getElementById("assinatura");
 const assinatura2Input = document.getElementById("assinatura2");
@@ -192,6 +198,14 @@ const deleteCertConfirmCodeInput = document.getElementById("delete-cert-confirm-
 const deleteCertPasswordInput = document.getElementById("delete-cert-password");
 const deleteCertStatus = document.getElementById("delete-cert-status");
 const deleteCertCancelBtn = document.getElementById("delete-cert-cancel");
+const editCertDialog = document.getElementById("edit-cert-dialog");
+const editCertForm = document.getElementById("edit-cert-form");
+const editCertMessage = document.getElementById("edit-cert-message");
+const editCertCurrentCodeInput = document.getElementById("edit-cert-current-code");
+const editCertConfirmCodeInput = document.getElementById("edit-cert-confirm-code");
+const editCertPasswordInput = document.getElementById("edit-cert-password");
+const editCertStatus = document.getElementById("edit-cert-status");
+const editCertCancelBtn = document.getElementById("edit-cert-cancel");
 const clearTrashDialog = document.getElementById("clear-trash-dialog");
 const clearTrashForm = document.getElementById("clear-trash-form");
 const clearTrashConfirmationInput = document.getElementById("clear-trash-confirmation");

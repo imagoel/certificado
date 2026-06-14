@@ -35,6 +35,59 @@ async function findPossibleDuplicateCertificates(cert) {
   return Array.isArray(payload) ? payload : [];
 }
 
+function getCertificateFormPrepared() {
+  const nome = nomeInput ? nomeInput.value.trim() : "";
+  const curso = cursoInput ? cursoInput.value.trim() : "";
+  const data = dataInput ? dataInput.value : "";
+  const cargaResult = getFormCargaHorariaResult();
+  if (cargaResult.invalid) {
+    const error = new Error(
+      `A carga horaria deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`
+    );
+    error.field = "carga_h";
+    throw error;
+  }
+
+  if (!nome || !curso || !data) {
+    const error = new Error("Preencha nome, curso e data de conclusao.");
+    error.field = "required";
+    throw error;
+  }
+
+  return {
+    nome,
+    curso,
+    data,
+    cargaH: cargaResult.value ?? 0,
+    linha1: textoLinha1Input ? textoLinha1Input.value.trim() : "",
+    linha2: textoLinha2Input ? textoLinha2Input.value.trim() : "",
+  };
+}
+
+function buildCertificateLastData(prepared, codigo, qrText) {
+  return {
+    nome: prepared.nome,
+    curso: prepared.curso,
+    data: prepared.data,
+    cargaH: prepared.cargaH,
+    codigo: sanitizeText(codigo).toUpperCase(),
+    linha1: prepared.linha1,
+    linha2: prepared.linha2,
+    qrText: sanitizeText(qrText),
+  };
+}
+
+function syncEditingCertificateLastDataFromForm() {
+  if (!editingCertificate || !lastData) return;
+  const cargaResult = getFormCargaHorariaResult();
+  lastData.nome = nomeInput ? nomeInput.value.trim() : "";
+  lastData.curso = cursoInput ? cursoInput.value.trim() : "";
+  lastData.data = dataInput ? dataInput.value : "";
+  lastData.cargaH = cargaResult.invalid ? 0 : (cargaResult.value ?? 0);
+  lastData.linha1 = textoLinha1Input ? textoLinha1Input.value.trim() : "";
+  lastData.linha2 = textoLinha2Input ? textoLinha2Input.value.trim() : "";
+}
+
 async function executeSingleCertificateGeneration(prepared) {
   if (!prepared) return;
 
@@ -56,16 +109,7 @@ async function executeSingleCertificateGeneration(prepared) {
     registeredCode = codigo;
     const qrText = sanitizeText(registered.url_validacao);
 
-    lastData = {
-      nome: prepared.nome,
-      curso: prepared.curso,
-      data: prepared.data,
-      cargaH: prepared.cargaH,
-      codigo,
-      linha1: prepared.linha1,
-      linha2: prepared.linha2,
-      qrText,
-    };
+    lastData = buildCertificateLastData(prepared, codigo, qrText);
     await drawCertificate(
       prepared.nome,
       prepared.curso,
@@ -79,7 +123,9 @@ async function executeSingleCertificateGeneration(prepared) {
     const pngBlob = await canvasToPngBlob();
     ensureCertificatePngWithinLimit(pngBlob, codigo);
     setBatchStatus(`Salvando o certificado ${codigo} no servidor...`, "info");
-    await uploadCertificateImage(codigo, pngBlob, codigo);
+    await uploadCertificateImage(codigo, pngBlob, codigo, {
+      renderSnapshot: buildLayoutPresetPayload(),
+    });
     uploadSucceeded = true;
     downloadBtn.disabled = false;
     setBatchStatus(
@@ -205,6 +251,9 @@ async function uploadCertificateImage(codigo, pngBlob, fileName, options = {}) {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const formData = new FormData();
     formData.append("arquivo", pngBlob, `${safeName}.png`);
+    if (options.renderSnapshot) {
+      formData.append("render_snapshot", JSON.stringify(options.renderSnapshot));
+    }
 
     try {
       const response = await fetch(
@@ -256,6 +305,277 @@ async function uploadCertificateImage(codigo, pngBlob, fileName, options = {}) {
     }
   }
   return null;
+}
+
+function syncCertificateEditUi() {
+  const isEditing = Boolean(editingCertificate);
+  if (certificateEditBanner) {
+    certificateEditBanner.hidden = !isEditing;
+  }
+  if (certificateEditTitle) {
+    certificateEditTitle.textContent = isEditing
+      ? `Editando certificado ${editingCertificate.codigo || ""}`
+      : "Editando certificado";
+  }
+  if (certificateEditMeta) {
+    certificateEditMeta.textContent = isEditing
+      ? "O codigo, o link de validacao e a ordem da listagem serao preservados."
+      : "";
+  }
+  if (certificateEditWarning) {
+    const hasSnapshot = Boolean(
+      editingCertificate &&
+        editingCertificate.render_snapshot &&
+        typeof editingCertificate.render_snapshot === "object"
+    );
+    certificateEditWarning.hidden = !isEditing || hasSnapshot;
+    certificateEditWarning.textContent = hasSnapshot
+      ? ""
+      : "Este certificado ainda nao tinha layout salvo. Revise as posicoes antes de salvar.";
+  }
+  if (certificateEditSaveBtn) {
+    certificateEditSaveBtn.disabled =
+      !isEditing || isCertificateEditSaving || isBatchRunning || isSingleGenerationRunning;
+    certificateEditSaveBtn.textContent = isCertificateEditSaving
+      ? "Salvando..."
+      : "Salvar alteracoes";
+  }
+  if (certificateEditCancelBtn) {
+    certificateEditCancelBtn.disabled = isCertificateEditSaving;
+  }
+  if (batchPreviewBtn) batchPreviewBtn.disabled = isEditing || isBatchRunning;
+  if (batchGenerateBtn) batchGenerateBtn.disabled = isEditing || isBatchRunning;
+  syncGenerateSubmitButton();
+}
+
+function closeCertificateEditDialog() {
+  pendingCertificateEditConfirmation = null;
+  if (editCertForm) editCertForm.reset();
+  setEditCertStatus("", "info");
+  if (editCertDialog && typeof editCertDialog.close === "function" && editCertDialog.open) {
+    editCertDialog.close();
+  }
+}
+
+function cancelCertificateEditMode(options = {}) {
+  const code = editingCertificate ? sanitizeText(editingCertificate.codigo).toUpperCase() : "";
+  editingCertificate = null;
+  pendingCertificateEditConfirmation = null;
+  isCertificateEditSaving = false;
+  lastData = null;
+  if (downloadBtn) downloadBtn.disabled = true;
+  closeCertificateEditDialog();
+  syncCertificateEditUi();
+  void renderLastCertificate();
+  if (!options.silent) {
+    setBatchStatus(code ? `Edicao do certificado ${code} cancelada.` : "Edicao cancelada.", "info");
+  }
+}
+
+async function ensureActiveSecretariaForCertificate(item) {
+  if (!item || !sessionState || !item.secretaria_id) return;
+  const targetSecretariaId = Number(item.secretaria_id);
+  if (!targetSecretariaId || Number(sessionState.secretaria_ativa_id) === targetSecretariaId) {
+    return;
+  }
+
+  const canSelectTarget = Array.isArray(sessionState.secretarias)
+    && sessionState.secretarias.some((secretaria) => Number(secretaria.id) === targetSecretariaId);
+  if (!canSelectTarget) {
+    setBatchStatus(
+      "Nao foi possivel trocar para a secretaria do certificado. Revise os ativos antes de salvar.",
+      "error"
+    );
+    return;
+  }
+
+  setBatchStatus("Carregando ativos da secretaria do certificado...", "info");
+  const session = await apiJsonRequest("/api/auth/select-secretaria", {
+    method: "POST",
+    body: JSON.stringify({ secretaria_id: targetSecretariaId }),
+  });
+  renderSession(session);
+  await refreshProtectedData({ page: certListState.page || 1 });
+}
+
+async function openCertificateEditMode(item) {
+  if (!item || !isAdminSession() || certListState.trashMode) return;
+
+  try {
+    await ensureActiveSecretariaForCertificate(item);
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setBatchStatus(
+      (error && error.message) ||
+        "Nao foi possivel carregar a secretaria do certificado para edicao.",
+      "error"
+    );
+    return;
+  }
+
+  editingCertificate = { ...item };
+  const codigo = sanitizeText(item.codigo).toUpperCase();
+  const qrText = sanitizeText(item.url_validacao);
+
+  if (nomeInput) nomeInput.value = item.nome || "";
+  if (cursoInput) cursoInput.value = item.curso || "";
+  if (dataInput) dataInput.value = item.concluido || "";
+  if (cargaHInput) cargaHInput.value = item.carga_h ? String(item.carga_h) : "";
+
+  const prepared = getCertificateFormPrepared();
+  lastData = buildCertificateLastData(prepared, codigo, qrText);
+  downloadBtn.disabled = false;
+  switchSection("generator");
+  syncCertificateEditUi();
+  setBatchStatus(
+    `Editando certificado ${codigo}. Ajuste os dados e revise a previa antes de salvar.`,
+    "info"
+  );
+
+  if (item.render_snapshot && typeof item.render_snapshot === "object") {
+    await applyLayoutPresetPayload(item.render_snapshot);
+    setPreviewAdjustStatus(`Layout salvo do certificado ${codigo} aplicado.`);
+    return;
+  }
+
+  setPreviewAdjustStatus(
+    `Certificado ${codigo} sem layout salvo. Revise as posicoes antes de salvar.`
+  );
+  await renderLastCertificate();
+}
+
+function openCertificateEditConfirmDialog() {
+  if (!editingCertificate || !isAdminSession()) {
+    setBatchStatus("Nenhum certificado em edicao.", "error");
+    return;
+  }
+
+  let prepared = null;
+  try {
+    prepared = getCertificateFormPrepared();
+  } catch (error) {
+    setBatchStatus(error.message || "Revise os dados do certificado.", "error");
+    if (error.field === "carga_h" && cargaHInput && typeof cargaHInput.reportValidity === "function") {
+      cargaHInput.reportValidity();
+    }
+    return;
+  }
+
+  syncEditingCertificateLastDataFromForm();
+  pendingCertificateEditConfirmation = prepared;
+  const codigo = sanitizeText(editingCertificate.codigo).toUpperCase();
+
+  if (!editCertDialog || !editCertForm || typeof editCertDialog.showModal !== "function") {
+    setBatchStatus("Modal de confirmacao indisponivel neste navegador.", "error");
+    return;
+  }
+
+  if (editCertCurrentCodeInput) editCertCurrentCodeInput.value = codigo;
+  if (editCertConfirmCodeInput) editCertConfirmCodeInput.value = "";
+  if (editCertPasswordInput) editCertPasswordInput.value = "";
+  if (editCertMessage) {
+    editCertMessage.textContent =
+      `Confirme o codigo ${codigo} e informe a senha do administrador para salvar a edicao.`;
+  }
+  setEditCertStatus("", "info");
+  editCertDialog.showModal();
+}
+
+async function saveCertificateEdit(prepared, password, confirmationCode) {
+  if (!editingCertificate || !prepared || isCertificateEditSaving) return;
+
+  const codigo = sanitizeText(editingCertificate.codigo).toUpperCase();
+  const qrText = sanitizeText(editingCertificate.url_validacao);
+  const confirmCode = sanitizeText(confirmationCode).toUpperCase();
+  if (confirmCode !== codigo) {
+    setEditCertStatus("Digite o codigo exato do certificado para confirmar.", "error");
+    return;
+  }
+  if (!password) {
+    setEditCertStatus("Informe a senha do administrador.", "error");
+    return;
+  }
+
+  isCertificateEditSaving = true;
+  syncCertificateEditUi();
+
+  try {
+    setEditCertStatus(`Gerando novo PNG de ${codigo}...`, "info");
+    lastData = buildCertificateLastData(prepared, codigo, qrText);
+    await drawCertificate(
+      prepared.nome,
+      prepared.curso,
+      prepared.data,
+      prepared.linha1,
+      prepared.linha2,
+      qrText,
+      codigo,
+      prepared.cargaH
+    );
+
+    const pngBlob = await canvasToPngBlob();
+    ensureCertificatePngWithinLimit(pngBlob, codigo);
+
+    const formData = new FormData();
+    formData.append("nome", prepared.nome);
+    formData.append("curso", prepared.curso);
+    formData.append("concluido", prepared.data);
+    formData.append("carga_h", String(prepared.cargaH || 0));
+    formData.append("render_snapshot", JSON.stringify(buildLayoutPresetPayload()));
+    formData.append("password", password);
+    formData.append("confirmacao_codigo", confirmCode);
+    formData.append("arquivo", pngBlob, `${sanitizeFileName(codigo, codigo)}.png`);
+
+    setEditCertStatus(`Salvando alteracoes de ${codigo}...`, "info");
+    const payload = await apiFormRequest(
+      `/api/admin/certificados/${encodeURIComponent(codigo)}`,
+      formData,
+      { method: "PATCH" }
+    );
+
+    lastData = buildCertificateLastData(
+      {
+        nome: payload.nome || prepared.nome,
+        curso: payload.curso || prepared.curso,
+        data: payload.concluido || prepared.data,
+        cargaH: payload.carga_h || 0,
+        linha1: prepared.linha1,
+        linha2: prepared.linha2,
+      },
+      payload.codigo || codigo,
+      payload.url_validacao || qrText
+    );
+    editingCertificate = null;
+    pendingCertificateEditConfirmation = null;
+    downloadBtn.disabled = false;
+    closeCertificateEditDialog();
+    syncCertificateEditUi();
+    setBatchStatus(`Certificado ${codigo} atualizado com sucesso.`, "success");
+    await loadCertificates(certListState.page || 1);
+    await loadAuditEvents(1);
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      if (error.message === "Senha do administrador invalida.") {
+        setEditCertStatus(error.message, "error");
+        if (editCertPasswordInput) editCertPasswordInput.value = "";
+        return;
+      }
+      await handleUnauthorized();
+      return;
+    }
+    setEditCertStatus(
+      (error && error.message) || "Nao foi possivel salvar a edicao.",
+      "error"
+    );
+  } finally {
+    isCertificateEditSaving = false;
+    syncCertificateEditUi();
+  }
 }
 
 async function discardPendingCertificate(codigo) {
