@@ -17,8 +17,9 @@ from common import (
     get_accessible_secretarias,
     get_current_user,
     is_admin,
-    is_certificate_ready,
+    is_certificate_deleted,
     normalize_prefix,
+    purge_expired_deleted_certificates,
     record_audit_event,
     require_active_secretaria,
     resolve_media_path,
@@ -59,10 +60,19 @@ def list_certificates(
     somente_com_arquivo: bool = Query(
         default=False, description="Retornar apenas certificados com PNG salvo"
     ),
+    lixeira: bool = Query(default=False, description="Listar certificados na lixeira"),
     secretaria_id: int | None = Query(default=None, ge=1, description="Filtrar por secretaria"),
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> PaginatedCertificateResponse:
+    if lixeira and not is_admin(usuario):
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador.")
+
+    if lixeira:
+        purged_count = purge_expired_deleted_certificates(db)
+        if purged_count:
+            db.commit()
+
     query = db.query(Certificate)
 
     if busca.strip():
@@ -92,6 +102,10 @@ def list_certificates(
         query = query.filter(Certificate.arquivo_relpath.isnot(None))
 
     query = query.filter(Certificate.arquivo_pendente.is_(False))
+    if lixeira:
+        query = query.filter(Certificate.excluido_em.isnot(None))
+    else:
+        query = query.filter(Certificate.excluido_em.is_(None))
 
     if is_admin(usuario):
         if secretaria_id:
@@ -153,6 +167,7 @@ def list_possible_duplicate_certificates(
         .filter(
             Certificate.secretaria_id == secretaria.id,
             Certificate.arquivo_pendente.is_(False),
+            Certificate.excluido_em.is_(None),
             Certificate.concluido == concluido,
             func.lower(Certificate.nome) == nome_normalizado,
             func.lower(Certificate.curso) == curso_normalizado,
@@ -338,6 +353,8 @@ async def upload_certificate_file(
         raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
 
     ensure_certificate_access(db, usuario, cert)
+    if is_certificate_deleted(cert):
+        raise HTTPException(status_code=409, detail="Certificado esta na lixeira.")
 
     content = await arquivo.read()
     validate_png_upload(arquivo, content)
@@ -378,13 +395,18 @@ def discard_pending_certificate(
         raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
 
     ensure_certificate_access(db, usuario, cert)
+    if is_certificate_deleted(cert):
+        raise HTTPException(
+            status_code=409,
+            detail="Certificado na lixeira nao pode ser descartado como pendente.",
+        )
     if not is_admin(usuario) and cert.emitido_por_usuario_id != usuario.id:
         raise HTTPException(
             status_code=403,
             detail="Somente o emissor original ou um administrador pode descartar este pendente.",
         )
 
-    if is_certificate_ready(cert):
+    if not cert.arquivo_pendente:
         raise HTTPException(
             status_code=409,
             detail="O certificado ja possui PNG salvo e nao pode ser descartado por esta rota.",
@@ -461,6 +483,10 @@ def get_certificate_file_internal(
         raise HTTPException(status_code=404, detail="Arquivo de certificado nao encontrado.")
 
     ensure_certificate_access(db, usuario, cert)
+    allow_deleted = is_admin(usuario) and is_certificate_deleted(cert)
+    if is_certificate_deleted(cert) and not allow_deleted:
+        raise HTTPException(status_code=404, detail="Arquivo de certificado nao encontrado.")
+
     record_audit_event(
         db,
         evento="certificado_png_acessado",
@@ -472,4 +498,4 @@ def get_certificate_file_internal(
         entidade_id=cert.id,
     )
     db.commit()
-    return build_certificate_file_response(cert)
+    return build_certificate_file_response(cert, allow_deleted=allow_deleted)

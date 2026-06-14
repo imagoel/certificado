@@ -4,13 +4,18 @@ async function loadCertificates(page = certListState.page) {
 
   certListState.page = page;
   syncCertificateFilterInputsFromState();
-  setCertListStatus("Carregando certificados...", "info");
+  const trashMode = Boolean(certListState.trashMode);
+  setCertListStatus(
+    trashMode ? "Carregando certificados na lixeira..." : "Carregando certificados...",
+    "info"
+  );
 
   try {
     const payload = await apiJsonRequest(
       `/api/certificados${buildQueryString({
         pagina: certListState.page,
         por_pagina: certListState.perPage,
+        lixeira: trashMode ? "true" : "",
         busca: certListState.filters.busca,
         secretaria_id: certListState.filters.secretariaId,
         concluido_de: certListState.filters.concluidoDe,
@@ -25,7 +30,9 @@ async function loadCertificates(page = certListState.page) {
     renderCertificateRows(payload.itens || []);
 
     if (certListSummary) {
-      certListSummary.textContent = `${certListState.total} certificado(s) encontrado(s)`;
+      certListSummary.textContent = trashMode
+        ? `${certListState.total} certificado(s) na lixeira`
+        : `${certListState.total} certificado(s) encontrado(s)`;
     }
     if (certPageIndicator) {
       certPageIndicator.textContent = `Página ${payload.pagina} de ${payload.paginas}`;

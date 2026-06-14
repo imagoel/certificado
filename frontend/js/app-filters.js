@@ -21,6 +21,7 @@ function syncCertificateFilterInputsFromState() {
     certFilterEmitidoAteInput.value = certListState.filters.emitidoAte || "";
   }
   updateCertificateQuickFilterButtons();
+  syncCertificateTrashModeUi();
 }
 
 function readCertificateFiltersFromInputs() {
@@ -73,6 +74,19 @@ function updateCertificateQuickFilterButtons() {
     Boolean(activeSecretariaId)
       && String(certListState.filters.secretariaId || "") === activeSecretariaId
   );
+}
+
+function syncCertificateTrashModeUi() {
+  const isAdmin = isAdminSession();
+  if (certTrashModeWrap) certTrashModeWrap.hidden = !isAdmin;
+  if (!isAdmin) {
+    certListState.trashMode = false;
+  }
+  setQuickButtonState(certTrashActiveBtn, !certListState.trashMode);
+  setQuickButtonState(certTrashDeletedBtn, certListState.trashMode);
+  if (certClearTrashBtn) {
+    certClearTrashBtn.hidden = !isAdmin || !certListState.trashMode;
+  }
 }
 
 function syncAuditFilterInputsFromState() {

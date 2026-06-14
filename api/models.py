@@ -109,11 +109,19 @@ class Certificate(Base):
     arquivo_relpath: Mapped[str | None] = mapped_column(String(255), nullable=True)
     arquivo_mime: Mapped[str | None] = mapped_column(String(100), nullable=True)
     arquivo_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    excluido_em: Mapped[datetime | None] = mapped_column(DateTime, index=True, nullable=True)
+    exclusao_expira_em: Mapped[datetime | None] = mapped_column(DateTime, index=True, nullable=True)
+    excluido_por_usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id"), nullable=True
+    )
 
     secretaria: Mapped[Secretaria | None] = relationship(back_populates="certificados")
     emitido_por: Mapped[Usuario | None] = relationship(
         back_populates="certificados_emitidos",
         foreign_keys=[emitido_por_usuario_id],
+    )
+    excluido_por: Mapped[Usuario | None] = relationship(
+        foreign_keys=[excluido_por_usuario_id],
     )
     auditorias: Mapped[list["AuditEvent"]] = relationship(back_populates="certificado")
 

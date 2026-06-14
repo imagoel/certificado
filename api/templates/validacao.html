@@ -85,6 +85,18 @@
         </div>
       </section>
 
+    {% elif status == "excluido" %}
+      <!-- INDISPONIVEL -->
+      <section class="card">
+        <div class="empty-state">
+          <div class="empty-icon error-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h2>Certificado indisponivel</h2>
+          <p>Este certificado foi removido do sistema e nao esta disponivel para validacao publica.</p>
+        </div>
+      </section>
+
     {% else %}
       <!-- NÃO ENCONTRADO -->
       <section class="card">

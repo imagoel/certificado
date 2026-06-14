@@ -53,6 +53,32 @@ function registerListingEvents() {
     });
   }
 
+  if (certClearTrashBtn) {
+    certClearTrashBtn.addEventListener("click", () => {
+      openClearTrashDialog();
+    });
+  }
+
+  if (certTrashActiveBtn) {
+    certTrashActiveBtn.addEventListener("click", async () => {
+      if (!certListState.trashMode) return;
+      certListState.trashMode = false;
+      certListState.page = 1;
+      syncCertificateTrashModeUi();
+      await loadCertificates(1);
+    });
+  }
+
+  if (certTrashDeletedBtn) {
+    certTrashDeletedBtn.addEventListener("click", async () => {
+      if (certListState.trashMode || !isAdminSession()) return;
+      certListState.trashMode = true;
+      certListState.page = 1;
+      syncCertificateTrashModeUi();
+      await loadCertificates(1);
+    });
+  }
+
   if (certPrevPageBtn) {
     certPrevPageBtn.addEventListener("click", () => {
       if (certListState.page > 1) {

@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260611-2" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260611-2" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260611-2" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260611-2" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260611-2" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260611-2" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260611-2" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260611-2" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260614-1" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260614-1" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260614-1" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260614-1" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260614-1" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260614-1" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260614-1" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260614-1" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -611,8 +611,15 @@
             </div>
             <div class="panel-header-actions">
               <p id="cert-list-summary" class="summary-pill"></p>
+              <button id="cert-clear-trash" type="button" class="danger-btn" hidden>Limpar lixeira</button>
               <button id="cert-export-csv" type="button" class="secondary-btn">Exportar CSV</button>
             </div>
+          </div>
+
+          <div id="cert-trash-mode" class="quick-filter-bar" aria-label="Modo da lista de certificados" hidden>
+            <span class="quick-filter-label">Mostrar</span>
+            <button type="button" id="cert-trash-active" class="quick-filter-btn is-active">Ativos</button>
+            <button type="button" id="cert-trash-deleted" class="quick-filter-btn">Lixeira</button>
           </div>
 
           <div class="quick-filter-bar" aria-label="Filtros rápidos de certificados">
@@ -747,6 +754,9 @@
                   <option value="certificado_png_acessado">PNG acessado</option>
                   <option value="certificado_pendente_descartado">Pendente descartado</option>
                   <option value="certificado_excluido">Certificado excluído</option>
+                  <option value="certificado_restaurado">Certificado restaurado</option>
+                  <option value="certificado_exclusao_definitiva">Exclusão definitiva</option>
+                  <option value="certificado_lixeira_limpa">Lixeira limpa</option>
                 </optgroup>
                 <optgroup label="Usuários e secretarias">
                   <option value="usuario_criado">Usuário criado</option>
@@ -1217,9 +1227,9 @@
     <form id="delete-cert-form" class="form modal-form" method="dialog">
       <div class="panel-header">
         <div>
-          <h2>Excluir Certificado</h2>
+          <h2>Mover certificado para a lixeira</h2>
           <p id="delete-cert-message" class="subtitle">
-            Confirme o código e informe a senha do administrador para excluir.
+            Confirme o código e informe a senha do administrador para mover o certificado para a lixeira.
           </p>
         </div>
       </div>
@@ -1252,10 +1262,55 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="danger-btn">Excluir Certificado</button>
+        <button type="submit" class="danger-btn">Mover para lixeira</button>
         <button id="delete-cert-cancel" type="button" class="secondary-btn">Cancelar</button>
       </div>
       <p id="delete-cert-status" class="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
+  <dialog id="clear-trash-dialog" class="modal-dialog">
+    <form id="clear-trash-form" class="form modal-form" method="dialog">
+      <div class="panel-header">
+        <div>
+          <h2>Limpar lixeira</h2>
+          <p class="subtitle">
+            Esta ação remove definitivamente todos os certificados que estão na lixeira.
+          </p>
+        </div>
+      </div>
+
+      <div class="confirm-summary danger-summary">
+        Os PNGs serão removidos e estes certificados não poderão ser restaurados depois.
+      </div>
+
+      <div class="field-stack">
+        <label for="clear-trash-confirmation">Digite LIMPAR LIXEIRA para confirmar</label>
+        <input
+          id="clear-trash-confirmation"
+          type="text"
+          placeholder="LIMPAR LIXEIRA"
+          autocomplete="off"
+          required
+        />
+      </div>
+
+      <div class="field-stack">
+        <label for="clear-trash-password">Senha do administrador</label>
+        <input
+          id="clear-trash-password"
+          type="password"
+          placeholder="Informe sua senha"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="danger-btn">Limpar lixeira</button>
+        <button id="clear-trash-cancel" type="button" class="secondary-btn">Cancelar</button>
+      </div>
+      <p id="clear-trash-status" class="status" aria-live="polite"></p>
     </form>
   </dialog>
 
@@ -1287,40 +1342,40 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/state/app-dom.js?v=20260611-2"></script>
-  <script src="frontend/js/state/app-layout-state.js?v=20260611-2"></script>
-  <script src="frontend/js/state/app-runtime-state.js?v=20260611-2"></script>
-  <script src="frontend/js/state/app-catalog-state.js?v=20260611-2"></script>
-  <script src="frontend/js/state/app-list-state.js?v=20260611-2"></script>
-  <script src="frontend/js/app-utils.js?v=20260611-2"></script>
-  <script src="frontend/js/app-api.js?v=20260611-2"></script>
-  <script src="frontend/js/app-filters.js?v=20260611-2"></script>
-  <script src="frontend/js/app-status.js?v=20260611-2"></script>
-  <script src="frontend/js/app-asset-utils.js?v=20260611-2"></script>
-  <script src="frontend/js/app-preview-adjust.js?v=20260611-2"></script>
-  <script src="frontend/js/app-navigation.js?v=20260611-2"></script>
-  <script src="frontend/js/app-ui.js?v=20260611-2"></script>
-  <script src="frontend/js/app-session-view.js?v=20260611-2"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260611-2"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260611-2"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260611-2"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260611-2"></script>
-  <script src="frontend/js/app-layout-presets.js?v=20260611-2"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260611-2"></script>
-  <script src="frontend/js/app-canvas.js?v=20260611-2"></script>
-  <script src="frontend/js/app-assets.js?v=20260611-2"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260611-2"></script>
-  <script src="frontend/js/app-batch.js?v=20260611-2"></script>
-  <script src="frontend/js/events/generator-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/preview-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/asset-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/batch-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/section-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/listing-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/admin-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/session-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/dialog-events.js?v=20260611-2"></script>
-  <script src="frontend/js/events/startup.js?v=20260611-2"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260611-2"></script>
+  <script src="frontend/js/state/app-dom.js?v=20260614-1"></script>
+  <script src="frontend/js/state/app-layout-state.js?v=20260614-1"></script>
+  <script src="frontend/js/state/app-runtime-state.js?v=20260614-1"></script>
+  <script src="frontend/js/state/app-catalog-state.js?v=20260614-1"></script>
+  <script src="frontend/js/state/app-list-state.js?v=20260614-1"></script>
+  <script src="frontend/js/app-utils.js?v=20260614-1"></script>
+  <script src="frontend/js/app-api.js?v=20260614-1"></script>
+  <script src="frontend/js/app-filters.js?v=20260614-1"></script>
+  <script src="frontend/js/app-status.js?v=20260614-1"></script>
+  <script src="frontend/js/app-asset-utils.js?v=20260614-1"></script>
+  <script src="frontend/js/app-preview-adjust.js?v=20260614-1"></script>
+  <script src="frontend/js/app-navigation.js?v=20260614-1"></script>
+  <script src="frontend/js/app-ui.js?v=20260614-1"></script>
+  <script src="frontend/js/app-session-view.js?v=20260614-1"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260614-1"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260614-1"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260614-1"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260614-1"></script>
+  <script src="frontend/js/app-layout-presets.js?v=20260614-1"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260614-1"></script>
+  <script src="frontend/js/app-canvas.js?v=20260614-1"></script>
+  <script src="frontend/js/app-assets.js?v=20260614-1"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260614-1"></script>
+  <script src="frontend/js/app-batch.js?v=20260614-1"></script>
+  <script src="frontend/js/events/generator-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/preview-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/asset-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/batch-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/section-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/listing-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/admin-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/session-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/dialog-events.js?v=20260614-1"></script>
+  <script src="frontend/js/events/startup.js?v=20260614-1"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260614-1"></script>
 </body>
 </html>

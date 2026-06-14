@@ -52,6 +52,10 @@ class CertificateResponse(BaseModel):
     secretaria_nome: Optional[str] = None
     emitido_por_usuario_id: Optional[int] = None
     emitido_por_username: Optional[str] = None
+    excluido_em: Optional[datetime] = None
+    exclusao_expira_em: Optional[datetime] = None
+    excluido_por_usuario_id: Optional[int] = None
+    excluido_por_username: Optional[str] = None
     arquivo_disponivel: bool = False
     arquivo_url: Optional[str] = None
     arquivo_admin_url: Optional[str] = None
@@ -255,6 +259,16 @@ class CertificateAdminDeleteRequest(BaseModel):
     @field_validator("confirmacao_codigo")
     @classmethod
     def normalize_confirmation_code(cls, value: str) -> str:
+        return value.strip().upper()
+
+
+class CertificateTrashClearRequest(BaseModel):
+    password: str = Field(min_length=4, max_length=200)
+    confirmacao: str = Field(min_length=4, max_length=40)
+
+    @field_validator("confirmacao")
+    @classmethod
+    def normalize_confirmation(cls, value: str) -> str:
         return value.strip().upper()
 
 

@@ -5,6 +5,12 @@ function registerDialogEvents() {
     });
   }
 
+  if (clearTrashCancelBtn) {
+    clearTrashCancelBtn.addEventListener("click", () => {
+      closeClearTrashDialog();
+    });
+  }
+
   if (duplicateCertCancelBtn) {
     duplicateCertCancelBtn.addEventListener("click", () => {
       closeDuplicateCertificateDialog();
@@ -64,6 +70,13 @@ function registerDialogEvents() {
     });
   }
 
+  if (clearTrashDialog) {
+    clearTrashDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      closeClearTrashDialog();
+    });
+  }
+
   if (deleteCertForm) {
     deleteCertForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -89,7 +102,7 @@ function registerDialogEvents() {
       }
 
       try {
-        setDeleteCertStatus(`Excluindo ${codigo}...`, "info");
+        setDeleteCertStatus(`Movendo ${codigo} para a lixeira...`, "info");
         const payload = await apiJsonRequest(
           `/api/admin/certificados/${encodeURIComponent(codigo)}`,
           {
@@ -116,7 +129,7 @@ function registerDialogEvents() {
 
         closeDeleteCertificateDialog();
         setCertListStatus(
-          (payload && payload.message) || `Certificado ${codigo} excluido com sucesso.`,
+          (payload && payload.message) || `Certificado ${codigo} movido para a lixeira.`,
           "success"
         );
         await loadCertificates(nextCertPage);
@@ -136,6 +149,59 @@ function registerDialogEvents() {
         }
         setDeleteCertStatus(
           (error && error.message) || "Nao foi possivel excluir o certificado.",
+          "error"
+        );
+      }
+    });
+  }
+
+  if (clearTrashForm) {
+    clearTrashForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!isAdminSession()) return;
+
+      const confirmacao = sanitizeText(
+        clearTrashConfirmationInput ? clearTrashConfirmationInput.value : ""
+      ).toUpperCase();
+      const password = clearTrashPasswordInput ? clearTrashPasswordInput.value : "";
+
+      if (confirmacao !== "LIMPAR LIXEIRA") {
+        setClearTrashStatus("Digite LIMPAR LIXEIRA para confirmar.", "error");
+        return;
+      }
+      if (!password) {
+        setClearTrashStatus("Informe a senha do administrador.", "error");
+        return;
+      }
+
+      try {
+        setClearTrashStatus("Limpando lixeira...", "info");
+        const payload = await apiJsonRequest("/api/admin/certificados/lixeira", {
+          method: "DELETE",
+          body: JSON.stringify({ password, confirmacao }),
+        });
+        closeClearTrashDialog();
+        certListState.trashMode = true;
+        syncCertificateTrashModeUi();
+        setCertListStatus(
+          (payload && payload.message) || "Lixeira limpa com sucesso.",
+          "success"
+        );
+        await loadCertificates(1);
+        await loadAuditEvents(1);
+      } catch (error) {
+        console.error(error);
+        if (error && error.status === 401) {
+          if (error.message === "Senha do administrador invalida.") {
+            setClearTrashStatus(error.message, "error");
+            if (clearTrashPasswordInput) clearTrashPasswordInput.value = "";
+            return;
+          }
+          await handleUnauthorized();
+          return;
+        }
+        setClearTrashStatus(
+          (error && error.message) || "Nao foi possivel limpar a lixeira.",
           "error"
         );
       }
