@@ -43,6 +43,9 @@ function renderCertificateRows(items) {
       `Emitido em: ${formatDateTime(item.emitido_em)}`,
       `Emitido por: ${item.emitido_por_username || "-"}`,
     ];
+    if (item.email) {
+      mobileMeta.unshift(`Email: ${item.email}`);
+    }
     if (trashMode) {
       mobileMeta.push(
         `Excluido em: ${formatDateTime(item.excluido_em)}`,
@@ -57,15 +60,23 @@ function renderCertificateRows(items) {
       nameMeta.appendChild(metaLine);
     });
 
+    const emailMeta = document.createElement("span");
+    emailMeta.className = "cert-email-meta";
+    emailMeta.textContent = item.email || "";
+
     if (trashMode) {
       const trashMeta = document.createElement("span");
       trashMeta.className = "cert-trash-meta";
       trashMeta.textContent =
         `Na lixeira desde ${formatDateTime(item.excluido_em)}. ` +
         `Expira em ${formatDateTime(item.exclusao_expira_em)}.`;
-      nameCell.append(nameTitle, trashMeta, nameMeta);
+      nameCell.append(nameTitle);
+      if (item.email) nameCell.appendChild(emailMeta);
+      nameCell.append(trashMeta, nameMeta);
     } else {
-      nameCell.append(nameTitle, nameMeta);
+      nameCell.append(nameTitle);
+      if (item.email) nameCell.appendChild(emailMeta);
+      nameCell.appendChild(nameMeta);
     }
 
     const courseCell = document.createElement("td");
@@ -632,6 +643,7 @@ function getCertificateReportRow(item) {
     item.codigo || "-",
     item.nome || "-",
     item.cpf || "-",
+    item.email || "-",
     item.curso || "-",
     String(item.carga_h || 0),
     formatDate(item.concluido),
@@ -648,6 +660,7 @@ function buildCertificateCsvReport(report) {
     "Código",
     "Participante",
     "CPF",
+    "Email",
     "Curso",
     "Carga horária",
     "Data de conclusão",

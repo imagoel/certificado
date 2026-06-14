@@ -19,6 +19,7 @@ def create_uploaded_certificate(
     *,
     nome: str = "Aluno Teste",
     curso: str = "Curso Teste",
+    email: str | None = None,
     carga_h: int = 8,
     concluido: str = "2026-03-28",
     render_snapshot: dict | None = None,
@@ -28,6 +29,7 @@ def create_uploaded_certificate(
         json={
             "nome": nome,
             "cpf": None,
+            "email": email,
             "curso": curso,
             "carga_h": carga_h,
             "concluido": concluido,
@@ -54,6 +56,7 @@ def build_edit_payload(
     *,
     nome: str = "Aluno Editado",
     curso: str = "Curso Editado",
+    email: str | None = None,
     carga_h: int = 16,
     concluido: str = "2026-04-02",
     render_snapshot: dict | None = None,
@@ -67,6 +70,8 @@ def build_edit_payload(
         "password": password,
         "confirmacao_codigo": confirmacao_codigo or codigo,
     }
+    if email is not None:
+        payload["email"] = email
     if render_snapshot is not None:
         payload["render_snapshot"] = json.dumps(render_snapshot)
     return payload
@@ -82,6 +87,7 @@ def test_operador_cria_certificado_com_secretaria_ativa_e_validacao_publica(
         json={
             "nome": "Maria do Teste",
             "cpf": None,
+            "email": "Maria.Teste@EXEMPLO.COM",
             "curso": "Introducao a Sistemas",
             "carga_h": 12,
             "concluido": "2026-03-28",
@@ -94,6 +100,7 @@ def test_operador_cria_certificado_com_secretaria_ativa_e_validacao_publica(
     assert payload["secretaria_sigla"] == "SEAFI"
     assert payload["emitido_por_username"] == "operador"
     assert payload["arquivo_disponivel"] is False
+    assert payload["email"] == "Maria.Teste@exemplo.com"
 
     pending_validation_response = client.get(f"/api/validar/{payload['codigo']}")
 
@@ -109,8 +116,76 @@ def test_operador_cria_certificado_com_secretaria_ativa_e_validacao_publica(
     validation_response = client.get(f"/api/validar/{payload['codigo']}")
 
     assert validation_response.status_code == 200
-    assert validation_response.json()["status"] == "valido"
-    assert validation_response.json()["valido"] is True
+    validation_payload = validation_response.json()
+    assert validation_payload["status"] == "valido"
+    assert validation_payload["valido"] is True
+    assert "email" not in validation_payload
+
+
+def test_api_rejeita_email_invalido_em_certificado_individual(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    response = client.post(
+        "/api/certificados",
+        json={
+            "nome": "Aluno Email Invalido",
+            "cpf": None,
+            "email": ".aluno@example.com",
+            "curso": "Curso Email",
+            "carga_h": 4,
+            "concluido": "2026-03-28",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_api_lote_salva_email_por_certificado(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    response = client.post(
+        "/api/certificados/lote",
+        json={
+            "prefixo": "ABC",
+            "itens": [
+                {
+                    "nome": "Aluno Lote Email",
+                    "cpf": None,
+                    "email": "aluno@EXEMPLO.COM",
+                    "curso": "Curso Lote",
+                    "carga_h": 6,
+                    "concluido": "2026-03-28",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload[0]["email"] == "aluno@exemplo.com"
+
+
+def test_api_lote_rejeita_item_com_email_invalido(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    response = client.post(
+        "/api/certificados/lote",
+        json={
+            "prefixo": "ABC",
+            "itens": [
+                {
+                    "nome": "Aluno Lote Email Ruim",
+                    "cpf": None,
+                    "email": "-aluno@example.com",
+                    "curso": "Curso Lote",
+                    "carga_h": 6,
+                    "concluido": "2026-03-28",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_api_lista_possiveis_duplicados_na_secretaria_ativa(client, seed_data, login):
@@ -258,6 +333,7 @@ def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
         client,
         nome="Aluno Antes",
         curso="Curso Antes",
+        email="antes@EXEMPLO.COM",
         carga_h=8,
         render_snapshot=original_snapshot,
     )
@@ -291,6 +367,7 @@ def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
             seed_data["admin_password"],
             nome="Aluno Depois",
             curso="Curso Depois",
+            email="depois@EXEMPLO.COM",
             carga_h=24,
             concluido="2026-04-02",
             render_snapshot=updated_snapshot,
@@ -303,6 +380,7 @@ def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
     assert payload["codigo"] == codigo
     assert payload["nome"] == "Aluno Depois"
     assert payload["curso"] == "Curso Depois"
+    assert payload["email"] == "depois@exemplo.com"
     assert payload["carga_h"] == 24
     assert payload["concluido"] == "2026-04-02"
     assert payload["emitido_em"] == old_emitido_em
@@ -322,6 +400,7 @@ def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
     assert validation_payload["codigo"] == codigo
     assert validation_payload["nome"] == "Aluno Depois"
     assert validation_payload["curso"] == "Curso Depois"
+    assert "email" not in validation_payload
     assert validation_payload["carga_h"] == 24
     assert validation_payload["concluido"] == "2026-04-02"
 
@@ -350,6 +429,7 @@ def test_admin_edicao_falha_sem_alterar_dados_ou_png(client, seed_data, login, a
         original_hash = cert.hash
         original_nome = cert.nome
         original_curso = cert.curso
+        original_email = cert.email
         original_carga = cert.carga_h
         original_concluido = cert.concluido
     finally:
@@ -372,9 +452,19 @@ def test_admin_edicao_falha_sem_alterar_dados_ou_png(client, seed_data, login, a
         ),
         files={"arquivo": ("certificado-editado.png", EDITED_PNG_BYTES, "image/png")},
     )
+    invalid_email_response = client.patch(
+        f"/api/admin/certificados/{codigo}",
+        data=build_edit_payload(
+            codigo,
+            seed_data["admin_password"],
+            email="@email-invalido.com",
+        ),
+        files={"arquivo": ("certificado-editado.png", EDITED_PNG_BYTES, "image/png")},
+    )
 
     assert wrong_password_response.status_code == 401
     assert wrong_code_response.status_code == 422
+    assert invalid_email_response.status_code == 422
     assert file_path.read_bytes() == original_bytes
 
     db = app_ctx.database.SessionLocal()
@@ -382,6 +472,7 @@ def test_admin_edicao_falha_sem_alterar_dados_ou_png(client, seed_data, login, a
         cert = db.query(app_ctx.models.Certificate).filter_by(codigo=codigo).one()
         assert cert.nome == original_nome
         assert cert.curso == original_curso
+        assert cert.email == original_email
         assert cert.carga_h == original_carga
         assert cert.concluido == original_concluido
         assert cert.hash == original_hash

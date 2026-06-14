@@ -4,6 +4,8 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from email_utils import normalize_optional_email
+
 
 MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500")))
 MAX_CERTIFICATE_UPLOAD_BYTES = max(1, int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "8388608")))
@@ -15,9 +17,15 @@ SecretariaAssetType = Literal["logo", "assinatura", "instituicao", "selo"]
 class CertificateCreate(BaseModel):
     nome: str = Field(min_length=2, max_length=200)
     cpf: Optional[str] = Field(default=None, max_length=14)
+    email: Optional[str] = Field(default=None, max_length=254)
     curso: str = Field(min_length=2, max_length=200)
     carga_h: int = Field(default=0, ge=0, le=2000)
     concluido: date
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: Optional[str]) -> Optional[str]:
+        return normalize_optional_email(value)
 
 
 class CertificateBatchCreate(BaseModel):
@@ -41,6 +49,7 @@ class CertificateResponse(BaseModel):
     codigo: str
     nome: str
     cpf: Optional[str]
+    email: Optional[str] = None
     curso: str
     carga_h: int
     concluido: date

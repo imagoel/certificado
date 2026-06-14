@@ -27,6 +27,7 @@ from common import (
     validate_role_and_secretarias,
 )
 from database import get_db
+from email_utils import normalize_optional_email
 from models import (
     AuditEvent,
     Certificate,
@@ -476,6 +477,7 @@ async def admin_update_certificate(
     curso: str = Form(...),
     concluido: date = Form(...),
     carga_h: int = Form(...),
+    email: str | None = Form(default=None),
     render_snapshot: str | None = Form(default=None),
     password: str = Form(...),
     confirmacao_codigo: str = Form(...),
@@ -512,6 +514,11 @@ async def admin_update_certificate(
             detail="Carga horaria deve estar entre 0 e 2000 horas.",
         )
 
+    try:
+        clean_email = cert.email if email is None else normalize_optional_email(email)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     snapshot = parse_render_snapshot_payload(render_snapshot)
     content = await arquivo.read()
     validate_png_upload(arquivo, content)
@@ -520,6 +527,7 @@ async def admin_update_certificate(
     try:
         cert.nome = clean_nome
         cert.curso = clean_curso
+        cert.email = clean_email
         cert.concluido = concluido
         cert.carga_h = carga_h
         cert.hash = calculate_certificate_hash(

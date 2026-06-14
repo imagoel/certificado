@@ -84,7 +84,7 @@ function resetBatchPreview() {
   if (batchPreviewBody) {
     batchPreviewBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">Nenhuma prévia carregada.</td>
+        <td colspan="7" class="empty-state">Nenhuma prévia carregada.</td>
       </tr>
     `;
   }
@@ -115,7 +115,7 @@ function renderBatchPreview(prepared) {
   if (!prepared.previewItems.length) {
     batchPreviewBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">Nenhuma linha válida disponível para pré-visualização.</td>
+        <td colspan="7" class="empty-state">Nenhuma linha válida disponível para pré-visualização.</td>
       </tr>
     `;
     return;
@@ -130,6 +130,9 @@ function renderBatchPreview(prepared) {
     const nameCell = document.createElement("td");
     nameCell.textContent = item.nome || "-";
 
+    const emailCell = document.createElement("td");
+    emailCell.textContent = item.email || "-";
+
     const courseCell = document.createElement("td");
     courseCell.textContent = item.curso || "-";
 
@@ -142,7 +145,7 @@ function renderBatchPreview(prepared) {
     const fileCell = document.createElement("td");
     fileCell.textContent = item.fileName || "-";
 
-    row.append(lineCell, nameCell, courseCell, dateCell, cargaCell, fileCell);
+    row.append(lineCell, nameCell, emailCell, courseCell, dateCell, cargaCell, fileCell);
     batchPreviewBody.appendChild(row);
   });
 }
@@ -397,6 +400,7 @@ async function executeBatchGeneration(prepared) {
       lastData = {
         nome: lastGenerated.nome,
         curso: lastGenerated.curso,
+        email: lastGenerated.email || "",
         data: lastGenerated.data,
         cargaH: lastGenerated.carga_h || 0,
         codigo: lastGenerated.codigo,

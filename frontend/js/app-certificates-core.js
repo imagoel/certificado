@@ -13,6 +13,7 @@ async function refreshProtectedData(options = {}) {
 async function registerSingleCertificate(cert) {
   const payload = {
     nome: cert.nome,
+    email: cert.email || null,
     curso: cert.curso,
     carga_h: cert.carga_h || 0,
     concluido: cert.data,
@@ -38,8 +39,21 @@ async function findPossibleDuplicateCertificates(cert) {
 function getCertificateFormPrepared() {
   const nome = nomeInput ? nomeInput.value.trim() : "";
   const curso = cursoInput ? cursoInput.value.trim() : "";
+  const emailResult = normalizeOptionalEmailResult(emailInput ? emailInput.value : "");
   const data = dataInput ? dataInput.value : "";
   const cargaResult = getFormCargaHorariaResult();
+  if (emailInput && typeof emailInput.setCustomValidity === "function") {
+    emailInput.setCustomValidity("");
+  }
+  if (emailResult.invalid) {
+    const error = new Error("Email do participante invalido.");
+    if (emailInput && typeof emailInput.setCustomValidity === "function") {
+      emailInput.setCustomValidity(error.message);
+    }
+    error.field = "email";
+    throw error;
+  }
+
   if (cargaResult.invalid) {
     const error = new Error(
       `A carga horaria deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`
@@ -57,6 +71,7 @@ function getCertificateFormPrepared() {
   return {
     nome,
     curso,
+    email: emailResult.value,
     data,
     cargaH: cargaResult.value ?? 0,
     linha1: textoLinha1Input ? textoLinha1Input.value.trim() : "",
@@ -68,6 +83,7 @@ function buildCertificateLastData(prepared, codigo, qrText) {
   return {
     nome: prepared.nome,
     curso: prepared.curso,
+    email: prepared.email || "",
     data: prepared.data,
     cargaH: prepared.cargaH,
     codigo: sanitizeText(codigo).toUpperCase(),
@@ -82,6 +98,7 @@ function syncEditingCertificateLastDataFromForm() {
   const cargaResult = getFormCargaHorariaResult();
   lastData.nome = nomeInput ? nomeInput.value.trim() : "";
   lastData.curso = cursoInput ? cursoInput.value.trim() : "";
+  lastData.email = emailInput ? emailInput.value.trim() : "";
   lastData.data = dataInput ? dataInput.value : "";
   lastData.cargaH = cargaResult.invalid ? 0 : (cargaResult.value ?? 0);
   lastData.linha1 = textoLinha1Input ? textoLinha1Input.value.trim() : "";
@@ -100,6 +117,7 @@ async function executeSingleCertificateGeneration(prepared) {
     setBatchStatus("Registrando certificado no backend...", "info");
     const registered = await registerSingleCertificate({
       nome: prepared.nome,
+      email: prepared.email,
       curso: prepared.curso,
       data: prepared.data,
       carga_h: prepared.cargaH,
@@ -213,6 +231,7 @@ async function registerBatchCertificates(items) {
   const payload = {
     itens: items.map((item) => ({
       nome: item.nome,
+      email: item.email || null,
       curso: item.curso,
       carga_h: Number.isFinite(item.carga_h) ? item.carga_h : 0,
       concluido: item.data,
@@ -423,6 +442,7 @@ async function openCertificateEditMode(item) {
 
   if (nomeInput) nomeInput.value = item.nome || "";
   if (cursoInput) cursoInput.value = item.curso || "";
+  if (emailInput) emailInput.value = item.email || "";
   if (dataInput) dataInput.value = item.concluido || "";
   if (cargaHInput) cargaHInput.value = item.carga_h ? String(item.carga_h) : "";
 
@@ -459,6 +479,9 @@ function openCertificateEditConfirmDialog() {
     prepared = getCertificateFormPrepared();
   } catch (error) {
     setBatchStatus(error.message || "Revise os dados do certificado.", "error");
+    if (error.field === "email" && emailInput && typeof emailInput.reportValidity === "function") {
+      emailInput.reportValidity();
+    }
     if (error.field === "carga_h" && cargaHInput && typeof cargaHInput.reportValidity === "function") {
       cargaHInput.reportValidity();
     }
@@ -523,6 +546,7 @@ async function saveCertificateEdit(prepared, password, confirmationCode) {
     const formData = new FormData();
     formData.append("nome", prepared.nome);
     formData.append("curso", prepared.curso);
+    formData.append("email", prepared.email || "");
     formData.append("concluido", prepared.data);
     formData.append("carga_h", String(prepared.cargaH || 0));
     formData.append("render_snapshot", JSON.stringify(buildLayoutPresetPayload()));
@@ -541,6 +565,7 @@ async function saveCertificateEdit(prepared, password, confirmationCode) {
       {
         nome: payload.nome || prepared.nome,
         curso: payload.curso || prepared.curso,
+        email: payload.email || prepared.email || "",
         data: payload.concluido || prepared.data,
         cargaH: payload.carga_h || 0,
         linha1: prepared.linha1,
