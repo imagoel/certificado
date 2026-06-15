@@ -182,6 +182,31 @@
 
 .reply-email-table-card {
   margin-top: 12px;
+  overflow-x: hidden;
+}
+
+.reply-email-admin-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.reply-email-admin-table th:nth-child(1),
+.reply-email-admin-table td:nth-child(1) {
+  width: auto;
+}
+
+.reply-email-admin-table th:nth-child(2),
+.reply-email-admin-table td:nth-child(2) {
+  width: 104px;
+}
+
+.reply-email-admin-table th:nth-child(3),
+.reply-email-admin-table td:nth-child(3) {
+  width: 128px;
+}
+
+.reply-email-admin-table .admin-muted-meta {
+  overflow-wrap: anywhere;
 }
 
 .reply-email-status-stack {

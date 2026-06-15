@@ -396,8 +396,8 @@ def test_certificado_usa_reply_to_selecionado_no_snapshot_e_smtp(
     message = sent_messages[0]["message"]
     assert message["Reply-To"] == "eventos@amargosa.ba.gov.br"
     text_body, html_body = get_email_bodies(message)
-    assert "Emitido por: Setor de Eventos - SEAFI" in text_body
-    assert "Setor de Eventos - SEAFI" in html_body
+    assert "Emitido por: Setor de Eventos - Secretaria de Administracao e Financas" in text_body
+    assert "Setor de Eventos - Secretaria de Administracao e Financas" in html_body
     assert "https://certificados.amargosa.ba.gov.br/static/email/logo-prefeitura.png" in html_body
     assert '<img' in html_body
 
