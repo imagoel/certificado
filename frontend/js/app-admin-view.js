@@ -119,6 +119,7 @@ function buildReplyEmailIssuerLabel(secretaria, replyEmail) {
   const setorNome =
     replyEmail && !isGenericReplyEmailName(replyEmail.nome) ? sanitizeText(replyEmail.nome) : "";
 
+  if (setorNome && secretariaNome) return `${setorNome} - ${secretariaNome}`;
   if (setorNome && sigla) return `${setorNome} - ${sigla}`;
   if (setorNome) return setorNome;
   if (sigla && secretariaNome) return `${sigla} - ${secretariaNome}`;

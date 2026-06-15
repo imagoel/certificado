@@ -108,6 +108,8 @@ def build_email_issuer_label(cert: Certificate) -> str:
         else (cert.reply_to_nome or "").strip()
     )
 
+    if setor_nome and secretaria_nome:
+        return f"{setor_nome} - {secretaria_nome}"
     if setor_nome and sigla:
         return f"{setor_nome} - {sigla}"
     if setor_nome:
