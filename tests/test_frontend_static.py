@@ -205,3 +205,19 @@ def test_secretaria_reply_to_field_is_wired_in_admin_ui():
     assert "email_resposta: replyEmailResult.value" in source
     assert "secretaria-reply-emails" in source
     assert "Email de resposta invalido." in source
+
+
+def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
+    html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
+    source = _frontend_source()
+
+    assert 'class="cert-col-email-status"' in html
+    assert 'class="email-status-legend"' in html
+    for label in ["Enviado", "Pendente", "Nao enviado", "Falha no envio"]:
+        assert label in html or label in source
+
+    assert "function getCertificateEmailDeliveryState" in source
+    assert "function resendCertificateEmail" in source
+    assert "reenviar-email" in source
+    assert "email_tentativa_em" in source
+    assert "email_reply_to" in source

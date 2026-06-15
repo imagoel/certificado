@@ -74,7 +74,9 @@ class CertificateResponse(BaseModel):
     excluido_por_usuario_id: Optional[int] = None
     excluido_por_username: Optional[str] = None
     email_envio_status: Optional[str] = None
+    email_tentativa_em: Optional[datetime] = None
     email_enviado_em: Optional[datetime] = None
+    email_reply_to: Optional[str] = None
     email_erro: Optional[str] = None
     arquivo_disponivel: bool = False
     arquivo_url: Optional[str] = None

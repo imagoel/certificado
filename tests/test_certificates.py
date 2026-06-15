@@ -415,6 +415,165 @@ def test_operador_nao_usa_reply_email_de_outra_secretaria(client, seed_data, log
     assert "email de resposta" in response.text.lower()
 
 
+def test_admin_reenvia_email_de_certificado_emitido(
+    client, seed_data, login, app_ctx, monkeypatch
+):
+    login("operador", seed_data["operador_password"])
+    codigo = create_uploaded_certificate(
+        client,
+        nome="Aluno Reenvio Admin",
+        email="reenvio.admin@example.com",
+        curso="Curso Reenvio",
+    )
+
+    configure_smtp_env(monkeypatch)
+    sent_messages = install_fake_smtp(monkeypatch)
+
+    client.post("/api/auth/logout")
+    login("admin", seed_data["admin_password"])
+    resend_response = client.post(f"/api/certificados/{codigo}/reenviar-email", json={})
+
+    assert resend_response.status_code == 200
+    payload = resend_response.json()
+    assert payload["email_envio_status"] == "enviado"
+    assert payload["email_tentativa_em"]
+    assert payload["email_enviado_em"]
+    assert payload["email_reply_to"] == "seafi@amargosa.ba.gov.br"
+    assert payload["email_erro"] is None
+
+    assert len(sent_messages) == 1
+    assert sent_messages[0]["message"]["To"] == "reenvio.admin@example.com"
+    assert sent_messages[0]["message"]["Reply-To"] == "seafi@amargosa.ba.gov.br"
+
+    list_response = client.get("/api/certificados", params={"busca": codigo})
+    assert list_response.status_code == 200
+    listed = list_response.json()["itens"][0]
+    assert listed["email_envio_status"] == "enviado"
+    assert listed["email_tentativa_em"]
+    assert listed["email_reply_to"] == "seafi@amargosa.ba.gov.br"
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        attempts = (
+            db.query(app_ctx.models.CertificateEmailAttempt)
+            .filter_by(certificado_codigo=codigo)
+            .all()
+        )
+        assert len(attempts) == 1
+        assert attempts[0].status == "enviado"
+    finally:
+        db.close()
+
+
+def test_operador_reenvia_email_e_outro_operador_nao_acessa(
+    client, seed_data, login, monkeypatch
+):
+    login("operador", seed_data["operador_password"])
+    codigo = create_uploaded_certificate(
+        client,
+        nome="Aluno Reenvio Operador",
+        email="reenvio.operador@example.com",
+        curso="Curso Reenvio",
+    )
+
+    configure_smtp_env(monkeypatch)
+    sent_messages = install_fake_smtp(monkeypatch)
+
+    resend_response = client.post(f"/api/certificados/{codigo}/reenviar-email", json={})
+    assert resend_response.status_code == 200
+    assert resend_response.json()["email_envio_status"] == "enviado"
+    assert len(sent_messages) == 1
+
+    client.post("/api/auth/logout")
+    login("admin", seed_data["admin_password"])
+    create_other_operator = client.post(
+        "/api/admin/usuarios",
+        json={
+            "nome": "Operador Semed",
+            "username": "operador.semed",
+            "password": "semed12345",
+            "papel": "operador",
+            "ativo": True,
+            "secretaria_ids": [seed_data["semed_id"]],
+        },
+    )
+    assert create_other_operator.status_code == 201
+
+    client.post("/api/auth/logout")
+    login("operador.semed", "semed12345")
+    forbidden_response = client.post(f"/api/certificados/{codigo}/reenviar-email", json={})
+
+    assert forbidden_response.status_code == 403
+    assert len(sent_messages) == 1
+
+
+def test_reenvio_bloqueia_certificado_sem_email_ou_png(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    without_email_code = create_uploaded_certificate(
+        client,
+        nome="Aluno Sem Email Reenvio",
+        curso="Curso Reenvio",
+    )
+    no_email_response = client.post(
+        f"/api/certificados/{without_email_code}/reenviar-email",
+        json={},
+    )
+    assert no_email_response.status_code == 422
+    assert "sem email" in no_email_response.text.lower()
+
+    pending_response = client.post(
+        "/api/certificados",
+        json={
+            "nome": "Aluno Sem PNG Reenvio",
+            "cpf": None,
+            "email": "pendente@example.com",
+            "curso": "Curso Reenvio",
+            "carga_h": 8,
+            "concluido": "2026-03-28",
+        },
+    )
+    assert pending_response.status_code == 201
+    pending_code = pending_response.json()["codigo"]
+
+    no_png_response = client.post(f"/api/certificados/{pending_code}/reenviar-email", json={})
+    assert no_png_response.status_code == 409
+    assert "png" in no_png_response.text.lower()
+
+
+def test_reenvio_com_smtp_desativado_registra_falha(
+    client, seed_data, login, app_ctx
+):
+    login("operador", seed_data["operador_password"])
+    codigo = create_uploaded_certificate(
+        client,
+        nome="Aluno SMTP Desativado",
+        email="smtp.desativado@example.com",
+        curso="Curso Reenvio",
+    )
+
+    resend_response = client.post(f"/api/certificados/{codigo}/reenviar-email", json={})
+
+    assert resend_response.status_code == 200
+    payload = resend_response.json()
+    assert payload["email_envio_status"] == "falhou"
+    assert payload["email_tentativa_em"]
+    assert payload["email_enviado_em"] is None
+    assert "desativado" in payload["email_erro"].lower()
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        attempt = (
+            db.query(app_ctx.models.CertificateEmailAttempt)
+            .filter_by(certificado_codigo=codigo)
+            .one()
+        )
+        assert attempt.status == "falhou"
+        assert "desativado" in attempt.erro.lower()
+    finally:
+        db.close()
+
+
 def test_falha_smtp_nao_desfaz_certificado_ou_png(
     client, seed_data, login, app_ctx, monkeypatch
 ):

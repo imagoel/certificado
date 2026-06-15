@@ -1,4 +1,81 @@
 
+function getFriendlyEmailError(errorMessage) {
+  const message = sanitizeText(errorMessage);
+  const normalized = message.toLowerCase();
+  if (!message) return "Nao foi possivel enviar o e-mail.";
+  if (normalized.includes("desativado")) return "Envio de e-mail desativado.";
+  if (normalized.includes("secretaria sem email")) {
+    return "Secretaria sem e-mail de resposta.";
+  }
+  if (normalized.includes("smtp") || normalized.includes("login")) {
+    return "Configuracao de envio precisa ser verificada.";
+  }
+  if (normalized.includes("arquivo") || normalized.includes("png")) {
+    return "PNG do certificado nao encontrado.";
+  }
+  return "Nao foi possivel enviar. Verifique o e-mail ou a configuracao de envio.";
+}
+
+function getCertificateEmailDeliveryState(item) {
+  if (!item || !item.email) {
+    return {
+      label: "Nao enviado",
+      className: "is-muted",
+      title: "Nenhum e-mail cadastrado para este participante.",
+    };
+  }
+
+  const replyTo = item.email_reply_to || item.reply_to_email || "";
+  const details = [];
+  if (item.email_tentativa_em) {
+    details.push(`Ultima tentativa: ${formatDateTime(item.email_tentativa_em)}`);
+  }
+  if (replyTo) details.push(`Respostas para: ${replyTo}`);
+
+  if (item.email_envio_status === "enviado") {
+    if (item.email_enviado_em) {
+      details.unshift(`Enviado em: ${formatDateTime(item.email_enviado_em)}`);
+    }
+    return {
+      label: "Enviado",
+      className: "is-sent",
+      title: details.join("\n") || "E-mail enviado com sucesso.",
+    };
+  }
+
+  if (item.email_envio_status === "falhou") {
+    details.push(`Motivo: ${getFriendlyEmailError(item.email_erro)}`);
+    return {
+      label: "Falha no envio",
+      className: "is-error",
+      title: details.join("\n"),
+    };
+  }
+
+  return {
+    label: "Pendente",
+    className: "is-pending",
+    title: "E-mail cadastrado, mas ainda sem tentativa de envio.",
+  };
+}
+
+function buildCertificateEmailStatusBadge(item) {
+  const state = getCertificateEmailDeliveryState(item);
+  const badge = document.createElement("span");
+  badge.className = `cert-email-status-badge ${state.className}`;
+  badge.textContent = state.label;
+  badge.title = state.title;
+  return badge;
+}
+
+function canResendCertificateEmail(item) {
+  if (!item || certListState.trashMode) return false;
+  return Boolean(
+    item.email &&
+      (item.arquivo_disponivel || item.arquivo_admin_url || item.arquivo_url)
+  );
+}
+
 function renderCertificateRows(items) {
   if (!certListBody) return;
   const trashMode = Boolean(certListState.trashMode);
@@ -6,7 +83,7 @@ function renderCertificateRows(items) {
   if (!items.length) {
     certListBody.innerHTML = `
       <tr>
-        <td colspan="8" class="empty-state">${
+        <td colspan="9" class="empty-state">${
           trashMode
             ? "Nenhum certificado na lixeira."
             : "Nenhum certificado encontrado com os filtros atuais."
@@ -46,13 +123,7 @@ function renderCertificateRows(items) {
     if (item.email) {
       mobileMeta.unshift(`Email: ${item.email}`);
     }
-    if (item.email_envio_status) {
-      mobileMeta.unshift(
-        item.email_envio_status === "enviado"
-          ? `Envio: enviado em ${formatDateTime(item.email_enviado_em)}`
-          : `Envio: falhou${item.email_erro ? ` (${item.email_erro})` : ""}`
-      );
-    }
+    mobileMeta.unshift(`E-mail: ${getCertificateEmailDeliveryState(item).label}`);
     if (trashMode) {
       mobileMeta.push(
         `Excluido em: ${formatDateTime(item.excluido_em)}`,
@@ -71,17 +142,6 @@ function renderCertificateRows(items) {
     emailMeta.className = "cert-email-meta";
     emailMeta.textContent = item.email || "";
 
-    const emailDeliveryMeta = document.createElement("span");
-    emailDeliveryMeta.className = `cert-email-delivery-meta ${
-      item.email_envio_status === "falhou" ? "is-error" : "is-success"
-    }`;
-    emailDeliveryMeta.textContent =
-      item.email_envio_status === "enviado"
-        ? `Email enviado em ${formatDateTime(item.email_enviado_em)}`
-        : item.email_envio_status === "falhou"
-          ? `Email falhou${item.email_erro ? `: ${item.email_erro}` : ""}`
-          : "";
-
     if (trashMode) {
       const trashMeta = document.createElement("span");
       trashMeta.className = "cert-trash-meta";
@@ -90,12 +150,10 @@ function renderCertificateRows(items) {
         `Expira em ${formatDateTime(item.exclusao_expira_em)}.`;
       nameCell.append(nameTitle);
       if (item.email) nameCell.appendChild(emailMeta);
-      if (item.email_envio_status) nameCell.appendChild(emailDeliveryMeta);
       nameCell.append(trashMeta, nameMeta);
     } else {
       nameCell.append(nameTitle);
       if (item.email) nameCell.appendChild(emailMeta);
-      if (item.email_envio_status) nameCell.appendChild(emailDeliveryMeta);
       nameCell.appendChild(nameMeta);
     }
 
@@ -118,6 +176,10 @@ function renderCertificateRows(items) {
     const emittedByCell = document.createElement("td");
     emittedByCell.className = "cert-col-secondary";
     emittedByCell.textContent = item.emitido_por_username || "-";
+
+    const emailStatusCell = document.createElement("td");
+    emailStatusCell.className = "cert-col-email-status";
+    emailStatusCell.appendChild(buildCertificateEmailStatusBadge(item));
 
     const actionsCell = document.createElement("td");
     actionsCell.className = "cert-col-actions";
@@ -157,7 +219,8 @@ function renderCertificateRows(items) {
       actionsWrap.appendChild(pngButton);
     }
 
-    if (isAdminSession() && !trashMode) {
+    const canResendEmail = canResendCertificateEmail(item);
+    if (!trashMode && (isAdminSession() || canResendEmail)) {
       const menu = document.createElement("details");
       menu.className = "action-menu";
 
@@ -169,24 +232,40 @@ function renderCertificateRows(items) {
 
       const menuContent = document.createElement("div");
       menuContent.className = "action-menu-content";
-      const editButton = createInlineButton(
-        "Editar",
-        () => {
-          menu.open = false;
-          void openCertificateEditMode(item);
-        },
-        "action-menu-item"
-      );
-      const deleteButton = createInlineButton(
-        "Mover para lixeira",
-        () => {
-          menu.open = false;
-          openDeleteCertificateDialog(item);
-        },
-        "action-menu-item danger-action"
-      );
-      menuContent.appendChild(editButton);
-      menuContent.appendChild(deleteButton);
+
+      if (canResendEmail) {
+        const resendButton = createInlineButton(
+          "Reenviar e-mail",
+          () => {
+            menu.open = false;
+            void resendCertificateEmail(item);
+          },
+          "action-menu-item"
+        );
+        menuContent.appendChild(resendButton);
+      }
+
+      if (isAdminSession()) {
+        const editButton = createInlineButton(
+          "Editar",
+          () => {
+            menu.open = false;
+            void openCertificateEditMode(item);
+          },
+          "action-menu-item"
+        );
+        const deleteButton = createInlineButton(
+          "Mover para lixeira",
+          () => {
+            menu.open = false;
+            openDeleteCertificateDialog(item);
+          },
+          "action-menu-item danger-action"
+        );
+        menuContent.appendChild(editButton);
+        menuContent.appendChild(deleteButton);
+      }
+
       menu.append(summary, menuContent);
       actionsWrap.appendChild(menu);
     }
@@ -201,11 +280,55 @@ function renderCertificateRows(items) {
       concluidoCell,
       emittedCell,
       emittedByCell,
+      emailStatusCell,
       actionsCell
     );
 
     certListBody.appendChild(row);
   });
+}
+
+async function resendCertificateEmail(item) {
+  if (!item || !item.codigo || !canResendCertificateEmail(item)) return;
+
+  const confirmed = window.confirm(
+    `Reenviar o certificado ${item.codigo} por e-mail para ${item.email}?`
+  );
+  if (!confirmed) return;
+
+  try {
+    setCertListStatus(`Reenviando e-mail do certificado ${item.codigo}...`, "info");
+    const payload = await apiJsonRequest(
+      `/api/certificados/${encodeURIComponent(item.codigo)}/reenviar-email`,
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      }
+    );
+    await loadCertificates(certListState.page || 1);
+    if (isAdminSession()) {
+      await loadAuditEvents(1);
+    }
+
+    if (payload && payload.email_envio_status === "enviado") {
+      setCertListStatus(`E-mail do certificado ${item.codigo} enviado com sucesso.`, "success");
+    } else {
+      setCertListStatus(
+        `Tentativa registrada para ${item.codigo}, mas o e-mail nao foi enviado.`,
+        "error"
+      );
+    }
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setCertListStatus(
+      (error && error.message) || "Nao foi possivel reenviar o e-mail.",
+      "error"
+    );
+  }
 }
 
 async function restoreCertificate(item) {
