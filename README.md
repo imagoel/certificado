@@ -382,7 +382,7 @@ Variaveis principais:
 - `SMTP_FROM_NAME=Gerador de Certificados`
 - `SMTP_STARTTLS=true`
 - `SMTP_TIMEOUT_SECONDS=15`
-- `EMAIL_LOGO_URL=https://certificados.amargosa.ba.gov.br/static/email/logo-prefeitura.png`
+- `EMAIL_LOGO_URL=https://certificados.amargosa.ba.gov.br/assets/email/logo-prefeitura.png`
 - `EMAIL_INSTITUTION_NAME=Prefeitura Municipal de Amargosa`
 
 Regras importantes:
@@ -395,7 +395,7 @@ Regras importantes:
 - a assinatura mostra `EMAIL_INSTITUTION_NAME` e a origem da emissao
 - a tela `Administracao > Secretarias` permite cadastrar, ativar e definir o
   email de resposta padrao de cada secretaria
-- o campo `Setor exibido no e-mail` aparece como `Emitido por: Nome do setor - SIGLA`
+- o campo `Setor exibido no e-mail` aparece como `Emitido por: Setor exibido - Nome da secretaria`
 - quando o setor for o email principal, o email mostra `Emitido por: SIGLA - Nome da secretaria`
 - o certificado salva um snapshot do Reply-To escolhido para permitir reenvio
   manual consistente em uma etapa futura
