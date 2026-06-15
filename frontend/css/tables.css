@@ -238,8 +238,14 @@
   overflow-wrap: anywhere;
 }
 
+.certificates-table th {
+  white-space: nowrap;
+}
+
 .certificates-table .cert-col-code {
+  min-width: 132px;
   width: 132px;
+  white-space: nowrap;
 }
 
 .certificates-table .cert-col-participant,
@@ -257,9 +263,15 @@
   min-width: 118px;
 }
 
+.certificates-table th.cert-col-secondary,
+.certificates-table td.cert-col-secondary {
+  white-space: nowrap;
+}
+
 .certificates-table .cert-col-email-status {
   min-width: 130px;
   width: 130px;
+  white-space: nowrap;
 }
 
 .cert-name-title {
@@ -516,11 +528,11 @@
 }
 
 .action-menu-content {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 10;
-  min-width: 116px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  min-width: 150px;
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: 10px;
