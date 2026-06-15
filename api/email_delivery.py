@@ -204,12 +204,23 @@ def send_certificate_email_if_needed(
     cert: Certificate,
     request: Request,
     usuario: Usuario | None,
+    record_disabled_attempt: bool = False,
 ) -> CertificateEmailAttempt | None:
     if not cert.email:
         return None
 
     config = load_smtp_config()
     if not config.enabled:
+        if record_disabled_attempt:
+            return safe_record_email_attempt(
+                db,
+                cert=cert,
+                usuario=usuario,
+                destinatario=cert.email,
+                reply_to=cert.reply_to_email,
+                status=EMAIL_STATUS_FAILED,
+                erro="Envio por email desativado no sistema.",
+            )
         return None
 
     destinatario = cert.email

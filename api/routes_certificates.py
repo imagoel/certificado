@@ -15,6 +15,7 @@ from common import (
     ensure_certificate_access,
     get_accessible_secretarias,
     get_current_user,
+    has_certificate_file,
     is_admin,
     is_certificate_deleted,
     normalize_prefix,
@@ -410,6 +411,49 @@ async def upload_certificate_file(
     replacement.commit()
     db.refresh(cert)
     send_certificate_email_if_needed(db, cert=cert, request=request, usuario=usuario)
+    db.refresh(cert)
+    return to_response(cert, request)
+
+
+@router.post("/api/certificados/{codigo}/reenviar-email", response_model=CertificateResponse)
+def resend_certificate_email(
+    codigo: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> CertificateResponse:
+    normalized_code = sanitize_code(codigo)
+    cert = db.query(Certificate).filter(Certificate.codigo == normalized_code).first()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificado nao encontrado.")
+
+    ensure_certificate_access(db, usuario, cert)
+    if is_certificate_deleted(cert):
+        raise HTTPException(status_code=409, detail="Certificado esta na lixeira.")
+    if cert.arquivo_pendente or not has_certificate_file(cert):
+        raise HTTPException(
+            status_code=409,
+            detail="Certificado ainda nao possui PNG salvo para envio.",
+        )
+    if not cert.email:
+        raise HTTPException(
+            status_code=422,
+            detail="Certificado sem email do participante cadastrado.",
+        )
+
+    attempt = send_certificate_email_if_needed(
+        db,
+        cert=cert,
+        request=request,
+        usuario=usuario,
+        record_disabled_attempt=True,
+    )
+    if attempt is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Nao foi possivel registrar a tentativa de envio.",
+        )
+
     db.refresh(cert)
     return to_response(cert, request)
 

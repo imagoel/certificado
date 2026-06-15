@@ -190,8 +190,47 @@
   gap: 6px;
 }
 
+.email-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 2px 0 10px;
+  color: #526981;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.email-status-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.email-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #87909a;
+}
+
+.email-status-dot.is-sent {
+  background: #34a853;
+}
+
+.email-status-dot.is-pending {
+  background: #d89b16;
+}
+
+.email-status-dot.is-muted {
+  background: #8f9388;
+}
+
+.email-status-dot.is-error {
+  background: #e34b4b;
+}
+
 .certificates-table {
-  min-width: 1080px;
+  min-width: 1180px;
 }
 
 .certificates-table th,
@@ -218,6 +257,11 @@
   min-width: 118px;
 }
 
+.certificates-table .cert-col-email-status {
+  min-width: 130px;
+  width: 130px;
+}
+
 .cert-name-title {
   display: block;
   margin-bottom: 2px;
@@ -241,19 +285,42 @@
   word-break: break-word;
 }
 
-.cert-email-delivery-meta {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #e7f7ed;
-  color: #087a35;
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.35;
+.cert-email-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 104px;
+  padding: 7px 10px;
+  border: 1px solid rgba(128, 159, 196, 0.42);
+  border-radius: 9px;
+  background: #fff;
+  color: #1f3654;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
 }
 
-.cert-email-delivery-meta.is-error {
+.cert-email-status-badge.is-sent {
+  border-color: rgba(52, 168, 83, 0.26);
+  background: #edf9f0;
+  color: #087a35;
+}
+
+.cert-email-status-badge.is-pending {
+  border-color: rgba(216, 155, 22, 0.28);
+  background: #fff8e8;
+  color: #8b5d00;
+}
+
+.cert-email-status-badge.is-muted {
+  border-color: rgba(143, 147, 136, 0.24);
+  background: #f4f4ef;
+  color: #555a50;
+}
+
+.cert-email-status-badge.is-error {
+  border-color: rgba(227, 75, 75, 0.28);
   background: #fff1f1;
   color: #b32929;
 }
@@ -272,12 +339,12 @@
 .cert-actions {
   align-items: center;
   flex-wrap: nowrap;
-  min-width: 132px;
+  min-width: 142px;
 }
 
 .certificates-table .cert-col-actions {
-  min-width: 132px;
-  width: 132px;
+  min-width: 142px;
+  width: 142px;
 }
 
 .user-admin-table {
