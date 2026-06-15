@@ -4,3 +4,6 @@ FROM nginx:alpine
 COPY index.html /usr/share/nginx/html/index.html
 COPY frontend/ /usr/share/nginx/html/frontend/
 COPY assets/ /usr/share/nginx/html/assets/
+
+# Publica assets usados fora da API, como a logo do template de e-mail.
+COPY api/static/ /usr/share/nginx/html/static/

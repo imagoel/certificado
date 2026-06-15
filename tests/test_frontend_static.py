@@ -212,6 +212,13 @@ def test_secretaria_reply_to_field_is_wired_in_admin_ui():
     assert (ROOT_DIR / "api" / "static" / "email" / "logo-prefeitura.png").is_file()
 
 
+def test_frontend_dockerfile_publishes_email_static_assets():
+    dockerfile = (ROOT_DIR / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "COPY api/static/ /usr/share/nginx/html/static/" in dockerfile
+    assert (ROOT_DIR / "api" / "static" / "email" / "logo-prefeitura.png").is_file()
+
+
 def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
     html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
     source = _frontend_source()
