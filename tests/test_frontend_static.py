@@ -215,6 +215,7 @@ def test_secretaria_reply_to_field_is_wired_in_admin_ui():
 def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
     html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
     source = _frontend_source()
+    tables_css = (ROOT_DIR / "frontend" / "css" / "tables.css").read_text(encoding="utf-8")
 
     assert 'class="cert-col-email-status"' in html
     assert 'class="email-status-legend"' in html
@@ -226,6 +227,13 @@ def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
     assert "reenviar-email" in source
     assert "email_tentativa_em" in source
     assert "email_reply_to" in source
+    assert "function closeOpenActionMenus" in source
+    assert "function positionActionMenu" in source
+    assert 'event.target.closest(".action-menu")' in source
+    assert 'event.key === "Escape"' in source
+    assert "position: fixed;" in tables_css
+    assert ".certificates-table th {\n  white-space: nowrap;\n}" in tables_css
+    assert ".certificates-table .cert-col-code {\n  min-width: 132px;" in tables_css
 
 
 def test_certificate_edit_offers_optional_email_resend_after_success():
