@@ -51,6 +51,16 @@ def bridge_legacy_schema(connection) -> None:
     if "emitido_por_usuario_id" not in columns:
         statements.append("ALTER TABLE certificados ADD COLUMN emitido_por_usuario_id INTEGER")
 
+    try:
+        secretaria_columns = {
+            column["name"] for column in inspector.get_columns("secretarias")
+        }
+    except Exception:
+        secretaria_columns = set()
+
+    if "email_resposta" not in secretaria_columns:
+        statements.append("ALTER TABLE secretarias ADD COLUMN email_resposta VARCHAR(254)")
+
     for statement in statements:
         connection.execute(text(statement))
 

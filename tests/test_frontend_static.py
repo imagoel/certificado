@@ -186,3 +186,13 @@ def test_spreadsheet_email_aliases_and_validation_are_available():
     assert "function normalizeOptionalEmailResult" in source
     assert "linha ${rowNumber} (email invalido:" in spreadsheets_source
     assert "emailResult.value" in spreadsheets_source
+
+
+def test_secretaria_reply_to_field_is_wired_in_admin_ui():
+    html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
+    source = _frontend_source()
+
+    assert 'id="secretaria-email-resposta"' in html
+    assert "secretariaReplyEmailInput" in source
+    assert "email_resposta: replyEmailResult.value" in source
+    assert "Email de resposta invalido." in source

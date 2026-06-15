@@ -122,6 +122,7 @@ const secretariaForm = document.getElementById("secretaria-form");
 const secretariaEditIdInput = document.getElementById("secretaria-edit-id");
 const secretariaSiglaInput = document.getElementById("secretaria-sigla");
 const secretariaNameInput = document.getElementById("secretaria-name");
+const secretariaReplyEmailInput = document.getElementById("secretaria-email-resposta");
 const secretariaActiveInput = document.getElementById("secretaria-active");
 const secretariaFormResetBtn = document.getElementById("secretaria-form-reset");
 const secretariaFormStatus = document.getElementById("secretaria-form-status");

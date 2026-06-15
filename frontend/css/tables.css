@@ -149,6 +149,19 @@
   background: #ffe8e8;
 }
 
+.admin-primary-title {
+  display: block;
+  color: #143a67;
+}
+
+.admin-muted-meta {
+  display: block;
+  margin-top: 2px;
+  color: #526981;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .certificates-table {
   min-width: 1080px;
 }
@@ -198,6 +211,23 @@
   font-size: 0.82rem;
   line-height: 1.35;
   word-break: break-word;
+}
+
+.cert-email-delivery-meta {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e7f7ed;
+  color: #087a35;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cert-email-delivery-meta.is-error {
+  background: #fff1f1;
+  color: #b32929;
 }
 
 .table-mobile-meta {

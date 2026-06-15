@@ -10,7 +10,7 @@ from uuid import uuid4
 from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, object_session
 
 from bootstrap import run_startup_bootstrap
 from database import SessionLocal, get_db
@@ -18,6 +18,7 @@ from migrations import ensure_database_schema
 from models import (
     AuditEvent,
     Certificate,
+    CertificateEmailAttempt,
     CertificateLayoutPreset,
     CertificateTemplate,
     Secretaria,
@@ -476,6 +477,7 @@ def build_secretaria_response(secretaria: Secretaria) -> SecretariaResponse:
         id=secretaria.id,
         sigla=secretaria.sigla,
         nome=secretaria.nome,
+        email_resposta=secretaria.email_resposta,
         ativa=secretaria.ativa,
     )
 
@@ -813,6 +815,12 @@ def delete_certificate_permanently(
         },
         synchronize_session=False,
     )
+    db.query(CertificateEmailAttempt).filter(
+        CertificateEmailAttempt.certificado_id == cert_id
+    ).update(
+        {CertificateEmailAttempt.certificado_id: None},
+        synchronize_session=False,
+    )
     db.delete(cert)
     db.flush()
 
@@ -865,6 +873,15 @@ def to_response(
 ) -> CertificateResponse:
     file_available = is_certificate_ready(cert)
     internal_file_available = not bool(cert.arquivo_pendente) and has_certificate_file(cert)
+    db = object_session(cert)
+    last_email_attempt = (
+        db.query(CertificateEmailAttempt)
+        .filter(CertificateEmailAttempt.certificado_id == cert.id)
+        .order_by(CertificateEmailAttempt.criado_em.desc(), CertificateEmailAttempt.id.desc())
+        .first()
+        if db is not None
+        else None
+    )
     return CertificateResponse(
         id=cert.id,
         codigo=cert.codigo,
@@ -890,6 +907,9 @@ def to_response(
         exclusao_expira_em=cert.exclusao_expira_em,
         excluido_por_usuario_id=cert.excluido_por_usuario_id,
         excluido_por_username=cert.excluido_por.username if cert.excluido_por else None,
+        email_envio_status=last_email_attempt.status if last_email_attempt else None,
+        email_enviado_em=last_email_attempt.enviado_em if last_email_attempt else None,
+        email_erro=last_email_attempt.erro if last_email_attempt else None,
         arquivo_disponivel=file_available,
         arquivo_url=build_certificate_file_url(request, cert.codigo) if file_available else None,
         arquivo_admin_url=build_internal_certificate_file_url(request, cert.codigo)

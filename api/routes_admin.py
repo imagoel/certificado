@@ -73,6 +73,14 @@ def normalize_certificate_form_text(value: str, field_label: str) -> str:
     return text
 
 
+def ensure_secretaria_reply_to(secretaria: Secretaria) -> None:
+    if secretaria.ativa and not secretaria.email_resposta:
+        raise HTTPException(
+            status_code=422,
+            detail="Email de resposta e obrigatorio para secretaria ativa.",
+        )
+
+
 @router.get("/api/admin/secretarias", response_model=list[SecretariaResponse])
 def admin_list_secretarias(
     db: Session = Depends(get_db),
@@ -99,8 +107,10 @@ def admin_create_secretaria(
     secretaria = Secretaria(
         sigla=sigla,
         nome=payload.nome.strip(),
+        email_resposta=payload.email_resposta,
         ativa=payload.ativa,
     )
+    ensure_secretaria_reply_to(secretaria)
     db.add(secretaria)
     db.flush()
     record_audit_event(
@@ -144,8 +154,12 @@ def admin_update_secretaria(
 
     if payload.nome is not None:
         secretaria.nome = payload.nome.strip()
+    if "email_resposta" in payload.model_fields_set:
+        secretaria.email_resposta = payload.email_resposta
     if payload.ativa is not None:
         secretaria.ativa = payload.ativa
+
+    ensure_secretaria_reply_to(secretaria)
 
     record_audit_event(
         db,

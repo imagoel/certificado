@@ -53,6 +53,8 @@ Resumo importante:
 - selecao de secretaria ativa em sessao
 - geracao individual de certificado
 - geracao em lote por planilha
+- email opcional do participante em emissao individual e lote
+- envio automatico do certificado por SMTP quando o PNG e salvo
 - download do PNG individual
 - download do lote em `.zip`
 - pre-visualizacao da planilha antes do lote
@@ -73,6 +75,7 @@ Resumo importante:
 - `admin_global` deve ser reservado para a equipe de TI e funcoes globais
 - secretarias inativas deixam de aparecer para vinculo de operadores
 - cadastro, edicao, ativacao e desativacao de secretarias
+- email de resposta por secretaria para receber replies de certificados enviados
 - exclusao administrativa de usuarios
 - exclusao administrativa de secretarias sem certificados emitidos
 - exclusao administrativa de certificados com confirmacao por codigo e senha do admin
@@ -205,7 +208,7 @@ Formatos suportados:
 Colunas reconhecidas:
 
 - obrigatoria: `nome`
-- opcionais: `sobrenome`, `curso`, `data`, `carga_h`, `linha1`, `linha2`, `arquivo`
+- opcionais: `sobrenome`, `curso`, `data`, `carga_h`, `linha1`, `linha2`, `arquivo`, `email`
 
 Regras:
 
@@ -213,6 +216,7 @@ Regras:
 - se a planilha vier so com `nome`, os campos do formulario sao usados como padrao
 - colunas extras desconhecidas sao ignoradas
 - o sistema aceita cabecalhos como `nome`, `NOME`, `Nome` e aliases conhecidos
+- para email, tambem reconhece aliases como `e-mail`, `e_mail`, `emailaluno`, `emaildoaluno`, `emailparticipante`, `correio` e `correioeletronico`
 - linhas totalmente vazias sao ignoradas
 - linhas sem `NOME` sao ignoradas no lote
 - nomes com caracteres de lixo no inicio sao saneados sem perder acentos validos
@@ -300,6 +304,7 @@ Observacao: para operadores, esses endpoints retornam e aceitam somente secretar
 - `api/routes_auth.py`: autenticacao e troca de secretaria
 - `api/routes_admin.py`: usuarios, secretarias, auditoria e exclusoes administrativas
 - `api/routes_certificates.py`: emissao, listagem e arquivos dos certificados
+- `api/email_delivery.py`: envio SMTP e registro de tentativas de email
 - `api/routes_public.py`: `health`, QR Code e validacao publica
 - `api/routes_templates.py`: moldes por secretaria
 - `api/routes_secretaria_assets.py`: logos, assinaturas e instituicoes por secretaria
@@ -342,6 +347,7 @@ Para producao:
 - deixe `AUTO_SEED_SECRETARIAS=true`
 - deixe `AUTO_BOOTSTRAP_ADMIN=true`
 - informe `BOOTSTRAP_ADMIN_USERNAME` e `BOOTSTRAP_ADMIN_PASSWORD`
+- configure SMTP por variaveis de ambiente quando o envio automatico estiver pronto para producao
 
 Fluxo recomendado com dominio publico:
 
@@ -356,6 +362,32 @@ Com isso:
 - frontend e API ficam no mesmo dominio
 - o frontend usa a mesma origem automaticamente em producao
 - o QR Code aponta para `PUBLIC_VALIDATION_BASE_URL`
+
+### Email automatico por SMTP
+
+O envio usa uma configuracao SMTP global no `.env`/Portainer e o email de resposta cadastrado em cada secretaria como `Reply-To`.
+
+Conta institucional prevista para envio: `certificados@amargosa.ba.gov.br`.
+
+Variaveis principais:
+
+- `SMTP_ENABLED=false`
+- `SMTP_HOST=smtp.office365.com`
+- `SMTP_PORT=587`
+- `SMTP_USERNAME=certificados@amargosa.ba.gov.br`
+- `SMTP_PASSWORD=...`
+- `SMTP_FROM_EMAIL=certificados@amargosa.ba.gov.br`
+- `SMTP_FROM_NAME=Gerador de Certificados`
+- `SMTP_STARTTLS=true`
+- `SMTP_TIMEOUT_SECONDS=15`
+
+Regras importantes:
+
+- se `SMTP_ENABLED=false`, nenhum envio e tentado
+- certificado sem email do participante nao dispara SMTP
+- falha SMTP nao desfaz a emissao nem remove o PNG
+- replies dos participantes vao para o `Email de resposta` da secretaria
+- email e status de envio aparecem apenas nas telas internas, nunca na validacao publica
 
 ## Provisionamento Inicial
 

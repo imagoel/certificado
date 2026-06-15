@@ -147,6 +147,7 @@ def test_admin_nao_exclui_secretaria_com_certificados_emitidos(client, seed_data
         json={
             "sigla": "TESTE",
             "nome": "Secretaria Temporaria",
+            "email_resposta": "teste@amargosa.ba.gov.br",
             "ativa": True,
         },
     )
@@ -181,6 +182,45 @@ def test_admin_nao_vincula_operador_a_secretaria_inativa(client, seed_data, logi
 
     assert create_response.status_code == 422
     assert "secretarias ativas" in create_response.text.lower()
+
+
+def test_admin_configura_email_resposta_da_secretaria(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+
+    missing_response = client.post(
+        "/api/admin/secretarias",
+        json={
+            "sigla": "SEMREPLY",
+            "nome": "Secretaria Sem Reply",
+            "ativa": True,
+        },
+    )
+    assert missing_response.status_code == 422
+
+    create_response = client.post(
+        "/api/admin/secretarias",
+        json={
+            "sigla": "REPLY",
+            "nome": "Secretaria Reply",
+            "email_resposta": "Reply@AMARGOSA.BA.GOV.BR",
+            "ativa": True,
+        },
+    )
+    assert create_response.status_code == 201
+    payload = create_response.json()
+    assert payload["email_resposta"] == "Reply@amargosa.ba.gov.br"
+
+    invalid_update = client.patch(
+        f"/api/admin/secretarias/{payload['id']}",
+        json={"email_resposta": "-reply@amargosa.ba.gov.br"},
+    )
+    assert invalid_update.status_code == 422
+
+    clear_active = client.patch(
+        f"/api/admin/secretarias/{payload['id']}",
+        json={"email_resposta": ""},
+    )
+    assert clear_active.status_code == 422
 
 
 def test_admin_global_nao_mantem_vinculos_de_secretaria(client, seed_data, login):
