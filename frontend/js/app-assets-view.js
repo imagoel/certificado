@@ -174,6 +174,7 @@ async function loadAdminData() {
       );
       renderUserSecretariasChecklist();
       renderSecretariasTable();
+      renderReplyEmailAdminPanel();
       renderUsersTable();
     }
     renderTemplatesTable();
@@ -192,6 +193,8 @@ async function loadAdminData() {
       );
       if (currentSecretaria) {
         fillSecretariaForm(currentSecretaria);
+      } else {
+        renderReplyEmailAdminPanel();
       }
     }
 

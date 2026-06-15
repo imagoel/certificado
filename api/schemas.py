@@ -18,6 +18,7 @@ class CertificateCreate(BaseModel):
     nome: str = Field(min_length=2, max_length=200)
     cpf: Optional[str] = Field(default=None, max_length=14)
     email: Optional[str] = Field(default=None, max_length=254)
+    reply_email_id: Optional[int] = Field(default=None, ge=1)
     curso: str = Field(min_length=2, max_length=200)
     carga_h: int = Field(default=0, ge=0, le=2000)
     concluido: date
@@ -59,6 +60,9 @@ class CertificateResponse(BaseModel):
     secretaria_id: Optional[int] = None
     secretaria_sigla: Optional[str] = None
     secretaria_nome: Optional[str] = None
+    reply_email_id: Optional[int] = None
+    reply_to_nome: Optional[str] = None
+    reply_to_email: Optional[str] = None
     emitido_por_usuario_id: Optional[int] = None
     emitido_por_username: Optional[str] = None
     render_snapshot: Optional[dict[str, Any]] = None
@@ -98,11 +102,22 @@ class PaginatedCertificateResponse(BaseModel):
     itens: list[CertificateResponse]
 
 
+class SecretariaReplyEmailResponse(BaseModel):
+    id: int
+    secretaria_id: int
+    nome: str
+    email: str
+    ativo: bool
+    padrao: bool
+    criado_em: datetime
+
+
 class SecretariaResponse(BaseModel):
     id: int
     sigla: str
     nome: str
     email_resposta: Optional[str] = None
+    reply_emails: list[SecretariaReplyEmailResponse] = Field(default_factory=list)
     ativa: bool
 
 
@@ -219,6 +234,36 @@ class SecretariaAdminUpdate(BaseModel):
     @classmethod
     def validate_email_resposta(cls, value: Optional[str]) -> Optional[str]:
         return normalize_optional_email(value)
+
+
+class SecretariaReplyEmailCreate(BaseModel):
+    nome: str = Field(min_length=2, max_length=120)
+    email: str = Field(min_length=3, max_length=254)
+    ativo: bool = True
+    padrao: bool = False
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        normalized = normalize_optional_email(value)
+        if not normalized:
+            raise ValueError("Email de resposta e obrigatorio.")
+        return normalized
+
+
+class SecretariaReplyEmailUpdate(BaseModel):
+    nome: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    email: Optional[str] = Field(default=None, min_length=3, max_length=254)
+    ativo: Optional[bool] = None
+    padrao: Optional[bool] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: Optional[str]) -> Optional[str]:
+        normalized = normalize_optional_email(value)
+        if value is not None and not normalized:
+            raise ValueError("Email de resposta e obrigatorio.")
+        return normalized
 
 
 class UserAdminCreate(BaseModel):

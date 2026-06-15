@@ -365,7 +365,9 @@ Com isso:
 
 ### Email automatico por SMTP
 
-O envio usa uma configuracao SMTP global no `.env`/Portainer e o email de resposta cadastrado em cada secretaria como `Reply-To`.
+O envio usa uma configuracao SMTP global no `.env`/Portainer. Cada secretaria
+mantem uma lista propria de emails de resposta por setor, e o operador escolhe
+no Gerador qual deles sera usado como `Reply-To` do certificado.
 
 Conta institucional prevista para envio: `certificados@amargosa.ba.gov.br`.
 
@@ -386,7 +388,11 @@ Regras importantes:
 - se `SMTP_ENABLED=false`, nenhum envio e tentado
 - certificado sem email do participante nao dispara SMTP
 - falha SMTP nao desfaz a emissao nem remove o PNG
-- replies dos participantes vao para o `Email de resposta` da secretaria
+- replies dos participantes vao para o email selecionado em `Responder para`
+- a tela `Administracao > Secretarias` permite cadastrar, ativar e definir o
+  email de resposta padrao de cada secretaria
+- o certificado salva um snapshot do Reply-To escolhido para permitir reenvio
+  manual consistente em uma etapa futura
 - email e status de envio aparecem apenas nas telas internas, nunca na validacao publica
 
 ## Provisionamento Inicial

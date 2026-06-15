@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from common import (
     build_validation_url,
+    get_default_secretaria_reply_email,
     record_audit_event,
     resolve_media_path,
     utc_now,
@@ -212,7 +213,12 @@ def send_certificate_email_if_needed(
         return None
 
     destinatario = cert.email
-    reply_to = cert.secretaria.email_resposta if cert.secretaria else None
+    default_reply = get_default_secretaria_reply_email(db, cert.secretaria) if cert.secretaria else None
+    reply_to = (
+        cert.reply_to_email
+        or (default_reply.email if default_reply else None)
+        or (cert.secretaria.email_resposta if cert.secretaria else None)
+    )
     config_error = validate_smtp_config(config)
     if config_error:
         return safe_record_email_attempt(

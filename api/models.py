@@ -47,10 +47,33 @@ class Secretaria(Base):
     certificados: Mapped[list["Certificate"]] = relationship(back_populates="secretaria")
     moldes: Mapped[list["CertificateTemplate"]] = relationship(back_populates="secretaria")
     assets: Mapped[list["SecretariaAsset"]] = relationship(back_populates="secretaria")
+    reply_emails: Mapped[list["SecretariaReplyEmail"]] = relationship(
+        back_populates="secretaria",
+        cascade="all, delete-orphan",
+    )
     layout_presets: Mapped[list["CertificateLayoutPreset"]] = relationship(
         back_populates="secretaria"
     )
     auditorias: Mapped[list["AuditEvent"]] = relationship(back_populates="secretaria")
+
+
+class SecretariaReplyEmail(Base):
+    __tablename__ = "secretaria_reply_emails"
+    __table_args__ = (
+        UniqueConstraint("secretaria_id", "email", name="uq_secretaria_reply_emails_email"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    secretaria_id: Mapped[int] = mapped_column(
+        ForeignKey("secretarias.id"), index=True, nullable=False
+    )
+    nome: Mapped[str] = mapped_column(String(120), nullable=False)
+    email: Mapped[str] = mapped_column(String(254), nullable=False)
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    padrao: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+    secretaria: Mapped[Secretaria] = relationship(back_populates="reply_emails")
 
 
 class Usuario(Base):
@@ -112,6 +135,11 @@ class Certificate(Base):
     emitido_por_usuario_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuarios.id"), nullable=True
     )
+    reply_email_id: Mapped[int | None] = mapped_column(
+        ForeignKey("secretaria_reply_emails.id"), nullable=True
+    )
+    reply_to_nome: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    reply_to_email: Mapped[str | None] = mapped_column(String(254), nullable=True)
     arquivo_relpath: Mapped[str | None] = mapped_column(String(255), nullable=True)
     arquivo_mime: Mapped[str | None] = mapped_column(String(100), nullable=True)
     arquivo_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -137,6 +165,9 @@ class Certificate(Base):
     )
     excluido_por: Mapped[Usuario | None] = relationship(
         foreign_keys=[excluido_por_usuario_id],
+    )
+    reply_email: Mapped[SecretariaReplyEmail | None] = relationship(
+        foreign_keys=[reply_email_id],
     )
     auditorias: Mapped[list["AuditEvent"]] = relationship(back_populates="certificado")
     email_tentativas: Mapped[list["CertificateEmailAttempt"]] = relationship(

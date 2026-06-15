@@ -9,18 +9,24 @@ from common import (
     build_audit_response,
     build_certificate_trash_expiration,
     build_secretaria_response,
+    build_secretaria_reply_email_response,
     build_user_admin_response,
     clear_all_login_attempts_for_username,
     delete_certificate_permanently,
+    ensure_secretaria_has_reply_to,
+    get_default_secretaria_reply_email,
     get_secretarias_by_ids,
+    normalize_secretaria_reply_defaults,
     normalize_secretaria_sigla,
     parse_render_snapshot_payload,
     purge_expired_deleted_certificates,
     record_audit_event,
     require_admin_user,
     replace_certificate_png_safely,
+    resolve_secretaria_reply_choice,
     resolve_template_media_path,
     sanitize_code,
+    sync_secretaria_reply_from_legacy_email,
     to_response,
     utc_now,
     validate_png_upload,
@@ -35,6 +41,7 @@ from models import (
     CertificateTemplate,
     Secretaria,
     SecretariaAsset,
+    SecretariaReplyEmail,
     Usuario,
 )
 from schemas import (
@@ -45,6 +52,9 @@ from schemas import (
     PaginatedAuditEventResponse,
     SecretariaAdminCreate,
     SecretariaAdminUpdate,
+    SecretariaReplyEmailCreate,
+    SecretariaReplyEmailResponse,
+    SecretariaReplyEmailUpdate,
     SecretariaResponse,
     UserAdminCreate,
     UserAdminResponse,
@@ -71,14 +81,6 @@ def normalize_certificate_form_text(value: str, field_label: str) -> str:
             detail=f"{field_label} deve ter entre 2 e 200 caracteres.",
         )
     return text
-
-
-def ensure_secretaria_reply_to(secretaria: Secretaria) -> None:
-    if secretaria.ativa and not secretaria.email_resposta:
-        raise HTTPException(
-            status_code=422,
-            detail="Email de resposta e obrigatorio para secretaria ativa.",
-        )
 
 
 @router.get("/api/admin/secretarias", response_model=list[SecretariaResponse])
@@ -110,9 +112,10 @@ def admin_create_secretaria(
         email_resposta=payload.email_resposta,
         ativa=payload.ativa,
     )
-    ensure_secretaria_reply_to(secretaria)
     db.add(secretaria)
     db.flush()
+    sync_secretaria_reply_from_legacy_email(db, secretaria)
+    ensure_secretaria_has_reply_to(db, secretaria)
     record_audit_event(
         db,
         evento="secretaria_criada",
@@ -156,10 +159,11 @@ def admin_update_secretaria(
         secretaria.nome = payload.nome.strip()
     if "email_resposta" in payload.model_fields_set:
         secretaria.email_resposta = payload.email_resposta
+        sync_secretaria_reply_from_legacy_email(db, secretaria)
     if payload.ativa is not None:
         secretaria.ativa = payload.ativa
 
-    ensure_secretaria_reply_to(secretaria)
+    ensure_secretaria_has_reply_to(db, secretaria)
 
     record_audit_event(
         db,
@@ -173,6 +177,194 @@ def admin_update_secretaria(
     db.commit()
     db.refresh(secretaria)
     return build_secretaria_response(secretaria)
+
+
+@router.post(
+    "/api/admin/secretarias/{secretaria_id}/reply-emails",
+    response_model=SecretariaReplyEmailResponse,
+    status_code=201,
+)
+def admin_create_secretaria_reply_email(
+    secretaria_id: int,
+    payload: SecretariaReplyEmailCreate,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> SecretariaReplyEmailResponse:
+    secretaria = db.query(Secretaria).filter(Secretaria.id == secretaria_id).first()
+    if not secretaria:
+        raise HTTPException(status_code=404, detail="Secretaria nao encontrada.")
+
+    duplicate = (
+        db.query(SecretariaReplyEmail)
+        .filter(
+            SecretariaReplyEmail.secretaria_id == secretaria.id,
+            SecretariaReplyEmail.email == payload.email,
+        )
+        .first()
+    )
+    if duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail="Ja existe um email de resposta cadastrado com este endereco.",
+        )
+
+    should_be_default = payload.padrao or not get_default_secretaria_reply_email(db, secretaria)
+    reply_email = SecretariaReplyEmail(
+        secretaria_id=secretaria.id,
+        nome=payload.nome.strip(),
+        email=payload.email,
+        ativo=payload.ativo,
+        padrao=should_be_default and payload.ativo,
+    )
+    db.add(reply_email)
+    db.flush()
+    if reply_email.padrao:
+        db.query(SecretariaReplyEmail).filter(
+            SecretariaReplyEmail.secretaria_id == secretaria.id,
+            SecretariaReplyEmail.id != reply_email.id,
+        ).update(
+            {SecretariaReplyEmail.padrao: False},
+            synchronize_session=False,
+        )
+    normalize_secretaria_reply_defaults(db, secretaria)
+    ensure_secretaria_has_reply_to(db, secretaria)
+    record_audit_event(
+        db,
+        evento="secretaria_reply_email_criado",
+        descricao=f"Email de resposta {reply_email.nome} criado para {secretaria.sigla}.",
+        usuario=admin_user,
+        secretaria=secretaria,
+        entidade_tipo="secretaria_reply_email",
+        entidade_id=reply_email.id,
+    )
+    db.commit()
+    db.refresh(reply_email)
+    return build_secretaria_reply_email_response(reply_email)
+
+
+@router.patch(
+    "/api/admin/secretaria-reply-emails/{reply_email_id}",
+    response_model=SecretariaReplyEmailResponse,
+)
+def admin_update_secretaria_reply_email(
+    reply_email_id: int,
+    payload: SecretariaReplyEmailUpdate,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> SecretariaReplyEmailResponse:
+    reply_email = (
+        db.query(SecretariaReplyEmail)
+        .filter(SecretariaReplyEmail.id == reply_email_id)
+        .first()
+    )
+    if not reply_email:
+        raise HTTPException(status_code=404, detail="Email de resposta nao encontrado.")
+
+    secretaria = reply_email.secretaria
+    if payload.email is not None and payload.email != reply_email.email:
+        duplicate = (
+            db.query(SecretariaReplyEmail)
+            .filter(
+                SecretariaReplyEmail.secretaria_id == reply_email.secretaria_id,
+                SecretariaReplyEmail.email == payload.email,
+                SecretariaReplyEmail.id != reply_email.id,
+            )
+            .first()
+        )
+        if duplicate:
+            raise HTTPException(
+                status_code=409,
+                detail="Ja existe um email de resposta cadastrado com este endereco.",
+            )
+        reply_email.email = payload.email
+
+    if payload.nome is not None:
+        reply_email.nome = payload.nome.strip()
+    if payload.ativo is not None:
+        reply_email.ativo = payload.ativo
+    if payload.padrao is not None:
+        if payload.padrao and not reply_email.ativo:
+            raise HTTPException(
+                status_code=422,
+                detail="Somente emails ativos podem ser definidos como padrao.",
+            )
+        reply_email.padrao = payload.padrao
+
+    db.flush()
+    if reply_email.padrao:
+        db.query(SecretariaReplyEmail).filter(
+            SecretariaReplyEmail.secretaria_id == reply_email.secretaria_id,
+            SecretariaReplyEmail.id != reply_email.id,
+        ).update(
+            {SecretariaReplyEmail.padrao: False},
+            synchronize_session=False,
+        )
+    normalize_secretaria_reply_defaults(db, secretaria)
+    ensure_secretaria_has_reply_to(db, secretaria)
+    record_audit_event(
+        db,
+        evento="secretaria_reply_email_atualizado",
+        descricao=f"Email de resposta {reply_email.nome} atualizado para {secretaria.sigla}.",
+        usuario=admin_user,
+        secretaria=secretaria,
+        entidade_tipo="secretaria_reply_email",
+        entidade_id=reply_email.id,
+    )
+    db.commit()
+    db.refresh(reply_email)
+    return build_secretaria_reply_email_response(reply_email)
+
+
+@router.delete("/api/admin/secretaria-reply-emails/{reply_email_id}", response_model=ActionResponse)
+def admin_delete_secretaria_reply_email(
+    reply_email_id: int,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> ActionResponse:
+    reply_email = (
+        db.query(SecretariaReplyEmail)
+        .filter(SecretariaReplyEmail.id == reply_email_id)
+        .first()
+    )
+    if not reply_email:
+        raise HTTPException(status_code=404, detail="Email de resposta nao encontrado.")
+
+    secretaria = reply_email.secretaria
+    if secretaria.ativa:
+        active_count = (
+            db.query(SecretariaReplyEmail)
+            .filter(
+                SecretariaReplyEmail.secretaria_id == secretaria.id,
+                SecretariaReplyEmail.ativo.is_(True),
+                SecretariaReplyEmail.id != reply_email.id,
+            )
+            .count()
+        )
+        if active_count == 0:
+            raise HTTPException(
+                status_code=422,
+                detail="Secretaria ativa precisa manter pelo menos um email de resposta.",
+            )
+
+    reply_name = reply_email.nome
+    db.query(Certificate).filter(Certificate.reply_email_id == reply_email.id).update(
+        {Certificate.reply_email_id: None},
+        synchronize_session=False,
+    )
+    db.delete(reply_email)
+    db.flush()
+    normalize_secretaria_reply_defaults(db, secretaria)
+    record_audit_event(
+        db,
+        evento="secretaria_reply_email_excluido",
+        descricao=f"Email de resposta {reply_name} excluido de {secretaria.sigla}.",
+        usuario=admin_user,
+        secretaria=secretaria,
+        entidade_tipo="secretaria_reply_email",
+        entidade_id=reply_email_id,
+    )
+    db.commit()
+    return ActionResponse(message=f"Email de resposta {reply_name} excluido com sucesso.")
 
 
 @router.get("/api/admin/usuarios", response_model=list[UserAdminResponse])
@@ -492,6 +684,7 @@ async def admin_update_certificate(
     concluido: date = Form(...),
     carga_h: int = Form(...),
     email: str | None = Form(default=None),
+    reply_email_id: int | None = Form(default=None),
     render_snapshot: str | None = Form(default=None),
     password: str = Form(...),
     confirmacao_codigo: str = Form(...),
@@ -534,6 +727,12 @@ async def admin_update_certificate(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     snapshot = parse_render_snapshot_payload(render_snapshot)
+    selected_reply_email_id = reply_email_id or cert.reply_email_id
+    reply_id, reply_nome, reply_email = (
+        resolve_secretaria_reply_choice(db, cert.secretaria, selected_reply_email_id)
+        if cert.secretaria
+        else (None, None, None)
+    )
     content = await arquivo.read()
     validate_png_upload(arquivo, content)
     replacement = replace_certificate_png_safely(cert, content)
@@ -542,6 +741,9 @@ async def admin_update_certificate(
         cert.nome = clean_nome
         cert.curso = clean_curso
         cert.email = clean_email
+        cert.reply_email_id = reply_id
+        cert.reply_to_nome = reply_nome
+        cert.reply_to_email = reply_email
         cert.concluido = concluido
         cert.carga_h = carga_h
         cert.hash = calculate_certificate_hash(

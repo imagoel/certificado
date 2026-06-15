@@ -24,6 +24,7 @@ function renderSession(session) {
       : "Nenhuma secretaria ativa selecionada.";
   }
   populateSecretariaOptions(secretariaSelect, secretarias, session.secretaria_ativa_id, false);
+  populateCertificateReplyEmailOptions();
   if (secretariaWrap) secretariaWrap.hidden = secretarias.length <= 1;
   if (sessionSecretaria) sessionSecretaria.hidden = secretarias.length > 1;
   populateSecretariaOptions(
@@ -99,6 +100,11 @@ function clearSessionUi(message = "") {
   if (sessionUser) sessionUser.textContent = "";
   if (sessionSecretaria) sessionSecretaria.textContent = "";
   if (secretariaSelect) secretariaSelect.innerHTML = "";
+  if (replyEmailSelect) {
+    replyEmailSelect.innerHTML = "";
+    replyEmailSelect.disabled = true;
+  }
+  if (replyEmailStatus) replyEmailStatus.textContent = "";
   if (secretariaWrap) secretariaWrap.hidden = true;
   if (certFilterBuscaInput) certFilterBuscaInput.value = "";
   if (certFilterConcluidoDeInput) certFilterConcluidoDeInput.value = "";
@@ -158,6 +164,7 @@ function clearSessionUi(message = "") {
   if (auditPageIndicator) auditPageIndicator.textContent = "Página 1";
   adminState.users = [];
   adminState.secretarias = [];
+  adminState.selectedSecretariaReplyEmailId = "";
   adminState.templates = [];
   adminState.secretariaAssets = [];
   adminUiState.module = "users";

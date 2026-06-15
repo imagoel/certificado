@@ -166,6 +166,96 @@ function registerAdminEvents() {
     });
   }
 
+  if (replyEmailFormResetBtn) {
+    replyEmailFormResetBtn.addEventListener("click", () => {
+      resetReplyEmailForm();
+    });
+  }
+
+  if (replyEmailAddressInput) {
+    replyEmailAddressInput.addEventListener("input", () => {
+      if (typeof replyEmailAddressInput.setCustomValidity === "function") {
+        replyEmailAddressInput.setCustomValidity("");
+      }
+    });
+  }
+
+  if (replyEmailForm) {
+    replyEmailForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!isAdminSession()) return;
+
+      const secretaria = getEditingSecretaria();
+      if (!secretaria) {
+        setReplyEmailFormStatus("Edite uma secretaria antes de cadastrar emails.", "error");
+        return;
+      }
+
+      const editingId = sanitizeText(replyEmailEditIdInput ? replyEmailEditIdInput.value : "");
+      const emailResult = normalizeOptionalEmailResult(
+        replyEmailAddressInput ? replyEmailAddressInput.value : ""
+      );
+      if (replyEmailAddressInput && typeof replyEmailAddressInput.setCustomValidity === "function") {
+        replyEmailAddressInput.setCustomValidity("");
+      }
+      if (emailResult.invalid || !emailResult.value) {
+        const message = "Email de resposta invalido.";
+        if (replyEmailAddressInput && typeof replyEmailAddressInput.setCustomValidity === "function") {
+          replyEmailAddressInput.setCustomValidity(message);
+          replyEmailAddressInput.reportValidity();
+        }
+        setReplyEmailFormStatus(message, "error");
+        return;
+      }
+
+      const payload = {
+        nome: replyEmailNameInput ? replyEmailNameInput.value.trim() : "",
+        email: emailResult.value,
+        ativo: replyEmailActiveInput ? replyEmailActiveInput.checked : true,
+        padrao: replyEmailDefaultInput ? replyEmailDefaultInput.checked : false,
+      };
+
+      if (!payload.nome) {
+        setReplyEmailFormStatus("Informe o nome do setor.", "error");
+        return;
+      }
+      if (payload.padrao && !payload.ativo) {
+        setReplyEmailFormStatus("Somente emails ativos podem ser padrao.", "error");
+        return;
+      }
+
+      try {
+        setReplyEmailFormStatus("Salvando email de resposta...", "info");
+        if (editingId) {
+          await apiJsonRequest(`/api/admin/secretaria-reply-emails/${editingId}`, {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          });
+        } else {
+          await apiJsonRequest(`/api/admin/secretarias/${secretaria.id}/reply-emails`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+        }
+
+        resetReplyEmailForm();
+        setReplyEmailFormStatus("Email de resposta salvo com sucesso.", "success");
+        await refreshSession();
+        await loadAdminData();
+      } catch (error) {
+        console.error(error);
+        if (error && error.status === 401) {
+          await handleUnauthorized();
+          return;
+        }
+        setReplyEmailFormStatus(
+          (error && error.message) || "Nao foi possivel salvar o email de resposta.",
+          "error"
+        );
+      }
+    });
+  }
+
   if (templateAdminResetBtn) {
     templateAdminResetBtn.addEventListener("click", () => {
       resetTemplateAdminForm();
@@ -336,5 +426,32 @@ function registerAdminEvents() {
         );
       }
     });
+  }
+}
+
+async function deleteReplyEmail(replyEmail) {
+  if (!replyEmail || !isAdminSession()) return;
+  const label = `${replyEmail.nome || "Email"} <${replyEmail.email || "-"}>`;
+  if (!window.confirm(`Excluir ${label}?`)) return;
+
+  try {
+    setReplyEmailFormStatus("Excluindo email de resposta...", "info");
+    await apiJsonRequest(`/api/admin/secretaria-reply-emails/${replyEmail.id}`, {
+      method: "DELETE",
+    });
+    resetReplyEmailForm();
+    setReplyEmailFormStatus("Email de resposta excluido com sucesso.", "success");
+    await refreshSession();
+    await loadAdminData();
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    setReplyEmailFormStatus(
+      (error && error.message) || "Nao foi possivel excluir o email de resposta.",
+      "error"
+    );
   }
 }
