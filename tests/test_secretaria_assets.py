@@ -236,6 +236,7 @@ def test_admin_exclui_secretaria_com_assets_e_remove_arquivos(client, seed_data,
         json={
             "sigla": "TEMP",
             "nome": "Secretaria Temporaria de Assets",
+            "email_resposta": "temp@amargosa.ba.gov.br",
             "ativa": True,
         },
     )

@@ -36,6 +36,7 @@ class Secretaria(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     sigla: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     nome: Mapped[str] = mapped_column(String(150), nullable=False)
+    email_resposta: Mapped[str | None] = mapped_column(String(254), nullable=True)
     ativa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
@@ -138,6 +139,27 @@ class Certificate(Base):
         foreign_keys=[excluido_por_usuario_id],
     )
     auditorias: Mapped[list["AuditEvent"]] = relationship(back_populates="certificado")
+    email_tentativas: Mapped[list["CertificateEmailAttempt"]] = relationship(
+        back_populates="certificado"
+    )
+
+
+class CertificateEmailAttempt(Base):
+    __tablename__ = "certificado_email_tentativas"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    certificado_id: Mapped[int | None] = mapped_column(
+        ForeignKey("certificados.id"), index=True, nullable=True
+    )
+    certificado_codigo: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    destinatario: Mapped[str] = mapped_column(String(254), nullable=False)
+    reply_to: Mapped[str | None] = mapped_column(String(254), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    erro: Mapped[str | None] = mapped_column(Text, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    enviado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    certificado: Mapped[Certificate | None] = relationship(back_populates="email_tentativas")
 
 
 class CertificateSequence(Base):

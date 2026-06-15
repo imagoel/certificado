@@ -85,20 +85,52 @@ function registerAdminEvents() {
     });
   }
 
+  if (secretariaReplyEmailInput) {
+    secretariaReplyEmailInput.addEventListener("input", () => {
+      if (typeof secretariaReplyEmailInput.setCustomValidity === "function") {
+        secretariaReplyEmailInput.setCustomValidity("");
+      }
+    });
+  }
+
   if (secretariaForm) {
     secretariaForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!isAdminSession()) return;
 
       const editingId = sanitizeText(secretariaEditIdInput ? secretariaEditIdInput.value : "");
+      const replyEmailResult = normalizeOptionalEmailResult(
+        secretariaReplyEmailInput ? secretariaReplyEmailInput.value : ""
+      );
+      if (secretariaReplyEmailInput && typeof secretariaReplyEmailInput.setCustomValidity === "function") {
+        secretariaReplyEmailInput.setCustomValidity("");
+      }
+      if (replyEmailResult.invalid) {
+        const message = "Email de resposta invalido.";
+        if (secretariaReplyEmailInput && typeof secretariaReplyEmailInput.setCustomValidity === "function") {
+          secretariaReplyEmailInput.setCustomValidity(message);
+          secretariaReplyEmailInput.reportValidity();
+        }
+        setSecretariaFormStatus(message, "error");
+        return;
+      }
+
       const payload = {
         sigla: secretariaSiglaInput ? secretariaSiglaInput.value.trim() : "",
         nome: secretariaNameInput ? secretariaNameInput.value.trim() : "",
+        email_resposta: replyEmailResult.value,
         ativa: secretariaActiveInput ? secretariaActiveInput.checked : true,
       };
 
       if (!payload.sigla || !payload.nome) {
         setSecretariaFormStatus("Preencha sigla e nome da secretaria.", "error");
+        return;
+      }
+      if (payload.ativa && !payload.email_resposta) {
+        setSecretariaFormStatus("Preencha o email de resposta da secretaria.", "error");
+        if (secretariaReplyEmailInput && typeof secretariaReplyEmailInput.reportValidity === "function") {
+          secretariaReplyEmailInput.reportValidity();
+        }
         return;
       }
 

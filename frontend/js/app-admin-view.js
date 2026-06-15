@@ -58,6 +58,9 @@ function resetUserForm() {
 function resetSecretariaForm() {
   if (secretariaForm) secretariaForm.reset();
   if (secretariaEditIdInput) secretariaEditIdInput.value = "";
+  if (secretariaReplyEmailInput && typeof secretariaReplyEmailInput.setCustomValidity === "function") {
+    secretariaReplyEmailInput.setCustomValidity("");
+  }
   if (secretariaActiveInput) secretariaActiveInput.checked = true;
   syncSecretariaFormState();
   setSecretariaFormStatus("", "info");
@@ -185,6 +188,9 @@ function fillSecretariaForm(secretaria) {
   if (secretariaEditIdInput) secretariaEditIdInput.value = String(secretaria.id);
   if (secretariaSiglaInput) secretariaSiglaInput.value = secretaria.sigla || "";
   if (secretariaNameInput) secretariaNameInput.value = secretaria.nome || "";
+  if (secretariaReplyEmailInput) {
+    secretariaReplyEmailInput.value = secretaria.email_resposta || "";
+  }
   if (secretariaActiveInput) secretariaActiveInput.checked = Boolean(secretaria.ativa);
   syncSecretariaFormState();
   setSecretariaFormStatus(`Editando secretaria ${secretaria.sigla}.`, "info");

@@ -24,6 +24,7 @@ MODULES_TO_RELOAD = [
     "bootstrap",
     "migrations",
     "common",
+    "email_delivery",
     "routes_auth",
     "routes_admin",
     "routes_certificates",
@@ -104,11 +105,13 @@ def seed_data(app_ctx):
         seafi = app_ctx.models.Secretaria(
             sigla="SEAFI",
             nome="Secretaria de Administracao e Financas",
+            email_resposta="seafi@amargosa.ba.gov.br",
             ativa=True,
         )
         semed = app_ctx.models.Secretaria(
             sigla="SEMED",
             nome="Secretaria de Educacao",
+            email_resposta="semed@amargosa.ba.gov.br",
             ativa=True,
         )
         admin = app_ctx.models.Usuario(

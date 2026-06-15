@@ -46,6 +46,13 @@ function renderCertificateRows(items) {
     if (item.email) {
       mobileMeta.unshift(`Email: ${item.email}`);
     }
+    if (item.email_envio_status) {
+      mobileMeta.unshift(
+        item.email_envio_status === "enviado"
+          ? `Envio: enviado em ${formatDateTime(item.email_enviado_em)}`
+          : `Envio: falhou${item.email_erro ? ` (${item.email_erro})` : ""}`
+      );
+    }
     if (trashMode) {
       mobileMeta.push(
         `Excluido em: ${formatDateTime(item.excluido_em)}`,
@@ -64,6 +71,17 @@ function renderCertificateRows(items) {
     emailMeta.className = "cert-email-meta";
     emailMeta.textContent = item.email || "";
 
+    const emailDeliveryMeta = document.createElement("span");
+    emailDeliveryMeta.className = `cert-email-delivery-meta ${
+      item.email_envio_status === "falhou" ? "is-error" : "is-success"
+    }`;
+    emailDeliveryMeta.textContent =
+      item.email_envio_status === "enviado"
+        ? `Email enviado em ${formatDateTime(item.email_enviado_em)}`
+        : item.email_envio_status === "falhou"
+          ? `Email falhou${item.email_erro ? `: ${item.email_erro}` : ""}`
+          : "";
+
     if (trashMode) {
       const trashMeta = document.createElement("span");
       trashMeta.className = "cert-trash-meta";
@@ -72,10 +90,12 @@ function renderCertificateRows(items) {
         `Expira em ${formatDateTime(item.exclusao_expira_em)}.`;
       nameCell.append(nameTitle);
       if (item.email) nameCell.appendChild(emailMeta);
+      if (item.email_envio_status) nameCell.appendChild(emailDeliveryMeta);
       nameCell.append(trashMeta, nameMeta);
     } else {
       nameCell.append(nameTitle);
       if (item.email) nameCell.appendChild(emailMeta);
+      if (item.email_envio_status) nameCell.appendChild(emailDeliveryMeta);
       nameCell.appendChild(nameMeta);
     }
 
@@ -319,7 +339,15 @@ function renderSecretariasTable() {
     siglaCell.textContent = secretaria.sigla || "-";
 
     const nomeCell = document.createElement("td");
-    nomeCell.textContent = secretaria.nome || "-";
+    const nomeTitle = document.createElement("strong");
+    nomeTitle.className = "admin-primary-title";
+    nomeTitle.textContent = secretaria.nome || "-";
+    const replyMeta = document.createElement("span");
+    replyMeta.className = "admin-muted-meta";
+    replyMeta.textContent = secretaria.email_resposta
+      ? `Resposta: ${secretaria.email_resposta}`
+      : "Email de resposta pendente";
+    nomeCell.append(nomeTitle, replyMeta);
 
     const statusCell = document.createElement("td");
     statusCell.appendChild(buildStatusPill(secretaria.ativa));

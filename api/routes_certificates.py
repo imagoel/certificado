@@ -31,6 +31,7 @@ from common import (
 )
 from certificate_sequences import build_reserved_codes, reserve_sequence_block
 from database import get_db
+from email_delivery import send_certificate_email_if_needed
 from models import AuditEvent, Certificate, Secretaria, Usuario
 from schemas import (
     ActionResponse,
@@ -390,6 +391,8 @@ async def upload_certificate_file(
         raise
 
     replacement.commit()
+    db.refresh(cert)
+    send_certificate_email_if_needed(db, cert=cert, request=request, usuario=usuario)
     db.refresh(cert)
     return to_response(cert, request)
 

@@ -14,6 +14,55 @@ PNG_BYTES = (
 EDITED_PNG_BYTES = PNG_BYTES + b"edited-version"
 
 
+def configure_smtp_env(monkeypatch) -> None:
+    monkeypatch.setenv("SMTP_ENABLED", "true")
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.test")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    monkeypatch.setenv("SMTP_USERNAME", "certificados@amargosa.ba.gov.br")
+    monkeypatch.setenv("SMTP_PASSWORD", "senha-smtp")
+    monkeypatch.setenv("SMTP_FROM_EMAIL", "certificados@amargosa.ba.gov.br")
+    monkeypatch.setenv("SMTP_FROM_NAME", "Certificados PMA")
+    monkeypatch.setenv("SMTP_STARTTLS", "true")
+    monkeypatch.setenv("SMTP_TIMEOUT_SECONDS", "7")
+
+
+def install_fake_smtp(monkeypatch, *, fail_message: str | None = None) -> list:
+    import email_delivery
+
+    sent_messages = []
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout):
+            self.host = host
+            self.port = port
+            self.timeout = timeout
+            sent_messages.append({"smtp": self, "message": None})
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def ehlo(self):
+            return None
+
+        def starttls(self, context):
+            self.started_tls = True
+
+        def login(self, username, password):
+            self.username = username
+            self.password = password
+
+        def send_message(self, message):
+            if fail_message:
+                raise RuntimeError(fail_message)
+            sent_messages[-1]["message"] = message
+
+    monkeypatch.setattr(email_delivery.smtplib, "SMTP", FakeSMTP)
+    return sent_messages
+
+
 def create_uploaded_certificate(
     client,
     *,
@@ -186,6 +235,192 @@ def test_api_lote_rejeita_item_com_email_invalido(client, seed_data, login):
     )
 
     assert response.status_code == 422
+
+
+def test_certificado_com_email_envia_apos_upload_png(
+    client, seed_data, login, app_ctx, monkeypatch
+):
+    configure_smtp_env(monkeypatch)
+    sent_messages = install_fake_smtp(monkeypatch)
+    login("operador", seed_data["operador_password"])
+
+    create_response = client.post(
+        "/api/certificados",
+        json={
+            "nome": "Aluno Com Email",
+            "cpf": None,
+            "email": "aluno@EXEMPLO.COM",
+            "curso": "Curso Envio",
+            "carga_h": 8,
+            "concluido": "2026-03-28",
+        },
+    )
+    assert create_response.status_code == 201
+    codigo = create_response.json()["codigo"]
+
+    upload_response = client.post(
+        f"/api/certificados/{codigo}/arquivo",
+        files={"arquivo": ("certificado.png", PNG_BYTES, "image/png")},
+    )
+
+    assert upload_response.status_code == 201
+    payload = upload_response.json()
+    assert payload["email_envio_status"] == "enviado"
+    assert payload["email_enviado_em"]
+    assert payload["email_erro"] is None
+
+    assert len(sent_messages) == 1
+    smtp = sent_messages[0]["smtp"]
+    message = sent_messages[0]["message"]
+    assert smtp.host == "smtp.example.test"
+    assert smtp.port == 587
+    assert smtp.timeout == 7
+    assert smtp.username == "certificados@amargosa.ba.gov.br"
+    assert smtp.password == "senha-smtp"
+    assert smtp.started_tls is True
+    assert message["To"] == "aluno@exemplo.com"
+    assert message["Reply-To"] == "seafi@amargosa.ba.gov.br"
+    assert "certificados@amargosa.ba.gov.br" in message["From"]
+    assert message["Subject"] == f"Certificado {codigo} - Curso Envio"
+    attachments = list(message.iter_attachments())
+    assert len(attachments) == 1
+    assert attachments[0].get_filename() == f"{codigo}.png"
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        attempt = (
+            db.query(app_ctx.models.CertificateEmailAttempt)
+            .filter_by(certificado_codigo=codigo)
+            .one()
+        )
+        assert attempt.status == "enviado"
+        assert attempt.destinatario == "aluno@exemplo.com"
+        assert attempt.reply_to == "seafi@amargosa.ba.gov.br"
+        assert attempt.enviado_em is not None
+    finally:
+        db.close()
+
+    validation_response = client.get(f"/api/validar/{codigo}")
+    assert validation_response.status_code == 200
+    validation_payload = validation_response.json()
+    assert validation_payload["status"] == "valido"
+    assert "email" not in validation_payload
+    assert "email_envio_status" not in validation_payload
+
+    client.post("/api/auth/logout")
+    login("admin", seed_data["admin_password"])
+    audit_response = client.get("/api/admin/auditoria", params={"busca": codigo})
+    assert audit_response.status_code == 200
+    assert any(
+        item["evento"] == "certificado_email_enviado"
+        for item in audit_response.json()["itens"]
+    )
+
+
+def test_falha_smtp_nao_desfaz_certificado_ou_png(
+    client, seed_data, login, app_ctx, monkeypatch
+):
+    configure_smtp_env(monkeypatch)
+    install_fake_smtp(monkeypatch, fail_message="smtp indisponivel")
+    login("operador", seed_data["operador_password"])
+
+    create_response = client.post(
+        "/api/certificados",
+        json={
+            "nome": "Aluno Falha Email",
+            "cpf": None,
+            "email": "falha@example.com",
+            "curso": "Curso Falha",
+            "carga_h": 8,
+            "concluido": "2026-03-28",
+        },
+    )
+    assert create_response.status_code == 201
+    codigo = create_response.json()["codigo"]
+
+    upload_response = client.post(
+        f"/api/certificados/{codigo}/arquivo",
+        files={"arquivo": ("certificado.png", PNG_BYTES, "image/png")},
+    )
+
+    assert upload_response.status_code == 201
+    payload = upload_response.json()
+    assert payload["email_envio_status"] == "falhou"
+    assert "smtp indisponivel" in payload["email_erro"]
+    assert (app_ctx.media_dir / "2026" / f"{codigo}.png").exists()
+
+    validation_response = client.get(f"/api/validar/{codigo}")
+    assert validation_response.status_code == 200
+    assert validation_response.json()["status"] == "valido"
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        attempt = (
+            db.query(app_ctx.models.CertificateEmailAttempt)
+            .filter_by(certificado_codigo=codigo)
+            .one()
+        )
+        assert attempt.status == "falhou"
+        assert "smtp indisponivel" in attempt.erro
+    finally:
+        db.close()
+
+
+def test_certificado_sem_email_nao_tenta_envio(client, seed_data, login, app_ctx, monkeypatch):
+    configure_smtp_env(monkeypatch)
+
+    import email_delivery
+
+    class BlockedSMTP:
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("SMTP nao deveria ser chamado")
+
+    monkeypatch.setattr(email_delivery.smtplib, "SMTP", BlockedSMTP)
+    login("operador", seed_data["operador_password"])
+    codigo = create_uploaded_certificate(client, nome="Aluno Sem Email")
+
+    list_response = client.get("/api/certificados", params={"busca": codigo})
+    assert list_response.status_code == 200
+    item = list_response.json()["itens"][0]
+    assert item["email_envio_status"] is None
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        attempts = db.query(app_ctx.models.CertificateEmailAttempt).all()
+        assert attempts == []
+    finally:
+        db.close()
+
+
+def test_secretaria_sem_reply_to_registra_falha_sem_bloquear(
+    client, seed_data, login, app_ctx, monkeypatch
+):
+    configure_smtp_env(monkeypatch)
+    sent_messages = install_fake_smtp(monkeypatch)
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        secretaria = db.query(app_ctx.models.Secretaria).filter_by(id=seed_data["seafi_id"]).one()
+        secretaria.email_resposta = None
+        db.commit()
+    finally:
+        db.close()
+
+    login("operador", seed_data["operador_password"])
+    codigo = create_uploaded_certificate(
+        client,
+        nome="Aluno Sem Reply",
+        email="reply@example.com",
+        curso="Curso Reply",
+    )
+
+    assert sent_messages == []
+    list_response = client.get("/api/certificados", params={"busca": codigo})
+    assert list_response.status_code == 200
+    item = list_response.json()["itens"][0]
+    assert item["email_envio_status"] == "falhou"
+    assert "Secretaria sem email de resposta" in item["email_erro"]
+    assert item["arquivo_disponivel"] is True
 
 
 def test_api_lista_possiveis_duplicados_na_secretaria_ativa(client, seed_data, login):

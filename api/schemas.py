@@ -2,7 +2,7 @@ import os
 from datetime import date, datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from email_utils import normalize_optional_email
 
@@ -69,6 +69,9 @@ class CertificateResponse(BaseModel):
     exclusao_expira_em: Optional[datetime] = None
     excluido_por_usuario_id: Optional[int] = None
     excluido_por_username: Optional[str] = None
+    email_envio_status: Optional[str] = None
+    email_enviado_em: Optional[datetime] = None
+    email_erro: Optional[str] = None
     arquivo_disponivel: bool = False
     arquivo_url: Optional[str] = None
     arquivo_admin_url: Optional[str] = None
@@ -99,6 +102,7 @@ class SecretariaResponse(BaseModel):
     id: int
     sigla: str
     nome: str
+    email_resposta: Optional[str] = None
     ativa: bool
 
 
@@ -190,13 +194,31 @@ class SecretariaSelectionRequest(BaseModel):
 class SecretariaAdminCreate(BaseModel):
     sigla: str = Field(min_length=2, max_length=20)
     nome: str = Field(min_length=2, max_length=150)
+    email_resposta: Optional[str] = Field(default=None, max_length=254)
     ativa: bool = True
+
+    @field_validator("email_resposta")
+    @classmethod
+    def validate_email_resposta(cls, value: Optional[str]) -> Optional[str]:
+        return normalize_optional_email(value)
+
+    @model_validator(mode="after")
+    def require_reply_to_when_active(self):
+        if self.ativa and not self.email_resposta:
+            raise ValueError("Email de resposta e obrigatorio para secretaria ativa.")
+        return self
 
 
 class SecretariaAdminUpdate(BaseModel):
     sigla: Optional[str] = Field(default=None, min_length=2, max_length=20)
     nome: Optional[str] = Field(default=None, min_length=2, max_length=150)
+    email_resposta: Optional[str] = Field(default=None, max_length=254)
     ativa: Optional[bool] = None
+
+    @field_validator("email_resposta")
+    @classmethod
+    def validate_email_resposta(cls, value: Optional[str]) -> Optional[str]:
+        return normalize_optional_email(value)
 
 
 class UserAdminCreate(BaseModel):
