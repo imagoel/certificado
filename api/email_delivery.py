@@ -6,6 +6,7 @@ import ssl
 from dataclasses import dataclass
 from email.message import EmailMessage
 from email.utils import formataddr
+from html import escape
 from pathlib import Path
 
 from fastapi import HTTPException, Request
@@ -35,6 +36,8 @@ class SmtpConfig:
     password: str
     from_email: str
     from_name: str
+    email_logo_url: str
+    email_institution_name: str
     starttls: bool
     timeout_seconds: int
 
@@ -63,6 +66,11 @@ def load_smtp_config() -> SmtpConfig:
         from_email=os.getenv("SMTP_FROM_EMAIL", "").strip(),
         from_name=os.getenv("SMTP_FROM_NAME", "Gerador de Certificados").strip()
         or "Gerador de Certificados",
+        email_logo_url=os.getenv("EMAIL_LOGO_URL", "").strip(),
+        email_institution_name=(
+            os.getenv("EMAIL_INSTITUTION_NAME", "Prefeitura Municipal de Amargosa").strip()
+            or "Prefeitura Municipal de Amargosa"
+        ),
         starttls=env_bool("SMTP_STARTTLS", "true"),
         timeout_seconds=max(1, env_int("SMTP_TIMEOUT_SECONDS", 15)),
     )
@@ -85,6 +93,151 @@ def summarize_email_error(error: object) -> str:
     return text
 
 
+def is_generic_reply_name(value: str | None) -> bool:
+    normalized = (value or "").strip().lower()
+    return normalized in {"", "email principal", "e-mail principal", "principal"}
+
+
+def build_email_issuer_label(cert: Certificate) -> str:
+    secretaria = cert.secretaria
+    sigla = (secretaria.sigla if secretaria else "").strip().upper()
+    secretaria_nome = (secretaria.nome if secretaria else "").strip()
+    setor_nome = (
+        ""
+        if is_generic_reply_name(cert.reply_to_nome)
+        else (cert.reply_to_nome or "").strip()
+    )
+
+    if setor_nome and sigla:
+        return f"{setor_nome} - {sigla}"
+    if setor_nome:
+        return setor_nome
+    if sigla and secretaria_nome:
+        return f"{sigla} - {secretaria_nome}"
+    return sigla or secretaria_nome
+
+
+def build_certificate_email_text_body(
+    *,
+    cert: Certificate,
+    validation_url: str,
+    institution_name: str,
+    issuer_label: str,
+) -> str:
+    issuer_line = f"\nEmitido por: {issuer_label}" if issuer_label else ""
+    return (
+        f"Olá, {cert.nome}.\n\n"
+        f"Parabéns pela conclusão do curso {cert.curso}.\n\n"
+        "Seu certificado foi emitido com sucesso e está disponível em anexo neste e-mail.\n\n"
+        "A autenticidade do certificado pode ser verificada por meio do QR Code presente "
+        "no documento ou pelo link abaixo:\n"
+        f"{validation_url}\n\n"
+        "Em caso de dúvidas, responda este e-mail. Sua mensagem será encaminhada para "
+        "a secretaria responsável pela emissão do certificado.\n\n"
+        "Atenciosamente,\n"
+        f"{institution_name}\n"
+        f"{issuer_line}"
+    ).strip()
+
+
+def build_certificate_email_html_body(
+    *,
+    cert: Certificate,
+    validation_url: str,
+    institution_name: str,
+    issuer_label: str,
+    logo_url: str,
+) -> str:
+    escaped_logo_url = escape(logo_url, quote=True)
+    escaped_institution = escape(institution_name)
+    escaped_name = escape(cert.nome)
+    escaped_course = escape(cert.curso)
+    escaped_validation_url = escape(validation_url, quote=True)
+    escaped_issuer = escape(issuer_label)
+    logo_html = ""
+    if escaped_logo_url:
+        logo_html = f"""
+            <tr>
+              <td align="center" style="padding-bottom: 24px;">
+                <img
+                  src="{escaped_logo_url}"
+                  alt="{escaped_institution}"
+                  width="160"
+                  style="display: block; max-width: 160px; height: auto; border: 0;"
+                />
+              </td>
+            </tr>"""
+
+    issuer_html = ""
+    if escaped_issuer:
+        issuer_html = f"""
+                <p style="font-size: 15px; line-height: 1.6; margin: 20px 0 0; color: #374151;">
+                  <strong>Emitido por:</strong> {escaped_issuer}
+                </p>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Certificado disponível</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: Arial, Helvetica, sans-serif; color: #333333;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 24px 0;">
+      <tr>
+        <td align="center">
+          <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; padding: 32px; max-width: 600px;">
+{logo_html}
+            <tr>
+              <td>
+                <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 22px; text-align: center;">
+                  Seu certificado está disponível
+                </h2>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                  Olá, {escaped_name}.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                  Parabéns pela conclusão do curso <strong>{escaped_course}</strong>.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                  Seu certificado foi emitido com sucesso e está disponível em anexo neste e-mail.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                  A autenticidade do certificado pode ser verificada por meio do QR Code presente no documento ou pelo link abaixo:
+                </p>
+                <p style="margin: 0 0 24px; text-align: center;">
+                  <a
+                    href="{escaped_validation_url}"
+                    style="background-color: #1f6feb; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 6px; display: inline-block; font-size: 15px; font-weight: bold;"
+                  >
+                    Validar certificado
+                  </a>
+                </p>
+                <p style="font-size: 14px; line-height: 1.6; margin: 0 0 24px; color: #555555;">
+                  Caso o botão não funcione, copie e cole o link abaixo no navegador:<br />
+                  <a href="{escaped_validation_url}" style="color: #1f6feb; word-break: break-all;">
+                    {escaped_validation_url}
+                  </a>
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                  Em caso de dúvidas, responda este e-mail. Sua mensagem será encaminhada para a secretaria responsável pela emissão do certificado.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0;">
+                  Atenciosamente,<br />
+                  <strong>{escaped_institution}</strong>
+                </p>{issuer_html}
+              </td>
+            </tr>
+          </table>
+          <p style="font-size: 12px; color: #777777; margin: 16px 0 0; text-align: center;">
+            Este é um e-mail automático. Responda apenas se precisar falar com a secretaria responsável.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>"""
+
+
 def build_certificate_email_message(
     *,
     config: SmtpConfig,
@@ -99,15 +252,22 @@ def build_certificate_email_message(
     message["To"] = cert.email or ""
     message["Reply-To"] = reply_to
 
-    body = (
-        f"Ola, {cert.nome}.\n\n"
-        f"Seu certificado do curso {cert.curso} foi emitido.\n\n"
-        f"Codigo: {cert.codigo}\n"
-        f"Link de validacao: {validation_url}\n\n"
-        "O arquivo do certificado esta anexado a esta mensagem.\n"
-        "Caso identifique alguma informacao incorreta, responda este email para contato com a secretaria responsavel.\n"
+    issuer_label = build_email_issuer_label(cert)
+    text_body = build_certificate_email_text_body(
+        cert=cert,
+        validation_url=validation_url,
+        institution_name=config.email_institution_name,
+        issuer_label=issuer_label,
     )
-    message.set_content(body)
+    html_body = build_certificate_email_html_body(
+        cert=cert,
+        validation_url=validation_url,
+        institution_name=config.email_institution_name,
+        issuer_label=issuer_label,
+        logo_url=config.email_logo_url,
+    )
+    message.set_content(text_body)
+    message.add_alternative(html_body, subtype="html")
     message.add_attachment(
         attachment_path.read_bytes(),
         maintype="image",

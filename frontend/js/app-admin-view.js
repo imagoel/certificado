@@ -105,6 +105,26 @@ function getSecretariaReplyEmailOptions(secretaria, includeInactive = false) {
     });
 }
 
+function isGenericReplyEmailName(name) {
+  const normalized = sanitizeText(name).toLowerCase();
+  return (
+    !normalized ||
+    ["email principal", "e-mail principal", "principal"].includes(normalized)
+  );
+}
+
+function buildReplyEmailIssuerLabel(secretaria, replyEmail) {
+  const sigla = sanitizeText(secretaria ? secretaria.sigla : "").toUpperCase();
+  const secretariaNome = sanitizeText(secretaria ? secretaria.nome : "");
+  const setorNome =
+    replyEmail && !isGenericReplyEmailName(replyEmail.nome) ? sanitizeText(replyEmail.nome) : "";
+
+  if (setorNome && sigla) return `${setorNome} - ${sigla}`;
+  if (setorNome) return setorNome;
+  if (sigla && secretariaNome) return `${sigla} - ${secretariaNome}`;
+  return sigla || secretariaNome;
+}
+
 function populateCertificateReplyEmailOptions(selectedValue = "") {
   if (!replyEmailSelect) return;
 
@@ -146,8 +166,9 @@ function populateCertificateReplyEmailOptions(selectedValue = "") {
 
   const selected = options.find((item) => String(item.id || "") === valueToSelect);
   if (replyEmailStatus) {
+    const issuerLabel = buildReplyEmailIssuerLabel(secretaria, selected);
     replyEmailStatus.textContent = selected
-      ? `Respostas irao para ${selected.email}.`
+      ? `Respostas irão para ${selected.email}. O e-mail mostrará: ${issuerLabel}.`
       : "";
     replyEmailStatus.className = "status info";
   }
@@ -217,7 +238,7 @@ function renderReplyEmailAdminPanel() {
 
   if (replyEmailAdminSummary) {
     replyEmailAdminSummary.textContent =
-      `${secretaria.sigla}: cadastre os setores que podem receber respostas dos participantes.`;
+      `${secretaria.sigla}: cadastre os setores que podem receber respostas e aparecer no e-mail do certificado.`;
   }
 
   const items = getSecretariaReplyEmailOptions(secretaria, true).filter((item) => !item.legado);
