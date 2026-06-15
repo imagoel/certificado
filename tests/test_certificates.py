@@ -348,7 +348,7 @@ def test_certificado_usa_reply_to_selecionado_no_snapshot_e_smtp(
     configure_smtp_env(monkeypatch)
     monkeypatch.setenv(
         "EMAIL_LOGO_URL",
-        "https://certificados.amargosa.ba.gov.br/static/email/logo-prefeitura.png",
+        "https://certificados.amargosa.ba.gov.br/assets/email/logo-prefeitura.png",
     )
     sent_messages = install_fake_smtp(monkeypatch)
 
@@ -398,7 +398,7 @@ def test_certificado_usa_reply_to_selecionado_no_snapshot_e_smtp(
     text_body, html_body = get_email_bodies(message)
     assert "Emitido por: Setor de Eventos - Secretaria de Administracao e Financas" in text_body
     assert "Setor de Eventos - Secretaria de Administracao e Financas" in html_body
-    assert "https://certificados.amargosa.ba.gov.br/static/email/logo-prefeitura.png" in html_body
+    assert "https://certificados.amargosa.ba.gov.br/assets/email/logo-prefeitura.png" in html_body
     assert '<img' in html_body
 
     db = app_ctx.database.SessionLocal()
