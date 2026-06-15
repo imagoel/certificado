@@ -62,8 +62,214 @@ function resetSecretariaForm() {
     secretariaReplyEmailInput.setCustomValidity("");
   }
   if (secretariaActiveInput) secretariaActiveInput.checked = true;
+  adminState.selectedSecretariaReplyEmailId = "";
+  resetReplyEmailForm();
+  renderReplyEmailAdminPanel();
   syncSecretariaFormState();
   setSecretariaFormStatus("", "info");
+}
+
+function setReplyEmailFormStatus(message, type = "info") {
+  setStatusMessage(replyEmailFormStatus, message, type);
+}
+
+function getActiveSessionSecretaria() {
+  if (!sessionState || !Array.isArray(sessionState.secretarias)) return null;
+  return (
+    sessionState.secretarias.find(
+      (secretaria) => Number(secretaria.id) === Number(sessionState.secretaria_ativa_id)
+    ) || null
+  );
+}
+
+function getSecretariaReplyEmailOptions(secretaria, includeInactive = false) {
+  if (!secretaria) return [];
+  const items = Array.isArray(secretaria.reply_emails) ? [...secretaria.reply_emails] : [];
+  if (!items.length && secretaria.email_resposta) {
+    items.push({
+      id: "",
+      secretaria_id: secretaria.id,
+      nome: "Email principal",
+      email: secretaria.email_resposta,
+      ativo: true,
+      padrao: true,
+      legado: true,
+    });
+  }
+  return items
+    .filter((item) => includeInactive || item.ativo)
+    .sort((a, b) => {
+      if (Boolean(a.padrao) !== Boolean(b.padrao)) return a.padrao ? -1 : 1;
+      if (Boolean(a.ativo) !== Boolean(b.ativo)) return a.ativo ? -1 : 1;
+      return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR");
+    });
+}
+
+function populateCertificateReplyEmailOptions(selectedValue = "") {
+  if (!replyEmailSelect) return;
+
+  const secretaria = getActiveSessionSecretaria();
+  const options = getSecretariaReplyEmailOptions(secretaria, false);
+  const selectedText =
+    selectedValue === null || selectedValue === undefined ? "" : String(selectedValue);
+  replyEmailSelect.innerHTML = "";
+
+  if (!options.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Nenhum email de resposta cadastrado";
+    replyEmailSelect.appendChild(option);
+    replyEmailSelect.disabled = true;
+    if (replyEmailStatus) {
+      replyEmailStatus.textContent = secretaria
+        ? "Cadastre um email de resposta para esta secretaria."
+        : "Selecione uma secretaria para escolher o email de resposta.";
+      replyEmailStatus.className = "status error";
+    }
+    return;
+  }
+
+  replyEmailSelect.disabled = false;
+  const defaultOption = options.find((item) => item.padrao) || options[0];
+  const selectedExists = options.some((item) => String(item.id || "") === selectedText);
+  const valueToSelect = selectedExists ? selectedText : String(defaultOption.id || "");
+
+  options.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = String(item.id || "");
+    option.textContent = item.padrao
+      ? `${item.nome} <${item.email}> (padrao)`
+      : `${item.nome} <${item.email}>`;
+    option.selected = String(item.id || "") === valueToSelect;
+    replyEmailSelect.appendChild(option);
+  });
+
+  const selected = options.find((item) => String(item.id || "") === valueToSelect);
+  if (replyEmailStatus) {
+    replyEmailStatus.textContent = selected
+      ? `Respostas irao para ${selected.email}.`
+      : "";
+    replyEmailStatus.className = "status info";
+  }
+}
+
+function getSelectedReplyEmailId() {
+  const rawValue = sanitizeText(replyEmailSelect ? replyEmailSelect.value : "");
+  const numericValue = Number(rawValue);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
+}
+
+function getEditingSecretaria() {
+  const secretariaId = sanitizeText(secretariaEditIdInput ? secretariaEditIdInput.value : "");
+  if (!secretariaId) return null;
+  return (
+    adminState.secretarias.find((secretaria) => String(secretaria.id) === secretariaId) || null
+  );
+}
+
+function syncReplyEmailFormState() {
+  const editing = Boolean(sanitizeText(replyEmailEditIdInput ? replyEmailEditIdInput.value : ""));
+  if (replyEmailSubmitBtn) {
+    replyEmailSubmitBtn.textContent = editing ? "Atualizar Email" : "Salvar Email";
+  }
+}
+
+function resetReplyEmailForm() {
+  if (replyEmailForm) replyEmailForm.reset();
+  if (replyEmailEditIdInput) replyEmailEditIdInput.value = "";
+  if (replyEmailActiveInput) replyEmailActiveInput.checked = true;
+  if (replyEmailDefaultInput) replyEmailDefaultInput.checked = false;
+  if (replyEmailAddressInput && typeof replyEmailAddressInput.setCustomValidity === "function") {
+    replyEmailAddressInput.setCustomValidity("");
+  }
+  syncReplyEmailFormState();
+  setReplyEmailFormStatus("", "info");
+}
+
+function fillReplyEmailForm(replyEmail) {
+  if (!replyEmail) return;
+  if (replyEmailEditIdInput) replyEmailEditIdInput.value = String(replyEmail.id || "");
+  if (replyEmailNameInput) replyEmailNameInput.value = replyEmail.nome || "";
+  if (replyEmailAddressInput) replyEmailAddressInput.value = replyEmail.email || "";
+  if (replyEmailActiveInput) replyEmailActiveInput.checked = Boolean(replyEmail.ativo);
+  if (replyEmailDefaultInput) replyEmailDefaultInput.checked = Boolean(replyEmail.padrao);
+  syncReplyEmailFormState();
+  setReplyEmailFormStatus(`Editando email ${replyEmail.nome}.`, "info");
+}
+
+function renderReplyEmailAdminPanel() {
+  if (!replyEmailAdminPanel || !replyEmailListBody) return;
+
+  const secretaria = getEditingSecretaria();
+  replyEmailAdminPanel.hidden = !secretaria;
+  if (!secretaria) {
+    if (replyEmailAdminSummary) {
+      replyEmailAdminSummary.textContent =
+        "Edite uma secretaria para gerenciar os emails de resposta.";
+    }
+    replyEmailListBody.innerHTML = `
+      <tr>
+        <td colspan="3" class="empty-state">Selecione uma secretaria.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  if (replyEmailAdminSummary) {
+    replyEmailAdminSummary.textContent =
+      `${secretaria.sigla}: cadastre os setores que podem receber respostas dos participantes.`;
+  }
+
+  const items = getSecretariaReplyEmailOptions(secretaria, true).filter((item) => !item.legado);
+  if (!items.length) {
+    replyEmailListBody.innerHTML = `
+      <tr>
+        <td colspan="3" class="empty-state">Nenhum email de resposta cadastrado.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  replyEmailListBody.innerHTML = "";
+  items.forEach((item) => {
+    const row = document.createElement("tr");
+
+    const nameCell = document.createElement("td");
+    const title = document.createElement("strong");
+    title.className = "admin-primary-title";
+    title.textContent = item.nome || "-";
+    const meta = document.createElement("span");
+    meta.className = "admin-muted-meta";
+    meta.textContent = item.email || "-";
+    nameCell.append(title, meta);
+
+    const statusCell = document.createElement("td");
+    const statusWrap = document.createElement("div");
+    statusWrap.className = "reply-email-status-stack";
+    statusWrap.appendChild(buildStatusPill(Boolean(item.ativo)));
+    if (item.padrao) {
+      statusWrap.appendChild(buildStatusPill(true, "Padrao", "Opcional"));
+    }
+    statusCell.appendChild(statusWrap);
+
+    const actionsCell = document.createElement("td");
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "inline-actions";
+    actionsWrap.appendChild(createInlineButton("Editar", () => fillReplyEmailForm(item)));
+    actionsWrap.appendChild(
+      createInlineButton(
+        "Excluir",
+        () => {
+          void deleteReplyEmail(item);
+        },
+        "danger-btn"
+      )
+    );
+    actionsCell.appendChild(actionsWrap);
+
+    row.append(nameCell, statusCell, actionsCell);
+    replyEmailListBody.appendChild(row);
+  });
 }
 
 function syncTemplateAdminFormState() {
@@ -192,7 +398,9 @@ function fillSecretariaForm(secretaria) {
     secretariaReplyEmailInput.value = secretaria.email_resposta || "";
   }
   if (secretariaActiveInput) secretariaActiveInput.checked = Boolean(secretaria.ativa);
+  resetReplyEmailForm();
   syncSecretariaFormState();
+  renderReplyEmailAdminPanel();
   setSecretariaFormStatus(`Editando secretaria ${secretaria.sigla}.`, "info");
   scrollAdminFormIntoView(secretariaForm);
 }

@@ -23,6 +23,7 @@ from common import (
     record_audit_event,
     require_active_secretaria,
     replace_certificate_png_safely,
+    resolve_secretaria_reply_choice,
     resolve_media_path,
     sanitize_code,
     to_response,
@@ -214,6 +215,11 @@ def create_certificate(
         carga_h=payload.carga_h,
         concluido=payload.concluido.isoformat(),
     )
+    reply_email_id, reply_to_nome, reply_to_email = resolve_secretaria_reply_choice(
+        db,
+        secretaria,
+        payload.reply_email_id,
+    )
 
     cert = Certificate(
         codigo=codigo,
@@ -228,6 +234,9 @@ def create_certificate(
         arquivo_pendente=True,
         secretaria_id=secretaria.id,
         emitido_por_usuario_id=usuario.id,
+        reply_email_id=reply_email_id,
+        reply_to_nome=reply_to_nome,
+        reply_to_email=reply_to_email,
     )
 
     db.add(cert)
@@ -297,6 +306,11 @@ def create_certificates_batch(
             carga_h=item.carga_h,
             concluido=item.concluido.isoformat(),
         )
+        reply_email_id, reply_to_nome, reply_to_email = resolve_secretaria_reply_choice(
+            db,
+            secretaria,
+            item.reply_email_id,
+        )
 
         cert = Certificate(
             codigo=codigo,
@@ -311,6 +325,9 @@ def create_certificates_batch(
             arquivo_pendente=True,
             secretaria_id=secretaria.id,
             emitido_por_usuario_id=usuario.id,
+            reply_email_id=reply_email_id,
+            reply_to_nome=reply_to_nome,
+            reply_to_email=reply_to_email,
         )
         db.add(cert)
         created.append(cert)

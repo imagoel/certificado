@@ -193,6 +193,15 @@ def test_secretaria_reply_to_field_is_wired_in_admin_ui():
     source = _frontend_source()
 
     assert 'id="secretaria-email-resposta"' in html
+    assert 'id="reply-email-select"' in html
+    assert 'id="reply-email-form"' in html
+    assert 'id="reply-email-list-body"' in html
     assert "secretariaReplyEmailInput" in source
+    assert "replyEmailSelect" in source
+    assert "replyEmailForm" in source
+    assert "reply_email_id" in source
+    assert "getSecretariaReplyEmailOptions" in source
+    assert "populateCertificateReplyEmailOptions" in source
     assert "email_resposta: replyEmailResult.value" in source
+    assert "secretaria-reply-emails" in source
     assert "Email de resposta invalido." in source

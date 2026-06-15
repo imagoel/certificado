@@ -50,6 +50,12 @@ def bridge_legacy_schema(connection) -> None:
         statements.append("ALTER TABLE certificados ADD COLUMN secretaria_id INTEGER")
     if "emitido_por_usuario_id" not in columns:
         statements.append("ALTER TABLE certificados ADD COLUMN emitido_por_usuario_id INTEGER")
+    if "reply_email_id" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN reply_email_id INTEGER")
+    if "reply_to_nome" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN reply_to_nome VARCHAR(120)")
+    if "reply_to_email" not in columns:
+        statements.append("ALTER TABLE certificados ADD COLUMN reply_to_email VARCHAR(254)")
 
     try:
         secretaria_columns = {

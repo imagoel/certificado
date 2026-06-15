@@ -17,6 +17,7 @@ const certListState = {
 const adminState = {
   users: [],
   secretarias: [],
+  selectedSecretariaReplyEmailId: "",
   templates: [],
   secretariaAssets: [],
 };

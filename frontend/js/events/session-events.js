@@ -78,4 +78,10 @@ function registerSessionEvents() {
       }
     });
   }
+
+  if (replyEmailSelect) {
+    replyEmailSelect.addEventListener("change", () => {
+      populateCertificateReplyEmailOptions(replyEmailSelect.value);
+    });
+  }
 }

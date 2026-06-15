@@ -69,21 +69,23 @@ def create_uploaded_certificate(
     nome: str = "Aluno Teste",
     curso: str = "Curso Teste",
     email: str | None = None,
+    reply_email_id: int | None = None,
     carga_h: int = 8,
     concluido: str = "2026-03-28",
     render_snapshot: dict | None = None,
 ) -> str:
-    create_response = client.post(
-        "/api/certificados",
-        json={
-            "nome": nome,
-            "cpf": None,
-            "email": email,
-            "curso": curso,
-            "carga_h": carga_h,
-            "concluido": concluido,
-        },
-    )
+    payload = {
+        "nome": nome,
+        "cpf": None,
+        "email": email,
+        "curso": curso,
+        "carga_h": carga_h,
+        "concluido": concluido,
+    }
+    if reply_email_id is not None:
+        payload["reply_email_id"] = reply_email_id
+
+    create_response = client.post("/api/certificados", json=payload)
     assert create_response.status_code == 201
     codigo = create_response.json()["codigo"]
 
@@ -106,6 +108,7 @@ def build_edit_payload(
     nome: str = "Aluno Editado",
     curso: str = "Curso Editado",
     email: str | None = None,
+    reply_email_id: int | None = None,
     carga_h: int = 16,
     concluido: str = "2026-04-02",
     render_snapshot: dict | None = None,
@@ -121,6 +124,8 @@ def build_edit_payload(
     }
     if email is not None:
         payload["email"] = email
+    if reply_email_id is not None:
+        payload["reply_email_id"] = str(reply_email_id)
     if render_snapshot is not None:
         payload["render_snapshot"] = json.dumps(render_snapshot)
     return payload
@@ -317,6 +322,99 @@ def test_certificado_com_email_envia_apos_upload_png(
     )
 
 
+def test_certificado_usa_reply_to_selecionado_no_snapshot_e_smtp(
+    client, seed_data, login, app_ctx, monkeypatch
+):
+    configure_smtp_env(monkeypatch)
+    sent_messages = install_fake_smtp(monkeypatch)
+
+    login("admin", seed_data["admin_password"])
+    reply_response = client.post(
+        f"/api/admin/secretarias/{seed_data['seafi_id']}/reply-emails",
+        json={
+            "nome": "Setor de Eventos",
+            "email": "eventos@amargosa.ba.gov.br",
+            "ativo": True,
+            "padrao": False,
+        },
+    )
+    assert reply_response.status_code == 201
+    reply_email_id = reply_response.json()["id"]
+
+    client.post("/api/auth/logout")
+    login("operador", seed_data["operador_password"])
+
+    create_response = client.post(
+        "/api/certificados",
+        json={
+            "nome": "Aluno Reply Setor",
+            "cpf": None,
+            "email": "aluno.reply@example.com",
+            "reply_email_id": reply_email_id,
+            "curso": "Curso Reply Setor",
+            "carga_h": 8,
+            "concluido": "2026-03-28",
+        },
+    )
+    assert create_response.status_code == 201
+    created = create_response.json()
+    codigo = created["codigo"]
+    assert created["reply_email_id"] == reply_email_id
+    assert created["reply_to_nome"] == "Setor de Eventos"
+    assert created["reply_to_email"] == "eventos@amargosa.ba.gov.br"
+
+    upload_response = client.post(
+        f"/api/certificados/{codigo}/arquivo",
+        files={"arquivo": ("certificado.png", PNG_BYTES, "image/png")},
+    )
+
+    assert upload_response.status_code == 201
+    assert sent_messages[0]["message"]["Reply-To"] == "eventos@amargosa.ba.gov.br"
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        cert = db.query(app_ctx.models.Certificate).filter_by(codigo=codigo).one()
+        attempt = (
+            db.query(app_ctx.models.CertificateEmailAttempt)
+            .filter_by(certificado_codigo=codigo)
+            .one()
+        )
+        assert cert.reply_email_id == reply_email_id
+        assert cert.reply_to_email == "eventos@amargosa.ba.gov.br"
+        assert attempt.reply_to == "eventos@amargosa.ba.gov.br"
+    finally:
+        db.close()
+
+
+def test_operador_nao_usa_reply_email_de_outra_secretaria(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+    secretarias_response = client.get("/api/admin/secretarias")
+    assert secretarias_response.status_code == 200
+    semed = next(
+        item for item in secretarias_response.json() if item["id"] == seed_data["semed_id"]
+    )
+    semed_reply_id = semed["reply_emails"][0]["id"]
+
+    client.post("/api/auth/logout")
+    login("operador", seed_data["operador_password"])
+
+    response = client.post(
+        "/api/certificados",
+        json={
+            "nome": "Aluno Reply Invalido",
+            "cpf": None,
+            "email": "aluno@example.com",
+            "reply_email_id": semed_reply_id,
+            "curso": "Curso Reply Invalido",
+            "carga_h": 8,
+            "concluido": "2026-03-28",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "email de resposta" in response.text.lower()
+
+
 def test_falha_smtp_nao_desfaz_certificado_ou_png(
     client, seed_data, login, app_ctx, monkeypatch
 ):
@@ -402,6 +500,9 @@ def test_secretaria_sem_reply_to_registra_falha_sem_bloquear(
     try:
         secretaria = db.query(app_ctx.models.Secretaria).filter_by(id=seed_data["seafi_id"]).one()
         secretaria.email_resposta = None
+        db.query(app_ctx.models.SecretariaReplyEmail).filter_by(
+            secretaria_id=seed_data["seafi_id"]
+        ).delete()
         db.commit()
     finally:
         db.close()
@@ -594,6 +695,17 @@ def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
 
     client.post("/api/auth/logout")
     login("admin", seed_data["admin_password"])
+    reply_response = client.post(
+        f"/api/admin/secretarias/{seed_data['seafi_id']}/reply-emails",
+        json={
+            "nome": "Setor de Certificados",
+            "email": "certificados-setor@amargosa.ba.gov.br",
+            "ativo": True,
+            "padrao": False,
+        },
+    )
+    assert reply_response.status_code == 201
+    reply_email_id = reply_response.json()["id"]
 
     edit_response = client.patch(
         f"/api/admin/certificados/{codigo}",
@@ -603,6 +715,7 @@ def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
             nome="Aluno Depois",
             curso="Curso Depois",
             email="depois@EXEMPLO.COM",
+            reply_email_id=reply_email_id,
             carga_h=24,
             concluido="2026-04-02",
             render_snapshot=updated_snapshot,
@@ -616,6 +729,9 @@ def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
     assert payload["nome"] == "Aluno Depois"
     assert payload["curso"] == "Curso Depois"
     assert payload["email"] == "depois@exemplo.com"
+    assert payload["reply_email_id"] == reply_email_id
+    assert payload["reply_to_nome"] == "Setor de Certificados"
+    assert payload["reply_to_email"] == "certificados-setor@amargosa.ba.gov.br"
     assert payload["carga_h"] == 24
     assert payload["concluido"] == "2026-04-02"
     assert payload["emitido_em"] == old_emitido_em

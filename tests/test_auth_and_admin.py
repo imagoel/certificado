@@ -209,6 +209,17 @@ def test_admin_configura_email_resposta_da_secretaria(client, seed_data, login):
     assert create_response.status_code == 201
     payload = create_response.json()
     assert payload["email_resposta"] == "Reply@amargosa.ba.gov.br"
+    assert payload["reply_emails"] == [
+        {
+            "id": payload["reply_emails"][0]["id"],
+            "secretaria_id": payload["id"],
+            "nome": "Email principal",
+            "email": "Reply@amargosa.ba.gov.br",
+            "ativo": True,
+            "padrao": True,
+            "criado_em": payload["reply_emails"][0]["criado_em"],
+        }
+    ]
 
     invalid_update = client.patch(
         f"/api/admin/secretarias/{payload['id']}",
@@ -220,7 +231,81 @@ def test_admin_configura_email_resposta_da_secretaria(client, seed_data, login):
         f"/api/admin/secretarias/{payload['id']}",
         json={"email_resposta": ""},
     )
-    assert clear_active.status_code == 422
+    assert clear_active.status_code == 200
+    assert clear_active.json()["email_resposta"] == "Reply@amargosa.ba.gov.br"
+
+
+def test_admin_gerencia_emails_de_resposta_por_secretaria(client, seed_data, login):
+    login("admin", seed_data["admin_password"])
+
+    create_response = client.post(
+        f"/api/admin/secretarias/{seed_data['seafi_id']}/reply-emails",
+        json={
+            "nome": "Setor de Cursos",
+            "email": "Cursos@AMARGOSA.BA.GOV.BR",
+            "ativo": True,
+            "padrao": True,
+        },
+    )
+
+    assert create_response.status_code == 201
+    created = create_response.json()
+    assert created["nome"] == "Setor de Cursos"
+    assert created["email"] == "Cursos@amargosa.ba.gov.br"
+    assert created["padrao"] is True
+
+    secretarias_response = client.get("/api/admin/secretarias")
+    assert secretarias_response.status_code == 200
+    seafi = next(
+        item for item in secretarias_response.json() if item["id"] == seed_data["seafi_id"]
+    )
+    assert seafi["email_resposta"] == "Cursos@amargosa.ba.gov.br"
+    assert sum(1 for item in seafi["reply_emails"] if item["padrao"]) == 1
+    assert any(
+        item["email"] == "seafi@amargosa.ba.gov.br" and not item["padrao"]
+        for item in seafi["reply_emails"]
+    )
+
+    invalid_update = client.patch(
+        f"/api/admin/secretaria-reply-emails/{created['id']}",
+        json={"email": "-cursos@amargosa.ba.gov.br"},
+    )
+    inactive_default = client.patch(
+        f"/api/admin/secretaria-reply-emails/{created['id']}",
+        json={"ativo": False, "padrao": True},
+    )
+
+    assert invalid_update.status_code == 422
+    assert inactive_default.status_code == 422
+
+    update_response = client.patch(
+        f"/api/admin/secretaria-reply-emails/{created['id']}",
+        json={"nome": "Cursos e Eventos", "padrao": False},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["nome"] == "Cursos e Eventos"
+
+    delete_default_response = client.request(
+        "DELETE",
+        f"/api/admin/secretaria-reply-emails/{created['id']}",
+        json={},
+    )
+    assert delete_default_response.status_code == 200
+
+    secretarias_after_delete = client.get("/api/admin/secretarias")
+    remaining_seafi = next(
+        item
+        for item in secretarias_after_delete.json()
+        if item["id"] == seed_data["seafi_id"]
+    )
+    remaining_reply_id = remaining_seafi["reply_emails"][0]["id"]
+
+    delete_last_response = client.request(
+        "DELETE",
+        f"/api/admin/secretaria-reply-emails/{remaining_reply_id}",
+        json={},
+    )
+    assert delete_last_response.status_code == 422
 
 
 def test_admin_global_nao_mantem_vinculos_de_secretaria(client, seed_data, login):

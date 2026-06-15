@@ -131,6 +131,25 @@ def seed_data(app_ctx):
         operador.secretarias = [seafi]
 
         db.add_all([seafi, semed, admin, operador])
+        db.flush()
+        db.add_all(
+            [
+                app_ctx.models.SecretariaReplyEmail(
+                    secretaria_id=seafi.id,
+                    nome="Email principal",
+                    email="seafi@amargosa.ba.gov.br",
+                    ativo=True,
+                    padrao=True,
+                ),
+                app_ctx.models.SecretariaReplyEmail(
+                    secretaria_id=semed.id,
+                    nome="Email principal",
+                    email="semed@amargosa.ba.gov.br",
+                    ativo=True,
+                    padrao=True,
+                ),
+            ]
+        )
         db.commit()
         db.refresh(seafi)
         db.refresh(semed)
