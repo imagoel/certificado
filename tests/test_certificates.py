@@ -24,6 +24,8 @@ def configure_smtp_env(monkeypatch) -> None:
     monkeypatch.setenv("SMTP_FROM_NAME", "Certificados PMA")
     monkeypatch.setenv("SMTP_STARTTLS", "true")
     monkeypatch.setenv("SMTP_TIMEOUT_SECONDS", "7")
+    monkeypatch.delenv("EMAIL_LOGO_URL", raising=False)
+    monkeypatch.setenv("EMAIL_INSTITUTION_NAME", "Prefeitura Municipal de Amargosa")
 
 
 def install_fake_smtp(monkeypatch, *, fail_message: str | None = None) -> list:
@@ -99,6 +101,15 @@ def create_uploaded_certificate(
     )
     assert upload_response.status_code == 201
     return codigo
+
+
+def get_email_bodies(message) -> tuple[str, str]:
+    plain = message.get_body(preferencelist=("plain",))
+    html = message.get_body(preferencelist=("html",))
+    return (
+        plain.get_content() if plain else "",
+        html.get_content() if html else "",
+    )
 
 
 def build_edit_payload(
@@ -287,6 +298,15 @@ def test_certificado_com_email_envia_apos_upload_png(
     assert message["Reply-To"] == "seafi@amargosa.ba.gov.br"
     assert "certificados@amargosa.ba.gov.br" in message["From"]
     assert message["Subject"] == f"Certificado {codigo} - Curso Envio"
+    text_body, html_body = get_email_bodies(message)
+    assert "Atenciosamente,\nPrefeitura Municipal de Amargosa" in text_body
+    assert "Emitido por: SEAFI - Secretaria de Administracao e Financas" in text_body
+    assert "Email principal - SEAFI" not in text_body
+    assert "Seu certificado está disponível" in html_body
+    assert "Prefeitura Municipal de Amargosa" in html_body
+    assert "SEAFI - Secretaria de Administracao e Financas" in html_body
+    assert "Email principal - SEAFI" not in html_body
+    assert "<img" not in html_body
     attachments = list(message.iter_attachments())
     assert len(attachments) == 1
     assert attachments[0].get_filename() == f"{codigo}.png"
@@ -326,6 +346,10 @@ def test_certificado_usa_reply_to_selecionado_no_snapshot_e_smtp(
     client, seed_data, login, app_ctx, monkeypatch
 ):
     configure_smtp_env(monkeypatch)
+    monkeypatch.setenv(
+        "EMAIL_LOGO_URL",
+        "https://certificados.amargosa.ba.gov.br/static/email/logo-prefeitura.png",
+    )
     sent_messages = install_fake_smtp(monkeypatch)
 
     login("admin", seed_data["admin_password"])
@@ -369,7 +393,13 @@ def test_certificado_usa_reply_to_selecionado_no_snapshot_e_smtp(
     )
 
     assert upload_response.status_code == 201
-    assert sent_messages[0]["message"]["Reply-To"] == "eventos@amargosa.ba.gov.br"
+    message = sent_messages[0]["message"]
+    assert message["Reply-To"] == "eventos@amargosa.ba.gov.br"
+    text_body, html_body = get_email_bodies(message)
+    assert "Emitido por: Setor de Eventos - SEAFI" in text_body
+    assert "Setor de Eventos - SEAFI" in html_body
+    assert "https://certificados.amargosa.ba.gov.br/static/email/logo-prefeitura.png" in html_body
+    assert '<img' in html_body
 
     db = app_ctx.database.SessionLocal()
     try:

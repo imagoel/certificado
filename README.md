@@ -382,6 +382,8 @@ Variaveis principais:
 - `SMTP_FROM_NAME=Gerador de Certificados`
 - `SMTP_STARTTLS=true`
 - `SMTP_TIMEOUT_SECONDS=15`
+- `EMAIL_LOGO_URL=https://certificados.amargosa.ba.gov.br/static/email/logo-prefeitura.png`
+- `EMAIL_INSTITUTION_NAME=Prefeitura Municipal de Amargosa`
 
 Regras importantes:
 
@@ -389,8 +391,12 @@ Regras importantes:
 - certificado sem email do participante nao dispara SMTP
 - falha SMTP nao desfaz a emissao nem remove o PNG
 - replies dos participantes vao para o email selecionado em `Responder para`
+- o email HTML usa a logo publica quando `EMAIL_LOGO_URL` estiver configurada
+- a assinatura mostra `EMAIL_INSTITUTION_NAME` e a origem da emissao
 - a tela `Administracao > Secretarias` permite cadastrar, ativar e definir o
   email de resposta padrao de cada secretaria
+- o campo `Setor exibido no e-mail` aparece como `Emitido por: Nome do setor - SIGLA`
+- quando o setor for o email principal, o email mostra `Emitido por: SIGLA - Nome da secretaria`
 - o certificado salva um snapshot do Reply-To escolhido para permitir reenvio
   manual consistente em uma etapa futura
 - email e status de envio aparecem apenas nas telas internas, nunca na validacao publica
@@ -427,6 +433,8 @@ Principais:
 - `APP_ENV`
 - `CODE_PREFIX`
 - `PUBLIC_VALIDATION_BASE_URL`
+- `EMAIL_LOGO_URL`
+- `EMAIL_INSTITUTION_NAME`
 - `CERTIFICADOS_MAX_UPLOAD_BYTES`
 - `CERTIFICADOS_MAX_BATCH_ITEMS`
 - `TEMPLATES_MEDIA_DIR`

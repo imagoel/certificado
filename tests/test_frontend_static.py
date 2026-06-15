@@ -205,6 +205,11 @@ def test_secretaria_reply_to_field_is_wired_in_admin_ui():
     assert "email_resposta: replyEmailResult.value" in source
     assert "secretaria-reply-emails" in source
     assert "Email de resposta invalido." in source
+    assert "Setor exibido no e-mail" in html
+    assert "Emitido por: Nome do setor - SIGLA" in html
+    assert "buildReplyEmailIssuerLabel" in source
+    assert "O e-mail mostrará:" in source
+    assert (ROOT_DIR / "api" / "static" / "email" / "logo-prefeitura.png").is_file()
 
 
 def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
