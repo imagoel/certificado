@@ -515,6 +515,70 @@ function openCertificateEditConfirmDialog() {
   editCertDialog.showModal();
 }
 
+async function offerResendEditedCertificateEmail(payload, codigo) {
+  if (!payload || !payload.email) {
+    return {
+      attempted: false,
+      message: `Certificado ${codigo} atualizado com sucesso.`,
+      type: "success",
+    };
+  }
+
+  const targetCode = sanitizeText(payload.codigo || codigo).toUpperCase();
+  const confirmed = window.confirm(
+    `Certificado ${targetCode} atualizado com sucesso. Deseja reenviar o certificado atualizado por e-mail para ${payload.email}?`
+  );
+  if (!confirmed) {
+    return {
+      attempted: false,
+      message: `Certificado ${targetCode} atualizado com sucesso. E-mail nao reenviado.`,
+      type: "success",
+    };
+  }
+
+  try {
+    setBatchStatus(`Reenviando e-mail atualizado do certificado ${targetCode}...`, "info");
+    const resendPayload = await apiJsonRequest(
+      `/api/certificados/${encodeURIComponent(targetCode)}/reenviar-email`,
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      }
+    );
+
+    if (resendPayload && resendPayload.email_envio_status === "enviado") {
+      return {
+        attempted: true,
+        message: `Certificado ${targetCode} atualizado e e-mail reenviado com sucesso.`,
+        type: "success",
+      };
+    }
+
+    return {
+      attempted: true,
+      message: `Certificado ${targetCode} atualizado, mas o e-mail nao foi enviado.`,
+      type: "error",
+    };
+  } catch (error) {
+    console.error(error);
+    if (error && error.status === 401) {
+      await handleUnauthorized();
+      return {
+        attempted: true,
+        message: "Sessao encerrada antes do reenvio do e-mail.",
+        type: "error",
+      };
+    }
+    return {
+      attempted: true,
+      message:
+        `Certificado ${targetCode} atualizado, mas nao foi possivel reenviar o e-mail agora. ` +
+        "Tente novamente pela aba Certificados.",
+      type: "error",
+    };
+  }
+}
+
 async function saveCertificateEdit(prepared, password, confirmationCode) {
   if (!editingCertificate || !prepared || isCertificateEditSaving) return;
 
@@ -589,7 +653,8 @@ async function saveCertificateEdit(prepared, password, confirmationCode) {
     downloadBtn.disabled = false;
     closeCertificateEditDialog();
     syncCertificateEditUi();
-    setBatchStatus(`Certificado ${codigo} atualizado com sucesso.`, "success");
+    const resendResult = await offerResendEditedCertificateEmail(payload, codigo);
+    setBatchStatus(resendResult.message, resendResult.type);
     await loadCertificates(certListState.page || 1);
     await loadAuditEvents(1);
   } catch (error) {

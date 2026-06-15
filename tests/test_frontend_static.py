@@ -221,3 +221,13 @@ def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
     assert "reenviar-email" in source
     assert "email_tentativa_em" in source
     assert "email_reply_to" in source
+
+
+def test_certificate_edit_offers_optional_email_resend_after_success():
+    source = _frontend_source()
+
+    assert "function offerResendEditedCertificateEmail" in source
+    assert "Deseja reenviar o certificado atualizado por e-mail" in source
+    assert "E-mail nao reenviado" in source
+    assert "atualizado e e-mail reenviado com sucesso" in source
+    assert "const resendResult = await offerResendEditedCertificateEmail(payload, codigo)" in source
