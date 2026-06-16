@@ -6,6 +6,10 @@ function canManageVisualAssets(session = sessionState) {
   return Boolean(session && Array.isArray(session.secretarias) && session.secretarias.length > 0);
 }
 
+function canManageReplyEmails(session = sessionState) {
+  return Boolean(session && Array.isArray(session.secretarias) && session.secretarias.length > 0);
+}
+
 function isAdminOnlySection(sectionName) {
   return sectionName === "audit";
 }
@@ -96,6 +100,10 @@ function switchAdminModule(moduleName) {
 function syncAdminSectionVisibility(session = sessionState) {
   const admin = isAdminSession(session);
   const canManageAssets = canManageVisualAssets(session);
+  const canManageEmails = canManageReplyEmails(session);
+  if (emailsTab) {
+    emailsTab.hidden = !canManageEmails;
+  }
   if (adminTab) {
     adminTab.hidden = !canManageAssets;
     adminTab.textContent = admin ? "Administração" : "Moldes e marcas";
@@ -104,7 +112,11 @@ function syncAdminSectionVisibility(session = sessionState) {
 }
 
 function switchSection(sectionName) {
-  currentSection = viewSections[sectionName] ? sectionName : "generator";
+  let targetSection = viewSections[sectionName] ? sectionName : "generator";
+  if (targetSection === "emails" && !canManageReplyEmails()) {
+    targetSection = "generator";
+  }
+  currentSection = targetSection;
 
   Object.entries(viewSections).forEach(([name, element]) => {
     if (!element) return;

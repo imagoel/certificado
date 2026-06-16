@@ -187,7 +187,7 @@ def test_admin_nao_vincula_operador_a_secretaria_inativa(client, seed_data, logi
 def test_admin_configura_email_resposta_da_secretaria(client, seed_data, login):
     login("admin", seed_data["admin_password"])
 
-    missing_response = client.post(
+    no_reply_response = client.post(
         "/api/admin/secretarias",
         json={
             "sigla": "SEMREPLY",
@@ -195,7 +195,9 @@ def test_admin_configura_email_resposta_da_secretaria(client, seed_data, login):
             "ativa": True,
         },
     )
-    assert missing_response.status_code == 422
+    assert no_reply_response.status_code == 201
+    assert no_reply_response.json()["email_resposta"] is None
+    assert no_reply_response.json()["reply_emails"] == []
 
     create_response = client.post(
         "/api/admin/secretarias",
@@ -306,6 +308,46 @@ def test_admin_gerencia_emails_de_resposta_por_secretaria(client, seed_data, log
         json={},
     )
     assert delete_last_response.status_code == 422
+
+
+def test_operador_gerencia_emails_da_propria_secretaria(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+
+    create_response = client.post(
+        f"/api/secretarias/{seed_data['seafi_id']}/reply-emails",
+        json={
+            "nome": "DIVISA",
+            "email": "divisa@amargosa.ba.gov.br",
+            "ativo": True,
+            "padrao": True,
+        },
+    )
+    assert create_response.status_code == 201
+    created = create_response.json()
+    assert created["nome"] == "DIVISA"
+    assert created["email"] == "divisa@amargosa.ba.gov.br"
+
+    list_response = client.get(f"/api/secretarias/{seed_data['seafi_id']}/reply-emails")
+    assert list_response.status_code == 200
+    assert any(item["id"] == created["id"] for item in list_response.json())
+
+    update_response = client.patch(
+        f"/api/secretaria-reply-emails/{created['id']}",
+        json={"nome": "Vigilancia Sanitaria"},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["nome"] == "Vigilancia Sanitaria"
+
+    blocked_response = client.post(
+        f"/api/secretarias/{seed_data['semed_id']}/reply-emails",
+        json={
+            "nome": "Outro setor",
+            "email": "outro@amargosa.ba.gov.br",
+            "ativo": True,
+            "padrao": False,
+        },
+    )
+    assert blocked_response.status_code == 403
 
 
 def test_admin_global_nao_mantem_vinculos_de_secretaria(client, seed_data, login):

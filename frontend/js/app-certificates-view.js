@@ -531,15 +531,7 @@ function renderSecretariasTable() {
     const nomeTitle = document.createElement("strong");
     nomeTitle.className = "admin-primary-title";
     nomeTitle.textContent = secretaria.nome || "-";
-    const replyMeta = document.createElement("span");
-    replyMeta.className = "admin-muted-meta";
-    const replyEmails = getSecretariaReplyEmailOptions(secretaria, true);
-    const defaultReply = replyEmails.find((item) => item.padrao) || replyEmails[0];
-    const replyCount = replyEmails.filter((item) => item.ativo).length;
-    replyMeta.textContent = defaultReply
-      ? `Resposta padrao: ${defaultReply.email} (${replyCount} ativo${replyCount === 1 ? "" : "s"})`
-      : "Email de resposta pendente";
-    nomeCell.append(nomeTitle, replyMeta);
+    nomeCell.appendChild(nomeTitle);
 
     const statusCell = document.createElement("td");
     statusCell.appendChild(buildStatusPill(secretaria.ativa));

@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260616-2" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260616-2" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260616-2" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260616-2" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260616-2" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260616-2" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260616-2" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260616-3" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260616-3" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260616-3" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260616-3" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260616-3" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260616-3" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260616-3" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260616-3" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -85,6 +85,7 @@
       <section class="panel section-switcher">
         <button id="tab-generator" class="section-tab is-active" type="button" data-section="generator">Gerar</button>
         <button id="tab-certificates" class="section-tab" type="button" data-section="certificates">Certificados</button>
+        <button id="tab-emails" class="section-tab" type="button" data-section="emails" hidden>E-mails</button>
         <button id="tab-audit" class="section-tab" type="button" data-section="audit" hidden>Auditoria</button>
         <button id="tab-admin" class="section-tab" type="button" data-section="admin" hidden>Administração</button>
       </section>
@@ -747,6 +748,96 @@
         </section>
       </section>
 
+
+      <section id="emails-section" class="stack-section listing-section emails-section" hidden>
+        <section class="panel listing-panel emails-panel">
+          <div class="panel-header">
+            <div>
+              <h2>E-mails de resposta</h2>
+              <p class="subtitle">Configure o endereco que recebe respostas e o texto que aparece no rodape do e-mail enviado ao participante.</p>
+            </div>
+          </div>
+
+          <div class="email-config-toolbar">
+            <label class="field-stack" for="email-secretaria-select">
+              Secretaria
+              <select id="email-secretaria-select"></select>
+            </label>
+            <p id="email-secretaria-status" class="status" aria-live="polite"></p>
+          </div>
+
+          <section id="reply-email-admin-panel" class="reply-email-admin-panel" hidden>
+            <div class="reply-email-admin-header">
+              <div>
+                <h3>Enderecos cadastrados</h3>
+                <p id="reply-email-admin-summary" class="hint">
+                  Escolha uma secretaria para gerenciar os e-mails de resposta.
+                </p>
+              </div>
+            </div>
+
+            <form id="reply-email-form" class="form admin-compact-form reply-email-form-grid">
+              <input id="reply-email-edit-id" type="hidden" />
+
+              <div class="grid-two">
+                <div class="field-stack">
+                  <label for="reply-email-name">Nome exibido no e-mail</label>
+                  <input id="reply-email-name" type="text" placeholder="Ex.: DIVISA ou Educacao Permanente" />
+                  <p class="hint">
+                    Aparece no rodape como &quot;Emitido por: Nome exibido - Nome da secretaria&quot;.
+                  </p>
+                </div>
+
+                <div class="field-stack">
+                  <label for="reply-email-address">Endereco que recebe respostas</label>
+                  <input id="reply-email-address" type="email" maxlength="254" placeholder="Ex.: cursos@amargosa.ba.gov.br" />
+                  <p class="hint">
+                    Usado apenas como Reply-To. Quando o participante responder, a mensagem ira para este endereco.
+                  </p>
+                </div>
+              </div>
+
+              <div class="admin-checkbox-row">
+                <label class="checkbox-field">
+                  <input id="reply-email-active" type="checkbox" checked />
+                  Ativo
+                </label>
+
+                <label class="checkbox-field">
+                  <input id="reply-email-default" type="checkbox" />
+                  Padrao da secretaria
+                </label>
+              </div>
+
+              <div class="actions">
+                <button type="submit">Salvar Email</button>
+                <button id="reply-email-form-reset" type="button" class="secondary-btn">Limpar</button>
+              </div>
+              <p id="reply-email-form-status" class="status" aria-live="polite"></p>
+            </form>
+
+            <div class="table-wrap listing-table-card admin-table-card reply-email-table-card">
+              <table class="data-table reply-email-admin-table">
+                <thead>
+                  <tr>
+                    <th>Origem no e-mail</th>
+                    <th>Endereco de resposta</th>
+                    <th>Status</th>
+                    <th>Acoes</th>
+                  </tr>
+                </thead>
+                <tbody id="reply-email-list-body">
+                  <tr>
+                    <td colspan="4" class="empty-state">Selecione uma secretaria.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+        </section>
+      </section>
+
       <section id="audit-section" class="stack-section listing-section" hidden>
         <section class="panel listing-panel">
           <div class="panel-header">
@@ -1000,11 +1091,6 @@
                 <label for="secretaria-name">Nome</label>
                 <input id="secretaria-name" type="text" placeholder="Ex.: Secretaria de Educação" required />
               </div>
-
-              <div class="field-stack field-span-2">
-                <label for="secretaria-email-resposta">Email de resposta</label>
-                <input id="secretaria-email-resposta" type="email" maxlength="254" placeholder="Ex.: secretaria@amargosa.ba.gov.br" required />
-              </div>
             </div>
 
             <label class="checkbox-field">
@@ -1019,70 +1105,6 @@
             <p id="secretaria-form-status" class="status" aria-live="polite"></p>
               </form>
 
-              <section id="reply-email-admin-panel" class="reply-email-admin-panel" hidden>
-                <div class="reply-email-admin-header">
-                  <div>
-                    <h3>Emails de resposta por setor</h3>
-                    <p id="reply-email-admin-summary" class="hint">
-                      Edite uma secretaria para gerenciar os emails de resposta.
-                    </p>
-                  </div>
-                </div>
-
-                <form id="reply-email-form" class="form admin-compact-form">
-                  <input id="reply-email-edit-id" type="hidden" />
-
-                  <div class="grid-two">
-                    <div class="field-stack">
-                      <label for="reply-email-name">Setor ou sigla exibida no e-mail</label>
-                      <input id="reply-email-name" type="text" placeholder="Ex.: DIVISA ou Educação Permanente" />
-                      <p class="hint">
-                        Aparece no e-mail como &quot;Emitido por: Setor exibido - Nome da secretaria&quot;.
-                      </p>
-                    </div>
-
-                    <div class="field-stack field-span-2">
-                      <label for="reply-email-address">Email</label>
-                      <input id="reply-email-address" type="email" maxlength="254" placeholder="Ex.: cursos@amargosa.ba.gov.br" />
-                    </div>
-                  </div>
-
-                  <div class="admin-checkbox-row">
-                    <label class="checkbox-field">
-                      <input id="reply-email-active" type="checkbox" checked />
-                      Ativo
-                    </label>
-
-                    <label class="checkbox-field">
-                      <input id="reply-email-default" type="checkbox" />
-                      Padrao da secretaria
-                    </label>
-                  </div>
-
-                  <div class="actions">
-                    <button type="submit">Salvar Email</button>
-                    <button id="reply-email-form-reset" type="button" class="secondary-btn">Limpar</button>
-                  </div>
-                  <p id="reply-email-form-status" class="status" aria-live="polite"></p>
-                </form>
-
-                <div class="table-wrap listing-table-card admin-table-card reply-email-table-card">
-                  <table class="data-table reply-email-admin-table">
-                    <thead>
-                      <tr>
-                        <th>Setor</th>
-                        <th>Status</th>
-                        <th>Acoes</th>
-                      </tr>
-                    </thead>
-                    <tbody id="reply-email-list-body">
-                      <tr>
-                        <td colspan="3" class="empty-state">Selecione uma secretaria.</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </section>
             </div>
 
             <div class="admin-table-shell">
@@ -1544,40 +1566,40 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/state/app-dom.js?v=20260616-2"></script>
-  <script src="frontend/js/state/app-layout-state.js?v=20260616-2"></script>
-  <script src="frontend/js/state/app-runtime-state.js?v=20260616-2"></script>
-  <script src="frontend/js/state/app-catalog-state.js?v=20260616-2"></script>
-  <script src="frontend/js/state/app-list-state.js?v=20260616-2"></script>
-  <script src="frontend/js/app-utils.js?v=20260616-2"></script>
-  <script src="frontend/js/app-api.js?v=20260616-2"></script>
-  <script src="frontend/js/app-filters.js?v=20260616-2"></script>
-  <script src="frontend/js/app-status.js?v=20260616-2"></script>
-  <script src="frontend/js/app-asset-utils.js?v=20260616-2"></script>
-  <script src="frontend/js/app-preview-adjust.js?v=20260616-2"></script>
-  <script src="frontend/js/app-navigation.js?v=20260616-2"></script>
-  <script src="frontend/js/app-ui.js?v=20260616-2"></script>
-  <script src="frontend/js/app-session-view.js?v=20260616-2"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260616-2"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260616-2"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260616-2"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260616-2"></script>
-  <script src="frontend/js/app-layout-presets.js?v=20260616-2"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260616-2"></script>
-  <script src="frontend/js/app-canvas.js?v=20260616-2"></script>
-  <script src="frontend/js/app-assets.js?v=20260616-2"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260616-2"></script>
-  <script src="frontend/js/app-batch.js?v=20260616-2"></script>
-  <script src="frontend/js/events/generator-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/preview-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/asset-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/batch-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/section-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/listing-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/admin-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/session-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/dialog-events.js?v=20260616-2"></script>
-  <script src="frontend/js/events/startup.js?v=20260616-2"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260616-2"></script>
+  <script src="frontend/js/state/app-dom.js?v=20260616-3"></script>
+  <script src="frontend/js/state/app-layout-state.js?v=20260616-3"></script>
+  <script src="frontend/js/state/app-runtime-state.js?v=20260616-3"></script>
+  <script src="frontend/js/state/app-catalog-state.js?v=20260616-3"></script>
+  <script src="frontend/js/state/app-list-state.js?v=20260616-3"></script>
+  <script src="frontend/js/app-utils.js?v=20260616-3"></script>
+  <script src="frontend/js/app-api.js?v=20260616-3"></script>
+  <script src="frontend/js/app-filters.js?v=20260616-3"></script>
+  <script src="frontend/js/app-status.js?v=20260616-3"></script>
+  <script src="frontend/js/app-asset-utils.js?v=20260616-3"></script>
+  <script src="frontend/js/app-preview-adjust.js?v=20260616-3"></script>
+  <script src="frontend/js/app-navigation.js?v=20260616-3"></script>
+  <script src="frontend/js/app-ui.js?v=20260616-3"></script>
+  <script src="frontend/js/app-session-view.js?v=20260616-3"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260616-3"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260616-3"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260616-3"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260616-3"></script>
+  <script src="frontend/js/app-layout-presets.js?v=20260616-3"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260616-3"></script>
+  <script src="frontend/js/app-canvas.js?v=20260616-3"></script>
+  <script src="frontend/js/app-assets.js?v=20260616-3"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260616-3"></script>
+  <script src="frontend/js/app-batch.js?v=20260616-3"></script>
+  <script src="frontend/js/events/generator-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/preview-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/asset-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/batch-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/section-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/listing-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/admin-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/session-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/dialog-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/startup.js?v=20260616-3"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260616-3"></script>
 </body>
 </html>

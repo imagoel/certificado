@@ -85,6 +85,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .email-config-toolbar {
+    grid-template-columns: 1fr;
+  }
+
   .admin-form-shell-wide {
     max-width: none;
   }

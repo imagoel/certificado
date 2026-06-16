@@ -2,7 +2,7 @@ import os
 from datetime import date, datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from email_utils import normalize_optional_email
 
@@ -218,12 +218,6 @@ class SecretariaAdminCreate(BaseModel):
     @classmethod
     def validate_email_resposta(cls, value: Optional[str]) -> Optional[str]:
         return normalize_optional_email(value)
-
-    @model_validator(mode="after")
-    def require_reply_to_when_active(self):
-        if self.ativa and not self.email_resposta:
-            raise ValueError("Email de resposta e obrigatorio para secretaria ativa.")
-        return self
 
 
 class SecretariaAdminUpdate(BaseModel):

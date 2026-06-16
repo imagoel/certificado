@@ -17,7 +17,7 @@ const certListState = {
 const adminState = {
   users: [],
   secretarias: [],
-  selectedSecretariaReplyEmailId: "",
+  selectedEmailSecretariaId: "",
   templates: [],
   secretariaAssets: [],
 };
@@ -43,6 +43,7 @@ const auditState = {
 const viewSections = {
   generator: generatorSection,
   certificates: certificatesSection,
+  emails: emailsSection,
   audit: auditSection,
   admin: adminSection,
 };

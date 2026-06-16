@@ -166,6 +166,23 @@
   margin-top: 16px;
 }
 
+.emails-panel {
+  max-width: 1120px;
+}
+
+.email-config-toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) minmax(260px, 1fr);
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.email-config-toolbar .status {
+  min-height: 0;
+  margin: 0;
+}
+
 .reply-email-admin-header {
   display: flex;
   align-items: flex-start;
@@ -192,20 +209,26 @@
 
 .reply-email-admin-table th:nth-child(1),
 .reply-email-admin-table td:nth-child(1) {
-  width: auto;
+  width: 34%;
 }
 
 .reply-email-admin-table th:nth-child(2),
 .reply-email-admin-table td:nth-child(2) {
-  width: 104px;
+  width: auto;
 }
 
 .reply-email-admin-table th:nth-child(3),
 .reply-email-admin-table td:nth-child(3) {
-  width: 128px;
+  width: 136px;
 }
 
-.reply-email-admin-table .admin-muted-meta {
+.reply-email-admin-table th:nth-child(4),
+.reply-email-admin-table td:nth-child(4) {
+  width: 132px;
+}
+
+.reply-email-admin-table .admin-muted-meta,
+.reply-email-address {
   overflow-wrap: anywhere;
 }
 

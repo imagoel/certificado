@@ -165,6 +165,8 @@ async function loadAdminData() {
       secretariaAssetSecretariaSelect ? secretariaAssetSecretariaSelect.value : "",
       false
     );
+    populateEmailSecretariaOptions();
+    renderReplyEmailAdminPanel();
     if (admin) {
       populateSecretariaOptions(
         auditSecretariaSelect,
@@ -174,7 +176,6 @@ async function loadAdminData() {
       );
       renderUserSecretariasChecklist();
       renderSecretariasTable();
-      renderReplyEmailAdminPanel();
       renderUsersTable();
     }
     renderTemplatesTable();

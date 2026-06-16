@@ -188,25 +188,33 @@ def test_spreadsheet_email_aliases_and_validation_are_available():
     assert "emailResult.value" in spreadsheets_source
 
 
-def test_secretaria_reply_to_field_is_wired_in_admin_ui():
+def test_secretaria_reply_to_settings_are_wired_in_emails_ui():
     html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
     source = _frontend_source()
 
-    assert 'id="secretaria-email-resposta"' in html
+    assert 'id="secretaria-email-resposta"' not in html
+    assert 'id="tab-emails"' in html
+    assert 'id="emails-section"' in html
+    assert 'id="email-secretaria-select"' in html
     assert 'id="reply-email-select"' in html
     assert 'id="reply-email-form"' in html
     assert 'id="reply-email-list-body"' in html
-    assert "secretariaReplyEmailInput" in source
+    assert "emailSecretariaSelect" in source
+    assert "canManageReplyEmails" in source
     assert "replyEmailSelect" in source
     assert "replyEmailForm" in source
     assert "reply_email_id" in source
     assert "getSecretariaReplyEmailOptions" in source
     assert "populateCertificateReplyEmailOptions" in source
-    assert "email_resposta: replyEmailResult.value" in source
-    assert "secretaria-reply-emails" in source
+    assert "email_resposta: replyEmailResult.value" not in source
+    assert "/api/secretarias/${secretaria.id}/reply-emails" in source
+    assert "/api/secretaria-reply-emails/${editingId}" in source
     assert "Email de resposta invalido." in source
-    assert "Setor ou sigla exibida no e-mail" in html
-    assert "Emitido por: Setor exibido - Nome da secretaria" in html
+    assert "Nome exibido no e-mail" in html
+    assert "Endereco que recebe respostas" in html
+    assert "Origem no e-mail" in html
+    assert "Endereco de resposta" in html
+    assert "Emitido por: Nome exibido - Nome da secretaria" in html
     assert "buildReplyEmailIssuerLabel" in source
     assert "No e-mail aparecerá:" in source
     assert "${item.nome} <${item.email}>" not in source
