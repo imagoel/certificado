@@ -208,7 +208,8 @@ def test_secretaria_reply_to_field_is_wired_in_admin_ui():
     assert "Setor ou sigla exibida no e-mail" in html
     assert "Emitido por: Setor exibido - Nome da secretaria" in html
     assert "buildReplyEmailIssuerLabel" in source
-    assert "O e-mail mostrará:" in source
+    assert "No e-mail aparecerá:" in source
+    assert "${item.nome} <${item.email}>" not in source
     assert (ROOT_DIR / "api" / "static" / "email" / "logo-prefeitura.png").is_file()
     assert (ROOT_DIR / "assets" / "email" / "logo-prefeitura.png").is_file()
 

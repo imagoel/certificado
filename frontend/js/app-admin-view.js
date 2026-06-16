@@ -158,9 +158,7 @@ function populateCertificateReplyEmailOptions(selectedValue = "") {
   options.forEach((item) => {
     const option = document.createElement("option");
     option.value = String(item.id || "");
-    option.textContent = item.padrao
-      ? `${item.nome} <${item.email}> (padrao)`
-      : `${item.nome} <${item.email}>`;
+    option.textContent = item.email || "Email de resposta";
     option.selected = String(item.id || "") === valueToSelect;
     replyEmailSelect.appendChild(option);
   });
@@ -168,8 +166,9 @@ function populateCertificateReplyEmailOptions(selectedValue = "") {
   const selected = options.find((item) => String(item.id || "") === valueToSelect);
   if (replyEmailStatus) {
     const issuerLabel = buildReplyEmailIssuerLabel(secretaria, selected);
+    const defaultHint = selected && selected.padrao ? ", e-mail padrão da secretaria" : "";
     replyEmailStatus.textContent = selected
-      ? `Respostas irão para ${selected.email}. O e-mail mostrará: ${issuerLabel}.`
+      ? `As respostas irão para ${selected.email}${defaultHint}. No e-mail aparecerá: ${issuerLabel}.`
       : "";
     replyEmailStatus.className = "status info";
   }
