@@ -78,108 +78,9 @@ function syncLayoutPresetControls() {
   }
 }
 
-function getLayoutPresetPreviewPayload() {
-  const selectedPreset = getLayoutPresetById(layoutPresetState.selectedId);
-  if (selectedPreset && selectedPreset.payload) return selectedPreset.payload;
-  return buildLayoutPresetPayload();
-}
-
-function getLayoutPresetPreviewTarget(payload, targetKey) {
-  const payloadLayout = payload && payload.layout && typeof payload.layout === "object"
-    ? payload.layout
-    : {};
-  const target = payloadLayout[targetKey] && typeof payloadLayout[targetKey] === "object"
-    ? payloadLayout[targetKey]
-    : layout[targetKey] || {};
-  return {
-    x: Number(target.x) || 0,
-    y: Number(target.y) || 0,
-    maxW: Number(target.maxW) || 80,
-    maxH: Number(target.maxH) || 60,
-  };
-}
-
-function hasLayoutPresetAsset(payload, assetKey) {
-  const selections = payload && payload.selections && typeof payload.selections === "object"
-    ? payload.selections
-    : {};
-  const selectedAssets = selections.assets && typeof selections.assets === "object"
-    ? selections.assets
-    : {};
-  return Boolean(selectedAssets[assetKey]);
-}
-
-function hasLayoutPresetLabel(payload, labelKey) {
-  const labels = payload && payload.labels && typeof payload.labels === "object"
-    ? payload.labels
-    : {};
-  return Boolean(sanitizeText(labels[labelKey]));
-}
-
-function buildLayoutPresetPreviewBox(payload, targetKey, label, className = "") {
-  const target = getLayoutPresetPreviewTarget(payload, targetKey);
-  const width = Math.max(44, Math.min(260, target.maxW));
-  const height = Math.max(34, Math.min(120, target.maxH || target.maxW * 0.5));
-  const x = Math.max(12, Math.min(CERTIFICATE_CANVAS_WIDTH - width - 12, target.x - width / 2));
-  const y = Math.max(12, Math.min(838 - height, target.y - height / 2));
-  const cssClass = `layout-preset-preview-item ${className}`.trim();
-  return `
-    <g class="${cssClass}">
-      <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="14"></rect>
-      <text x="${x + width / 2}" y="${y + height / 2 + 7}">${label}</text>
-    </g>
-  `;
-}
-
-function renderLayoutPresetPreview() {
-  if (!layoutPresetPreview) return;
-  const payload = getLayoutPresetPreviewPayload();
-  const hasSignature2 = hasLayoutPresetAsset(payload, "assinatura2")
-    || hasLayoutPresetLabel(payload, "assinatura2");
-  const hasSignature3 = hasLayoutPresetAsset(payload, "assinatura3")
-    || hasLayoutPresetLabel(payload, "assinatura3");
-  const hasInstitution = hasLayoutPresetAsset(payload, "instituicao")
-    && !hasSignature2
-    && !hasSignature3;
-
-  const boxes = [
-    buildLayoutPresetPreviewBox(payload, "qr", "QR", "is-qr"),
-    buildLayoutPresetPreviewBox(payload, "assinatura", "Ass.", "is-signature"),
-  ];
-
-  if (hasLayoutPresetAsset(payload, "logo")) {
-    boxes.push(buildLayoutPresetPreviewBox(payload, "logo", "Logo", "is-logo"));
-  }
-  if (hasSignature2) {
-    boxes.push(buildLayoutPresetPreviewBox(payload, "assinatura2", "Ass. 2", "is-signature"));
-  }
-  if (hasSignature3) {
-    boxes.push(buildLayoutPresetPreviewBox(payload, "assinatura3", "Ass. 3", "is-signature"));
-  }
-  if (hasInstitution) {
-    boxes.push(buildLayoutPresetPreviewBox(payload, "instituicao", "Inst.", "is-institution"));
-  }
-  SELO_SLOT_KEYS.forEach((slotKey, index) => {
-    if (hasLayoutPresetAsset(payload, slotKey)) {
-      boxes.push(buildLayoutPresetPreviewBox(payload, slotKey, `S${index + 1}`, "is-seal"));
-    }
-  });
-
-  layoutPresetPreview.innerHTML = `
-    <svg viewBox="0 0 1200 850" role="img" aria-label="Mini preview das posicoes do layout">
-      <rect class="layout-preset-preview-paper" x="14" y="14" width="1172" height="822" rx="26"></rect>
-      <line class="layout-preset-preview-line" x1="360" y1="275" x2="840" y2="275"></line>
-      <line class="layout-preset-preview-line" x1="300" y1="372" x2="900" y2="372"></line>
-      <line class="layout-preset-preview-line is-short" x1="430" y1="470" x2="770" y2="470"></line>
-      ${boxes.join("")}
-    </svg>
-  `;
-}
-
 function syncLayoutPresetSelectUi() {
   populateLayoutPresetOptions();
   syncLayoutPresetControls();
-  renderLayoutPresetPreview();
 }
 
 function cloneLayoutPresetTarget(targetKey) {
@@ -353,7 +254,6 @@ function handleLayoutPresetSelectionChange() {
   }
   setLayoutPresetStatus("", "info");
   syncLayoutPresetControls();
-  renderLayoutPresetPreview();
 }
 
 async function applySelectedLayoutPreset() {
@@ -371,7 +271,6 @@ async function applySelectedLayoutPreset() {
   try {
     await applyLayoutPresetPayload(selectedPreset.payload || {});
     if (layoutPresetNameInput) layoutPresetNameInput.value = selectedPreset.nome;
-    renderLayoutPresetPreview();
     setLayoutPresetStatus(`Layout ${selectedPreset.nome} aplicado.`, "success");
     setPreviewAdjustStatus(`Layout "${selectedPreset.nome}" aplicado.`);
   } catch (error) {

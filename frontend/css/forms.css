@@ -37,6 +37,12 @@
   grid-template-columns: 1fr;
 }
 
+.participant-email-field input[type="email"] {
+  min-height: 40px;
+  height: 40px;
+  padding-block: 8px;
+}
+
 .form.is-editing {
   padding: 12px;
   border: 1px solid #bfd6f3;
@@ -110,6 +116,14 @@
 .admin-compact-form .grid-two,
 .admin-compact-form .grid-three {
   gap: 9px 10px;
+}
+
+.reply-email-form-grid .grid-two {
+  align-items: start;
+}
+
+.reply-email-form-grid .field-stack {
+  align-content: start;
 }
 
 .admin-compact-form label {

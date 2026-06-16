@@ -270,7 +270,6 @@ const previewAdjustXVal = document.getElementById("preview-adjust-x-val");
 const previewAdjustYVal = document.getElementById("preview-adjust-y-val");
 const previewAdjustSizeVal = document.getElementById("preview-adjust-size-val");
 const layoutPresetSelect = document.getElementById("layout-preset-select");
-const layoutPresetPreview = document.getElementById("layout-preset-preview");
 const layoutPresetApplyBtn = document.getElementById("layout-preset-apply");
 const layoutPresetForm = document.getElementById("layout-preset-form");
 const layoutPresetNameInput = document.getElementById("layout-preset-name");

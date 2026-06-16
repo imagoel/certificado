@@ -180,7 +180,13 @@
 
 .email-config-toolbar .status {
   min-height: 0;
-  margin: 0;
+  margin: 0 0 4px;
+  line-height: 1.35;
+}
+
+.reply-email-form-grid input[type="email"] {
+  min-height: 38px;
+  height: 38px;
 }
 
 .reply-email-admin-header {
