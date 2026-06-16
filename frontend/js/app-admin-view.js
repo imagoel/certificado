@@ -4,6 +4,16 @@ function scrollAdminFormIntoView(form) {
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function pulseEditingForm(form) {
+  if (!form || !form.classList) return;
+  form.classList.remove("is-editing-pulse");
+  void form.offsetWidth;
+  form.classList.add("is-editing-pulse");
+  window.setTimeout(() => {
+    form.classList.remove("is-editing-pulse");
+  }, 820);
+}
+
 function syncUserRoleUi() {
   if (!userRoleSelect || !userSecretariasSelect) return;
 
@@ -254,6 +264,7 @@ function fillReplyEmailForm(replyEmail) {
   if (replyEmailDefaultInput) replyEmailDefaultInput.checked = Boolean(replyEmail.padrao);
   syncReplyEmailFormState();
   setReplyEmailFormStatus(`Editando email ${replyEmail.nome}.`, "info");
+  pulseEditingForm(replyEmailForm);
 }
 
 function renderReplyEmailAdminPanel() {
@@ -456,6 +467,7 @@ function fillUserForm(usuario) {
   );
   syncUserFormState();
   setUserFormStatus(`Editando usuário ${usuario.username}.`, "info");
+  pulseEditingForm(userForm);
   scrollAdminFormIntoView(userForm);
 }
 
@@ -468,6 +480,7 @@ function fillSecretariaForm(secretaria) {
   if (secretariaActiveInput) secretariaActiveInput.checked = Boolean(secretaria.ativa);
   syncSecretariaFormState();
   setSecretariaFormStatus(`Editando secretaria ${secretaria.sigla}.`, "info");
+  pulseEditingForm(secretariaForm);
   scrollAdminFormIntoView(secretariaForm);
 }
 
@@ -491,6 +504,7 @@ function fillTemplateAdminForm(template) {
     `Editando molde ${template.nome}. Envie um novo arquivo somente se quiser substituí-lo.`,
     "info"
   );
+  pulseEditingForm(templateAdminForm);
   scrollAdminFormIntoView(templateAdminForm);
 }
 
@@ -515,5 +529,6 @@ function fillSecretariaAssetForm(asset) {
     `Editando ${getSecretariaAssetDisplayLabel(asset.tipo)} ${asset.nome}. Envie um novo arquivo somente se quiser substituí-lo.`,
     "info"
   );
+  pulseEditingForm(secretariaAssetForm);
   scrollAdminFormIntoView(secretariaAssetForm);
 }

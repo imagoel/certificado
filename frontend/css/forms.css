@@ -44,6 +44,33 @@
   background: #f8fbff;
 }
 
+.form.is-editing-pulse {
+  animation: editingFormPulse 760ms ease-out;
+}
+
+@keyframes editingFormPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(31, 111, 235, 0.28), 0 14px 28px rgba(26, 79, 139, 0.1);
+    transform: translateY(-1px);
+  }
+
+  45% {
+    box-shadow: 0 0 0 6px rgba(31, 111, 235, 0.12), 0 18px 34px rgba(26, 79, 139, 0.12);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 111, 235, 0), 0 0 0 rgba(26, 79, 139, 0);
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form.is-editing-pulse {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.16);
+  }
+}
+
 .certificate-edit-banner {
   display: flex;
   align-items: flex-start;
