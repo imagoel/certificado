@@ -247,6 +247,82 @@ function isPreviewAdjustPanelControlActive() {
   );
 }
 
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getPanelOverlapArea(panelRect, targetRect) {
+  const overlapWidth = Math.max(
+    0,
+    Math.min(panelRect.left + panelRect.width, targetRect.right) -
+      Math.max(panelRect.left, targetRect.left)
+  );
+  const overlapHeight = Math.max(
+    0,
+    Math.min(panelRect.top + panelRect.height, targetRect.bottom) -
+      Math.max(panelRect.top, targetRect.top)
+  );
+  return overlapWidth * overlapHeight;
+}
+
+function getPreviewAdjustPanelPosition({
+  frameWidth,
+  frameHeight,
+  panelWidth,
+  panelHeight,
+  targetLeft,
+  targetTop,
+  targetRight,
+  targetBottom,
+  margin,
+  gap,
+}) {
+  const maxLeft = Math.max(margin, frameWidth - panelWidth - margin);
+  const maxTop = Math.max(margin, frameHeight - panelHeight - margin);
+  const targetCenterX = (targetLeft + targetRight) / 2;
+  const targetCenterY = (targetTop + targetBottom) / 2;
+  const targetRect = {
+    left: targetLeft,
+    top: targetTop,
+    right: targetRight,
+    bottom: targetBottom,
+  };
+  const clampLeft = (value) => clampNumber(value, margin, maxLeft);
+  const clampTop = (value) => clampNumber(value, margin, maxTop);
+  const makeCandidate = (left, top, priority) => {
+    const panelRect = {
+      left: clampLeft(left),
+      top: clampTop(top),
+      width: panelWidth,
+      height: panelHeight,
+    };
+    return {
+      left: panelRect.left,
+      top: panelRect.top,
+      overlap: getPanelOverlapArea(panelRect, targetRect),
+      priority,
+    };
+  };
+  const centeredLeft = targetCenterX - panelWidth / 2;
+  const centeredTop = targetCenterY - panelHeight / 2;
+  const candidates = [
+    makeCandidate(targetRight + gap, centeredTop, 0),
+    makeCandidate(targetLeft - panelWidth - gap, centeredTop, 1),
+    makeCandidate(centeredLeft, targetBottom + gap, 2),
+    makeCandidate(centeredLeft, targetTop - panelHeight - gap, 3),
+    makeCandidate(frameWidth - panelWidth - margin, margin, 4),
+    makeCandidate(margin, margin, 5),
+    makeCandidate(frameWidth - panelWidth - margin, frameHeight - panelHeight - margin, 6),
+    makeCandidate(margin, frameHeight - panelHeight - margin, 7),
+  ];
+
+  candidates.sort((a, b) => {
+    if (a.overlap !== b.overlap) return a.overlap - b.overlap;
+    return a.priority - b.priority;
+  });
+  return candidates[0] || { left: margin, top: margin };
+}
+
 function positionPreviewAdjustPanel(options = {}) {
   if (!options.force && isPreviewAdjustPanelControlActive()) {
     return;
@@ -271,23 +347,21 @@ function positionPreviewAdjustPanel(options = {}) {
   const targetTop = rect.y * scaleY;
   const targetRight = (rect.x + rect.width) * scaleX;
   const targetBottom = (rect.y + rect.height) * scaleY;
-  const targetCenterX = (targetLeft + targetRight) / 2;
+  const position = getPreviewAdjustPanelPosition({
+    frameWidth,
+    frameHeight,
+    panelWidth,
+    panelHeight,
+    targetLeft,
+    targetTop,
+    targetRight,
+    targetBottom,
+    margin,
+    gap,
+  });
 
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-  const maxLeft = Math.max(margin, frameWidth - panelWidth - margin);
-  const maxTop = Math.max(margin, frameHeight - panelHeight - margin);
-  const preferredTop = targetTop - panelHeight - gap;
-  const fallbackTop = targetBottom + gap;
-
-  const left = clamp(targetCenterX - panelWidth / 2, margin, maxLeft);
-  const top = preferredTop >= margin
-    ? preferredTop
-    : fallbackTop + panelHeight <= frameHeight - margin
-      ? fallbackTop
-      : clamp(targetTop, margin, maxTop);
-
-  previewAdjustPanel.style.left = `${left}px`;
-  previewAdjustPanel.style.top = `${clamp(top, margin, maxTop)}px`;
+  previewAdjustPanel.style.left = `${position.left}px`;
+  previewAdjustPanel.style.top = `${position.top}px`;
 }
 
 function syncPreviewAdjustPanel() {
