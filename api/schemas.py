@@ -330,12 +330,27 @@ class PaginatedAuditEventResponse(BaseModel):
 
 class CertificateAdminDeleteRequest(BaseModel):
     password: str = Field(min_length=4, max_length=200)
-    confirmacao_codigo: str = Field(min_length=3, max_length=20)
 
-    @field_validator("confirmacao_codigo")
+
+class CertificateAdminBulkDeleteRequest(BaseModel):
+    password: str = Field(min_length=4, max_length=200)
+    codigos: list[str] = Field(min_length=1, max_length=100)
+
+    @field_validator("codigos")
     @classmethod
-    def normalize_confirmation_code(cls, value: str) -> str:
-        return value.strip().upper()
+    def normalize_codes(cls, value: list[str]) -> list[str]:
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for item in value:
+            code = item.strip().upper()
+            if not code:
+                continue
+            if code not in seen:
+                normalized.append(code)
+                seen.add(code)
+        if not normalized:
+            raise ValueError("Informe ao menos um certificado.")
+        return normalized
 
 
 class CertificateTrashClearRequest(BaseModel):

@@ -607,6 +607,8 @@
           </div>
 
           <div class="preview-layout-controls" aria-label="Layouts salvos da prévia">
+            <div id="layout-preset-preview" class="layout-preset-preview" aria-label="Mini preview do layout"></div>
+
             <label class="field-stack preview-layout-select" for="layout-preset-select">
               Layout salvo
               <span class="inline-control-row">
@@ -641,6 +643,7 @@
             </div>
             <div class="panel-header-actions">
               <p id="cert-list-summary" class="summary-pill"></p>
+              <button id="cert-bulk-trash" type="button" class="secondary-btn" hidden>Mover selecionados</button>
               <button id="cert-clear-trash" type="button" class="danger-btn" hidden>Limpar lixeira</button>
               <button id="cert-export-csv" type="button" class="secondary-btn">Exportar CSV</button>
             </div>
@@ -721,6 +724,9 @@
             <table class="data-table certificates-table">
               <thead>
                 <tr>
+                  <th class="cert-col-select" hidden>
+                    <input id="cert-select-all" type="checkbox" aria-label="Selecionar todos os certificados desta pagina" />
+                  </th>
                   <th class="cert-col-code">Código</th>
                   <th class="cert-col-participant">Participante</th>
                   <th class="cert-col-course">Curso</th>
@@ -734,7 +740,7 @@
               </thead>
               <tbody id="cert-list-body">
                 <tr>
-                  <td colspan="9" class="empty-state">Faça login para carregar os certificados.</td>
+                  <td colspan="10" class="empty-state">Faça login para carregar os certificados.</td>
                 </tr>
               </tbody>
             </table>
@@ -1403,25 +1409,14 @@
         <div>
           <h2>Mover certificado para a lixeira</h2>
           <p id="delete-cert-message" class="subtitle">
-            Confirme o código e informe a senha do administrador para mover o certificado para a lixeira.
+            Informe a senha do administrador para mover para a lixeira.
           </p>
         </div>
       </div>
 
       <div class="field-stack">
-        <label for="delete-cert-current-code">Código selecionado</label>
+        <label for="delete-cert-current-code">Seleção</label>
         <input id="delete-cert-current-code" type="text" readonly />
-      </div>
-
-      <div class="field-stack">
-        <label for="delete-cert-confirm-code">Digite o código para confirmar</label>
-        <input
-          id="delete-cert-confirm-code"
-          type="text"
-          placeholder="Ex.: ABC-2026-00015"
-          autocomplete="off"
-          required
-        />
       </div>
 
       <div class="field-stack">

@@ -27,6 +27,7 @@ let sessionState = null;
 let currentSection = "generator";
 let pendingDuplicateCertificate = null;
 let pendingDeleteCertificate = null;
+let pendingDeleteCertificates = [];
 let pendingResendCertificate = null;
 let pendingConfirmAction = null;
 let editingCertificate = null;

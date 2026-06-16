@@ -290,6 +290,19 @@
   white-space: nowrap;
 }
 
+.certificates-table .cert-col-select {
+  min-width: 42px;
+  width: 42px;
+  text-align: center;
+}
+
+.certificates-table .cert-col-select input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #145491;
+  cursor: pointer;
+}
+
 .certificates-table .cert-col-code {
   min-width: 132px;
   width: 132px;

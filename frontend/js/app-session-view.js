@@ -126,11 +126,12 @@ function clearSessionUi(message = "") {
   if (auditSecretariaWrap) auditSecretariaWrap.hidden = false;
   updateCertificateQuickFilterButtons();
   syncCertificateTrashModeUi();
+  syncCertificateBulkSelectionUi();
   updateAuditQuickFilterButtons();
   if (certListBody) {
     certListBody.innerHTML = `
       <tr>
-        <td colspan="8" class="empty-state">Faça login para carregar os certificados.</td>
+        <td colspan="10" class="empty-state">Faça login para carregar os certificados.</td>
       </tr>
     `;
   }
@@ -437,6 +438,7 @@ function openConfirmActionDialog(options = {}) {
 
 function closeDeleteCertificateDialog() {
   pendingDeleteCertificate = null;
+  pendingDeleteCertificates = [];
   if (deleteCertForm) deleteCertForm.reset();
   setDeleteCertStatus("", "info");
   if (deleteCertDialog && typeof deleteCertDialog.close === "function" && deleteCertDialog.open) {
@@ -444,26 +446,39 @@ function closeDeleteCertificateDialog() {
   }
 }
 
-function openDeleteCertificateDialog(item) {
+function openDeleteCertificatesDialog(items) {
   if (!deleteCertDialog || !deleteCertForm || !isAdminSession()) return;
 
-  pendingDeleteCertificate = item;
+  const selectedItems = (items || []).filter((item) => item && item.codigo);
+  if (!selectedItems.length) return;
+
+  pendingDeleteCertificates = selectedItems;
+  pendingDeleteCertificate = selectedItems.length === 1 ? selectedItems[0] : null;
+  const count = selectedItems.length;
+  const firstItem = selectedItems[0];
   if (deleteCertCurrentCodeInput) {
-    deleteCertCurrentCodeInput.value = item.codigo || "";
-  }
-  if (deleteCertConfirmCodeInput) {
-    deleteCertConfirmCodeInput.value = "";
+    deleteCertCurrentCodeInput.value =
+      count === 1
+        ? `${firstItem.codigo || ""} - ${firstItem.nome || "Participante"}`
+        : `${count} certificados selecionados`;
   }
   if (deleteCertPasswordInput) {
     deleteCertPasswordInput.value = "";
   }
   if (deleteCertMessage) {
-    deleteCertMessage.textContent = `Confirme o código ${item.codigo} e informe a senha do administrador para mover ${item.nome} para a lixeira.`;
+    deleteCertMessage.textContent =
+      count === 1
+        ? `Informe a senha do administrador para mover ${firstItem.nome || "este certificado"} para a lixeira.`
+        : `Informe a senha do administrador para mover ${count} certificados para a lixeira.`;
   }
   setDeleteCertStatus("", "info");
   if (typeof deleteCertDialog.showModal === "function") {
     deleteCertDialog.showModal();
   }
+}
+
+function openDeleteCertificateDialog(item) {
+  openDeleteCertificatesDialog([item]);
 }
 
 function closeResendEmailDialog() {

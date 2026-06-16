@@ -76,6 +76,42 @@ function canResendCertificateEmail(item) {
   );
 }
 
+function clearCertificateSelection() {
+  if (certListState.selectedCodes) {
+    certListState.selectedCodes.clear();
+  }
+  syncCertificateBulkSelectionUi();
+}
+
+function getCertificateSelectionCheckboxes() {
+  if (!certListBody) return [];
+  return Array.from(certListBody.querySelectorAll(".cert-row-select"));
+}
+
+function syncCertificateBulkSelectionUi() {
+  const canSelect = isAdminSession() && !certListState.trashMode;
+  const selectedCount = certListState.selectedCodes ? certListState.selectedCodes.size : 0;
+  const selectHeader = certSelectAllInput ? certSelectAllInput.closest("th") : null;
+  const visibleCheckboxes = getCertificateSelectionCheckboxes();
+  const checkedVisibleCount = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
+
+  if (selectHeader) selectHeader.hidden = !canSelect;
+  if (certSelectAllInput) {
+    certSelectAllInput.disabled = !canSelect || !visibleCheckboxes.length;
+    certSelectAllInput.checked =
+      canSelect && visibleCheckboxes.length > 0 && checkedVisibleCount === visibleCheckboxes.length;
+    certSelectAllInput.indeterminate =
+      canSelect && checkedVisibleCount > 0 && checkedVisibleCount < visibleCheckboxes.length;
+  }
+
+  if (certBulkTrashBtn) {
+    certBulkTrashBtn.hidden = !canSelect || selectedCount < 1;
+    certBulkTrashBtn.disabled = !canSelect || selectedCount < 1;
+    certBulkTrashBtn.textContent =
+      selectedCount > 1 ? `Mover selecionados (${selectedCount})` : "Mover selecionado";
+  }
+}
+
 function resetActionMenuPosition(menu) {
   const menuContent = menu ? menu.querySelector(".action-menu-content") : null;
   if (!menuContent) return;
@@ -137,17 +173,19 @@ window.addEventListener("scroll", positionOpenActionMenus, true);
 function renderCertificateRows(items) {
   if (!certListBody) return;
   const trashMode = Boolean(certListState.trashMode);
+  const canSelect = isAdminSession() && !trashMode;
 
   if (!items.length) {
     certListBody.innerHTML = `
       <tr>
-        <td colspan="9" class="empty-state">${
+        <td colspan="10" class="empty-state">${
           trashMode
             ? "Nenhum certificado na lixeira."
             : "Nenhum certificado encontrado com os filtros atuais."
         }</td>
       </tr>
     `;
+    syncCertificateBulkSelectionUi();
     return;
   }
 
@@ -155,6 +193,29 @@ function renderCertificateRows(items) {
 
   items.forEach((item) => {
     const row = document.createElement("tr");
+
+    const selectCell = document.createElement("td");
+    selectCell.className = "cert-col-select";
+    selectCell.hidden = !canSelect;
+    if (canSelect) {
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "cert-row-select";
+      checkbox.value = item.codigo || "";
+      checkbox.setAttribute("aria-label", `Selecionar certificado ${item.codigo || ""}`);
+      checkbox.checked = certListState.selectedCodes.has(item.codigo);
+      checkbox.addEventListener("change", () => {
+        const code = sanitizeText(checkbox.value).toUpperCase();
+        if (!code) return;
+        if (checkbox.checked) {
+          certListState.selectedCodes.add(code);
+        } else {
+          certListState.selectedCodes.delete(code);
+        }
+        syncCertificateBulkSelectionUi();
+      });
+      selectCell.appendChild(checkbox);
+    }
 
     const codeCell = document.createElement("td");
     codeCell.className = "cert-col-code";
@@ -341,6 +402,7 @@ function renderCertificateRows(items) {
     actionsCell.appendChild(actionsWrap);
 
     row.append(
+      selectCell,
       codeCell,
       nameCell,
       courseCell,
@@ -354,6 +416,7 @@ function renderCertificateRows(items) {
 
     certListBody.appendChild(row);
   });
+  syncCertificateBulkSelectionUi();
 }
 
 async function resendCertificateEmail(item) {

@@ -87,6 +87,7 @@ function syncCertificateTrashModeUi() {
   if (certClearTrashBtn) {
     certClearTrashBtn.hidden = !isAdmin || !certListState.trashMode;
   }
+  syncCertificateBulkSelectionUi();
 }
 
 function syncAuditFilterInputsFromState() {

@@ -4,6 +4,7 @@ function registerListingEvents() {
       event.preventDefault();
       readCertificateFiltersFromInputs();
       certListState.page = 1;
+      clearCertificateSelection();
       await loadCertificates(1);
     });
   }
@@ -12,6 +13,7 @@ function registerListingEvents() {
     certFilterResetBtn.addEventListener("click", async () => {
       resetCertificateFiltersState();
       certListState.page = 1;
+      clearCertificateSelection();
       syncCertificateFilterInputsFromState();
       await loadCertificates(1);
     });
@@ -23,6 +25,7 @@ function registerListingEvents() {
       certListState.filters.emitidoDe = todayRange.start;
       certListState.filters.emitidoAte = todayRange.end;
       certListState.page = 1;
+      clearCertificateSelection();
       await loadCertificates(1);
     });
   }
@@ -33,6 +36,7 @@ function registerListingEvents() {
       certListState.filters.emitidoDe = range.start;
       certListState.filters.emitidoAte = range.end;
       certListState.page = 1;
+      clearCertificateSelection();
       await loadCertificates(1);
     });
   }
@@ -43,6 +47,7 @@ function registerListingEvents() {
         ? String(sessionState.secretaria_ativa_id)
         : "";
       certListState.page = 1;
+      clearCertificateSelection();
       await loadCertificates(1);
     });
   }
@@ -59,11 +64,39 @@ function registerListingEvents() {
     });
   }
 
+  if (certBulkTrashBtn) {
+    certBulkTrashBtn.addEventListener("click", () => {
+      if (!isAdminSession() || certListState.trashMode) return;
+      const selectedItems = Array.from(certListState.selectedCodes || []).map((codigo) => ({
+        codigo,
+      }));
+      openDeleteCertificatesDialog(selectedItems);
+    });
+  }
+
+  if (certSelectAllInput) {
+    certSelectAllInput.addEventListener("change", () => {
+      const checkboxes = getCertificateSelectionCheckboxes();
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = certSelectAllInput.checked;
+        const code = sanitizeText(checkbox.value).toUpperCase();
+        if (!code) return;
+        if (checkbox.checked) {
+          certListState.selectedCodes.add(code);
+        } else {
+          certListState.selectedCodes.delete(code);
+        }
+      });
+      syncCertificateBulkSelectionUi();
+    });
+  }
+
   if (certTrashActiveBtn) {
     certTrashActiveBtn.addEventListener("click", async () => {
       if (!certListState.trashMode) return;
       certListState.trashMode = false;
       certListState.page = 1;
+      clearCertificateSelection();
       syncCertificateTrashModeUi();
       await loadCertificates(1);
     });
@@ -74,6 +107,7 @@ function registerListingEvents() {
       if (certListState.trashMode || !isAdminSession()) return;
       certListState.trashMode = true;
       certListState.page = 1;
+      clearCertificateSelection();
       syncCertificateTrashModeUi();
       await loadCertificates(1);
     });
@@ -82,6 +116,7 @@ function registerListingEvents() {
   if (certPrevPageBtn) {
     certPrevPageBtn.addEventListener("click", () => {
       if (certListState.page > 1) {
+        clearCertificateSelection();
         void loadCertificates(certListState.page - 1);
       }
     });
@@ -90,6 +125,7 @@ function registerListingEvents() {
   if (certNextPageBtn) {
     certNextPageBtn.addEventListener("click", () => {
       if (certListState.page < certListState.totalPages) {
+        clearCertificateSelection();
         void loadCertificates(certListState.page + 1);
       }
     });

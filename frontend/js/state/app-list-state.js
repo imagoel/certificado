@@ -4,6 +4,7 @@ const certListState = {
   total: 0,
   totalPages: 1,
   trashMode: false,
+  selectedCodes: new Set(),
   filters: {
     busca: "",
     secretariaId: "",

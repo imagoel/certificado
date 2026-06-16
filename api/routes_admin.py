@@ -49,6 +49,7 @@ from models import (
 )
 from schemas import (
     ActionResponse,
+    CertificateAdminBulkDeleteRequest,
     CertificateAdminDeleteRequest,
     CertificateResponse,
     CertificateTrashClearRequest,
@@ -74,6 +75,33 @@ LOW_SIGNAL_AUDIT_EVENTS = (
     "troca_secretaria",
     "certificado_png_acessado",
 )
+
+
+def move_certificate_to_trash(
+    db: Session,
+    *,
+    cert: Certificate,
+    admin_user: Usuario,
+    deleted_at: datetime | None = None,
+) -> None:
+    deleted_at = deleted_at or utc_now()
+    cert.excluido_em = deleted_at
+    cert.exclusao_expira_em = build_certificate_trash_expiration(deleted_at)
+    cert.excluido_por_usuario_id = admin_user.id
+
+    record_audit_event(
+        db,
+        evento="certificado_excluido",
+        descricao=(
+            f"Certificado {cert.codigo} ({cert.nome}) movido para a lixeira por "
+            f"{admin_user.username}."
+        ),
+        usuario=admin_user,
+        secretaria=cert.secretaria,
+        certificado=cert,
+        entidade_tipo="certificado",
+        entidade_id=cert.id,
+    )
 
 
 def require_reply_email_secretaria_access(
@@ -994,6 +1022,52 @@ def admin_restore_certificate(
     )
 
 
+@router.delete("/api/admin/certificados", response_model=ActionResponse)
+def admin_bulk_delete_certificates(
+    payload: CertificateAdminBulkDeleteRequest,
+    db: Session = Depends(get_db),
+    admin_user: Usuario = Depends(require_admin_user),
+) -> ActionResponse:
+    if not verify_password(payload.password, admin_user.senha_hash):
+        raise HTTPException(status_code=401, detail="Senha do administrador invalida.")
+
+    requested_codes = [sanitize_code(codigo) for codigo in payload.codigos]
+    certificates = (
+        db.query(Certificate)
+        .filter(Certificate.codigo.in_(requested_codes))
+        .all()
+    )
+    by_code = {cert.codigo: cert for cert in certificates}
+    missing_codes = [codigo for codigo in requested_codes if codigo not in by_code]
+    if missing_codes:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Certificado(s) nao encontrado(s): {', '.join(missing_codes)}.",
+        )
+
+    already_deleted = [cert.codigo for cert in certificates if cert.excluido_em]
+    if already_deleted:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Certificado(s) ja esta(o) na lixeira: {', '.join(already_deleted)}.",
+        )
+
+    deleted_at = utc_now()
+    for codigo in requested_codes:
+        move_certificate_to_trash(
+            db,
+            cert=by_code[codigo],
+            admin_user=admin_user,
+            deleted_at=deleted_at,
+        )
+    db.commit()
+
+    count = len(requested_codes)
+    return ActionResponse(
+        message=f"{count} certificado(s) movido(s) para a lixeira com sucesso.",
+    )
+
+
 @router.delete("/api/admin/certificados/{codigo}", response_model=ActionResponse)
 def admin_delete_certificate(
     codigo: str,
@@ -1002,12 +1076,6 @@ def admin_delete_certificate(
     admin_user: Usuario = Depends(require_admin_user),
 ) -> ActionResponse:
     normalized_code = sanitize_code(codigo)
-    if payload.confirmacao_codigo != normalized_code:
-        raise HTTPException(
-            status_code=422,
-            detail="Codigo de confirmacao divergente. Digite o codigo exato do certificado.",
-        )
-
     if not verify_password(payload.password, admin_user.senha_hash):
         raise HTTPException(status_code=401, detail="Senha do administrador invalida.")
 
@@ -1018,24 +1086,7 @@ def admin_delete_certificate(
     if cert.excluido_em:
         raise HTTPException(status_code=409, detail="Certificado ja esta na lixeira.")
 
-    deleted_at = utc_now()
-    cert.excluido_em = deleted_at
-    cert.exclusao_expira_em = build_certificate_trash_expiration(deleted_at)
-    cert.excluido_por_usuario_id = admin_user.id
-
-    record_audit_event(
-        db,
-        evento="certificado_excluido",
-        descricao=(
-            f"Certificado {cert.codigo} ({cert.nome}) movido para a lixeira por "
-            f"{admin_user.username}."
-        ),
-        usuario=admin_user,
-        secretaria=cert.secretaria,
-        certificado=cert,
-        entidade_tipo="certificado",
-        entidade_id=cert.id,
-    )
+    move_certificate_to_trash(db, cert=cert, admin_user=admin_user)
     db.commit()
 
     return ActionResponse(

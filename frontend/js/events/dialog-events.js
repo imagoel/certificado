@@ -126,20 +126,20 @@ function registerDialogEvents() {
   if (deleteCertForm) {
     deleteCertForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!pendingDeleteCertificate || !isAdminSession()) return;
+      if (!isAdminSession()) return;
 
-      const codigo = sanitizeText(pendingDeleteCertificate.codigo).toUpperCase();
-      const confirmacaoCodigo = sanitizeText(
-        deleteCertConfirmCodeInput ? deleteCertConfirmCodeInput.value : ""
-      ).toUpperCase();
+      const selectedItems = pendingDeleteCertificates.length
+        ? pendingDeleteCertificates
+        : pendingDeleteCertificate
+          ? [pendingDeleteCertificate]
+          : [];
+      const codigos = selectedItems
+        .map((item) => sanitizeText(item.codigo).toUpperCase())
+        .filter(Boolean);
       const password = deleteCertPasswordInput ? deleteCertPasswordInput.value : "";
 
-      if (!codigo) {
+      if (!codigos.length) {
         setDeleteCertStatus("Nenhum certificado selecionado para exclusao.", "error");
-        return;
-      }
-      if (confirmacaoCodigo !== codigo) {
-        setDeleteCertStatus("Digite o codigo exato do certificado para confirmar.", "error");
         return;
       }
       if (!password) {
@@ -148,25 +148,33 @@ function registerDialogEvents() {
       }
 
       try {
-        setDeleteCertStatus(`Movendo ${codigo} para a lixeira...`, "info");
-        const payload = await apiJsonRequest(
-          `/api/admin/certificados/${encodeURIComponent(codigo)}`,
-          {
-            method: "DELETE",
-            body: JSON.stringify({
-              password,
-              confirmacao_codigo: confirmacaoCodigo,
-            }),
-          }
+        const isBulkDelete = codigos.length > 1;
+        setDeleteCertStatus(
+          isBulkDelete
+            ? `Movendo ${codigos.length} certificados para a lixeira...`
+            : `Movendo ${codigos[0]} para a lixeira...`,
+          "info"
         );
+        const payload = isBulkDelete
+          ? await apiJsonRequest("/api/admin/certificados", {
+              method: "DELETE",
+              body: JSON.stringify({ password, codigos }),
+            })
+          : await apiJsonRequest(
+              `/api/admin/certificados/${encodeURIComponent(codigos[0])}`,
+              {
+                method: "DELETE",
+                body: JSON.stringify({ password }),
+              }
+            );
 
-        if (lastData && sanitizeText(lastData.codigo).toUpperCase() === codigo) {
+        if (lastData && codigos.includes(sanitizeText(lastData.codigo).toUpperCase())) {
           lastData = null;
           downloadBtn.disabled = true;
         }
 
         const currentCertPage = certListState.page || 1;
-        const remainingCertTotal = Math.max(0, (certListState.total || 0) - 1);
+        const remainingCertTotal = Math.max(0, (certListState.total || 0) - codigos.length);
         const maxPageAfterDelete = Math.max(
           1,
           Math.ceil(remainingCertTotal / certListState.perPage)
@@ -174,8 +182,12 @@ function registerDialogEvents() {
         const nextCertPage = Math.min(currentCertPage, maxPageAfterDelete);
 
         closeDeleteCertificateDialog();
+        clearCertificateSelection();
         setCertListStatus(
-          (payload && payload.message) || `Certificado ${codigo} movido para a lixeira.`,
+          (payload && payload.message) ||
+            (codigos.length > 1
+              ? `${codigos.length} certificados movidos para a lixeira.`
+              : `Certificado ${codigos[0]} movido para a lixeira.`),
           "success"
         );
         await loadCertificates(nextCertPage);

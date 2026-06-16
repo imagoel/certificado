@@ -759,35 +759,27 @@ def test_admin_move_certificado_para_lixeira_e_restaura(client, seed_data, login
         carga_h=4,
     )
 
+    operator_delete_response = client.request(
+        "DELETE",
+        f"/api/admin/certificados/{codigo}",
+        json={"password": seed_data["operador_password"]},
+    )
+    assert operator_delete_response.status_code == 403
+
     client.post("/api/auth/logout")
     login("admin", seed_data["admin_password"])
 
-    wrong_code_response = client.request(
-        "DELETE",
-        f"/api/admin/certificados/{codigo}",
-        json={
-            "password": seed_data["admin_password"],
-            "confirmacao_codigo": "CODIGO-ERRADO",
-        },
-    )
     wrong_password_response = client.request(
         "DELETE",
         f"/api/admin/certificados/{codigo}",
-        json={
-            "password": "senha-incorreta",
-            "confirmacao_codigo": codigo,
-        },
+        json={"password": "senha-incorreta"},
     )
     delete_response = client.request(
         "DELETE",
         f"/api/admin/certificados/{codigo}",
-        json={
-            "password": seed_data["admin_password"],
-            "confirmacao_codigo": codigo,
-        },
+        json={"password": seed_data["admin_password"]},
     )
 
-    assert wrong_code_response.status_code == 422
     assert wrong_password_response.status_code == 401
     assert delete_response.status_code == 200
     assert "lixeira" in delete_response.json()["message"].lower()
@@ -837,6 +829,61 @@ def test_admin_move_certificado_para_lixeira_e_restaura(client, seed_data, login
     assert any(item["evento"] == "certificado_criado" for item in matching_events)
     assert any(item["evento"] == "certificado_excluido" for item in matching_events)
     assert any(item["evento"] == "certificado_restaurado" for item in matching_events)
+
+
+def test_admin_move_certificados_em_lote_para_lixeira(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+    first_code = create_uploaded_certificate(
+        client,
+        nome="Aluno Lote Um",
+        curso="Exclusao em Lote",
+    )
+    second_code = create_uploaded_certificate(
+        client,
+        nome="Aluno Lote Dois",
+        curso="Exclusao em Lote",
+    )
+
+    client.post("/api/auth/logout")
+    login("admin", seed_data["admin_password"])
+
+    wrong_password_response = client.request(
+        "DELETE",
+        "/api/admin/certificados",
+        json={
+            "password": "senha-incorreta",
+            "codigos": [first_code, second_code],
+        },
+    )
+    assert wrong_password_response.status_code == 401
+
+    active_before_response = client.get("/api/certificados", params={"busca": "Exclusao em Lote"})
+    assert active_before_response.status_code == 200
+    assert active_before_response.json()["total"] == 2
+
+    bulk_delete_response = client.request(
+        "DELETE",
+        "/api/admin/certificados",
+        json={
+            "password": seed_data["admin_password"],
+            "codigos": [first_code, second_code],
+        },
+    )
+
+    assert bulk_delete_response.status_code == 200
+    assert "2 certificado" in bulk_delete_response.json()["message"]
+
+    active_after_response = client.get("/api/certificados", params={"busca": "Exclusao em Lote"})
+    assert active_after_response.status_code == 200
+    assert active_after_response.json()["total"] == 0
+
+    trash_response = client.get(
+        "/api/certificados",
+        params={"lixeira": "true", "busca": "Exclusao em Lote"},
+    )
+    assert trash_response.status_code == 200
+    trash_codes = {item["codigo"] for item in trash_response.json()["itens"]}
+    assert trash_codes == {first_code, second_code}
 
 
 def test_admin_edita_certificado_ativo_e_substitui_png_com_snapshot(
@@ -1065,10 +1112,7 @@ def test_edicao_admin_restrita_e_bloqueia_pendente_ou_lixeira(
     delete_response = client.request(
         "DELETE",
         f"/api/admin/certificados/{codigo}",
-        json={
-            "password": seed_data["admin_password"],
-            "confirmacao_codigo": codigo,
-        },
+        json={"password": seed_data["admin_password"]},
     )
     assert delete_response.status_code == 200
 
@@ -1095,10 +1139,7 @@ def test_lixeira_expirada_remove_certificado_e_png(client, seed_data, login, app
     delete_response = client.request(
         "DELETE",
         f"/api/admin/certificados/{codigo}",
-        json={
-            "password": seed_data["admin_password"],
-            "confirmacao_codigo": codigo,
-        },
+        json={"password": seed_data["admin_password"]},
     )
     assert delete_response.status_code == 200
 
@@ -1155,10 +1196,7 @@ def test_admin_limpa_lixeira_com_senha_e_frase(client, seed_data, login, app_ctx
         delete_response = client.request(
             "DELETE",
             f"/api/admin/certificados/{codigo}",
-            json={
-                "password": seed_data["admin_password"],
-                "confirmacao_codigo": codigo,
-            },
+            json={"password": seed_data["admin_password"]},
         )
         assert delete_response.status_code == 200
 
