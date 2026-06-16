@@ -1,7 +1,19 @@
 function registerDialogEvents() {
+  if (confirmActionCancelBtn) {
+    confirmActionCancelBtn.addEventListener("click", () => {
+      resolveConfirmAction(false);
+    });
+  }
+
   if (deleteCertCancelBtn) {
     deleteCertCancelBtn.addEventListener("click", () => {
       closeDeleteCertificateDialog();
+    });
+  }
+
+  if (resendEmailCancelBtn) {
+    resendEmailCancelBtn.addEventListener("click", () => {
+      closeResendEmailDialog();
     });
   }
 
@@ -55,6 +67,20 @@ function registerDialogEvents() {
     });
   }
 
+  if (confirmActionDialog) {
+    confirmActionDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      resolveConfirmAction(false);
+    });
+  }
+
+  if (confirmActionForm) {
+    confirmActionForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      resolveConfirmAction(true);
+    });
+  }
+
   if (duplicateCertForm) {
     duplicateCertForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -73,6 +99,13 @@ function registerDialogEvents() {
     deleteCertDialog.addEventListener("cancel", (event) => {
       event.preventDefault();
       closeDeleteCertificateDialog();
+    });
+  }
+
+  if (resendEmailDialog) {
+    resendEmailDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      closeResendEmailDialog();
     });
   }
 
@@ -165,6 +198,20 @@ function registerDialogEvents() {
           "error"
         );
       }
+    });
+  }
+
+  if (resendEmailForm) {
+    resendEmailForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!pendingResendCertificate || !canResendCertificateEmail(pendingResendCertificate)) {
+        setResendEmailStatus("Nenhum certificado disponível para reenvio.", "error");
+        return;
+      }
+
+      const item = pendingResendCertificate;
+      closeResendEmailDialog();
+      await resendCertificateEmail(item);
     });
   }
 

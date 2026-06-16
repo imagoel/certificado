@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gerador de Certificados</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260404-1" />
-  <link rel="stylesheet" href="frontend/css/base.css?v=20260616-1" />
-  <link rel="stylesheet" href="frontend/css/login.css?v=20260616-1" />
-  <link rel="stylesheet" href="frontend/css/layout.css?v=20260616-1" />
-  <link rel="stylesheet" href="frontend/css/forms.css?v=20260616-1" />
-  <link rel="stylesheet" href="frontend/css/preview.css?v=20260616-1" />
-  <link rel="stylesheet" href="frontend/css/grids.css?v=20260616-1" />
-  <link rel="stylesheet" href="frontend/css/tables.css?v=20260616-1" />
-  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260616-1" />
+  <link rel="stylesheet" href="frontend/css/base.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/login.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/layout.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/forms.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/preview.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/grids.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/tables.css?v=20260616-2" />
+  <link rel="stylesheet" href="frontend/css/responsive.css?v=20260616-2" />
 </head>
 <body>
   <section id="login-shell" class="login-page">
@@ -1330,6 +1330,51 @@
     </form>
   </dialog>
 
+  <dialog id="confirm-action-dialog" class="modal-dialog">
+    <form id="confirm-action-form" class="form modal-form" method="dialog">
+      <div class="panel-header">
+        <div>
+          <h2 id="confirm-action-title">Confirmar ação</h2>
+          <p id="confirm-action-message" class="subtitle">
+            Revise as informações antes de continuar.
+          </p>
+        </div>
+      </div>
+
+      <div id="confirm-action-summary" class="confirm-summary">
+        Nenhuma ação selecionada.
+      </div>
+
+      <div class="actions">
+        <button id="confirm-action-submit" type="submit">Confirmar</button>
+        <button id="confirm-action-cancel" type="button" class="secondary-btn">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="resend-email-dialog" class="modal-dialog">
+    <form id="resend-email-form" class="form modal-form" method="dialog">
+      <div class="panel-header">
+        <div>
+          <h2>Reenviar e-mail?</h2>
+          <p id="resend-email-message" class="subtitle">
+            Confirme o envio do certificado para o participante.
+          </p>
+        </div>
+      </div>
+
+      <div id="resend-email-summary" class="confirm-summary">
+        Nenhum certificado selecionado.
+      </div>
+
+      <div class="actions">
+        <button type="submit">Reenviar e-mail</button>
+        <button id="resend-email-cancel" type="button" class="secondary-btn">Cancelar</button>
+      </div>
+      <p id="resend-email-status" class="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
   <dialog id="delete-cert-dialog" class="modal-dialog">
     <form id="delete-cert-form" class="form modal-form" method="dialog">
       <div class="panel-header">
@@ -1499,40 +1544,40 @@
   <script>
     window.CERT_API_BASE_URL = window.CERT_API_BASE_URL || "";
   </script>
-  <script src="frontend/js/state/app-dom.js?v=20260616-1"></script>
-  <script src="frontend/js/state/app-layout-state.js?v=20260616-1"></script>
-  <script src="frontend/js/state/app-runtime-state.js?v=20260616-1"></script>
-  <script src="frontend/js/state/app-catalog-state.js?v=20260616-1"></script>
-  <script src="frontend/js/state/app-list-state.js?v=20260616-1"></script>
-  <script src="frontend/js/app-utils.js?v=20260616-1"></script>
-  <script src="frontend/js/app-api.js?v=20260616-1"></script>
-  <script src="frontend/js/app-filters.js?v=20260616-1"></script>
-  <script src="frontend/js/app-status.js?v=20260616-1"></script>
-  <script src="frontend/js/app-asset-utils.js?v=20260616-1"></script>
-  <script src="frontend/js/app-preview-adjust.js?v=20260616-1"></script>
-  <script src="frontend/js/app-navigation.js?v=20260616-1"></script>
-  <script src="frontend/js/app-ui.js?v=20260616-1"></script>
-  <script src="frontend/js/app-session-view.js?v=20260616-1"></script>
-  <script src="frontend/js/app-admin-view.js?v=20260616-1"></script>
-  <script src="frontend/js/app-certificates-view.js?v=20260616-1"></script>
-  <script src="frontend/js/app-audit-view.js?v=20260616-1"></script>
-  <script src="frontend/js/app-assets-view.js?v=20260616-1"></script>
-  <script src="frontend/js/app-layout-presets.js?v=20260616-1"></script>
-  <script src="frontend/js/app-certificates-core.js?v=20260616-1"></script>
-  <script src="frontend/js/app-canvas.js?v=20260616-1"></script>
-  <script src="frontend/js/app-assets.js?v=20260616-1"></script>
-  <script src="frontend/js/app-spreadsheets.js?v=20260616-1"></script>
-  <script src="frontend/js/app-batch.js?v=20260616-1"></script>
-  <script src="frontend/js/events/generator-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/preview-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/asset-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/batch-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/section-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/listing-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/admin-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/session-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/dialog-events.js?v=20260616-1"></script>
-  <script src="frontend/js/events/startup.js?v=20260616-1"></script>
-  <script src="frontend/js/app-bootstrap.js?v=20260616-1"></script>
+  <script src="frontend/js/state/app-dom.js?v=20260616-2"></script>
+  <script src="frontend/js/state/app-layout-state.js?v=20260616-2"></script>
+  <script src="frontend/js/state/app-runtime-state.js?v=20260616-2"></script>
+  <script src="frontend/js/state/app-catalog-state.js?v=20260616-2"></script>
+  <script src="frontend/js/state/app-list-state.js?v=20260616-2"></script>
+  <script src="frontend/js/app-utils.js?v=20260616-2"></script>
+  <script src="frontend/js/app-api.js?v=20260616-2"></script>
+  <script src="frontend/js/app-filters.js?v=20260616-2"></script>
+  <script src="frontend/js/app-status.js?v=20260616-2"></script>
+  <script src="frontend/js/app-asset-utils.js?v=20260616-2"></script>
+  <script src="frontend/js/app-preview-adjust.js?v=20260616-2"></script>
+  <script src="frontend/js/app-navigation.js?v=20260616-2"></script>
+  <script src="frontend/js/app-ui.js?v=20260616-2"></script>
+  <script src="frontend/js/app-session-view.js?v=20260616-2"></script>
+  <script src="frontend/js/app-admin-view.js?v=20260616-2"></script>
+  <script src="frontend/js/app-certificates-view.js?v=20260616-2"></script>
+  <script src="frontend/js/app-audit-view.js?v=20260616-2"></script>
+  <script src="frontend/js/app-assets-view.js?v=20260616-2"></script>
+  <script src="frontend/js/app-layout-presets.js?v=20260616-2"></script>
+  <script src="frontend/js/app-certificates-core.js?v=20260616-2"></script>
+  <script src="frontend/js/app-canvas.js?v=20260616-2"></script>
+  <script src="frontend/js/app-assets.js?v=20260616-2"></script>
+  <script src="frontend/js/app-spreadsheets.js?v=20260616-2"></script>
+  <script src="frontend/js/app-batch.js?v=20260616-2"></script>
+  <script src="frontend/js/events/generator-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/preview-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/asset-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/batch-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/section-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/listing-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/admin-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/session-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/dialog-events.js?v=20260616-2"></script>
+  <script src="frontend/js/events/startup.js?v=20260616-2"></script>
+  <script src="frontend/js/app-bootstrap.js?v=20260616-2"></script>
 </body>
 </html>

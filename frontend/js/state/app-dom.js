@@ -205,6 +205,14 @@ const duplicateCertStatus = document.getElementById("duplicate-cert-status");
 const duplicateCertViewExistingBtn = document.getElementById("duplicate-cert-view-existing");
 const duplicateCertCancelBtn = document.getElementById("duplicate-cert-cancel");
 
+const confirmActionDialog = document.getElementById("confirm-action-dialog");
+const confirmActionForm = document.getElementById("confirm-action-form");
+const confirmActionTitle = document.getElementById("confirm-action-title");
+const confirmActionMessage = document.getElementById("confirm-action-message");
+const confirmActionSummary = document.getElementById("confirm-action-summary");
+const confirmActionSubmitBtn = document.getElementById("confirm-action-submit");
+const confirmActionCancelBtn = document.getElementById("confirm-action-cancel");
+
 const deleteCertDialog = document.getElementById("delete-cert-dialog");
 const deleteCertForm = document.getElementById("delete-cert-form");
 const deleteCertMessage = document.getElementById("delete-cert-message");
@@ -213,6 +221,12 @@ const deleteCertConfirmCodeInput = document.getElementById("delete-cert-confirm-
 const deleteCertPasswordInput = document.getElementById("delete-cert-password");
 const deleteCertStatus = document.getElementById("delete-cert-status");
 const deleteCertCancelBtn = document.getElementById("delete-cert-cancel");
+const resendEmailDialog = document.getElementById("resend-email-dialog");
+const resendEmailForm = document.getElementById("resend-email-form");
+const resendEmailMessage = document.getElementById("resend-email-message");
+const resendEmailSummary = document.getElementById("resend-email-summary");
+const resendEmailStatus = document.getElementById("resend-email-status");
+const resendEmailCancelBtn = document.getElementById("resend-email-cancel");
 const editCertDialog = document.getElementById("edit-cert-dialog");
 const editCertForm = document.getElementById("edit-cert-form");
 const editCertMessage = document.getElementById("edit-cert-message");

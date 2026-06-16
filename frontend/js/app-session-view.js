@@ -349,6 +349,10 @@ function setDeleteCertStatus(message, type = "info") {
   setStatusMessage(deleteCertStatus, message, type);
 }
 
+function setResendEmailStatus(message, type = "info") {
+  setStatusMessage(resendEmailStatus, message, type);
+}
+
 function setEditCertStatus(message, type = "info") {
   setStatusMessage(editCertStatus, message, type);
 }
@@ -363,6 +367,67 @@ function setBatchConfirmStatus(message, type = "info") {
 
 function setDuplicateCertStatus(message, type = "info") {
   setStatusMessage(duplicateCertStatus, message, type);
+}
+
+function resolveConfirmAction(result) {
+  if (!pendingConfirmAction) return;
+  const resolver = pendingConfirmAction.resolve;
+  pendingConfirmAction = null;
+  if (confirmActionSummary) {
+    confirmActionSummary.classList.remove("danger-summary");
+  }
+  if (confirmActionSubmitBtn) {
+    confirmActionSubmitBtn.className = "";
+  }
+  if (
+    confirmActionDialog &&
+    typeof confirmActionDialog.close === "function" &&
+    confirmActionDialog.open
+  ) {
+    confirmActionDialog.close();
+  }
+  resolver(Boolean(result));
+}
+
+function openConfirmActionDialog(options = {}) {
+  if (
+    !confirmActionDialog ||
+    !confirmActionForm ||
+    typeof confirmActionDialog.showModal !== "function"
+  ) {
+    return Promise.resolve(false);
+  }
+
+  if (pendingConfirmAction) {
+    resolveConfirmAction(false);
+  }
+
+  const title = sanitizeText(options.title) || "Confirmar ação";
+  const message = sanitizeText(options.message) || "Revise as informações antes de continuar.";
+  const summary = sanitizeText(options.summary);
+  const confirmLabel = sanitizeText(options.confirmLabel) || "Confirmar";
+  const danger = Boolean(options.danger);
+
+  if (confirmActionTitle) confirmActionTitle.textContent = title;
+  if (confirmActionMessage) confirmActionMessage.textContent = message;
+  if (confirmActionSummary) {
+    confirmActionSummary.textContent = summary || "Esta ação será executada após a confirmação.";
+    confirmActionSummary.classList.toggle("danger-summary", danger);
+  }
+  if (confirmActionSubmitBtn) {
+    confirmActionSubmitBtn.textContent = confirmLabel;
+    confirmActionSubmitBtn.className = danger ? "danger-btn" : "";
+  }
+  if (confirmActionForm) confirmActionForm.reset();
+
+  if (confirmActionDialog.open) {
+    confirmActionDialog.close();
+  }
+  confirmActionDialog.showModal();
+
+  return new Promise((resolve) => {
+    pendingConfirmAction = { resolve };
+  });
 }
 
 function closeDeleteCertificateDialog() {
@@ -393,6 +458,45 @@ function openDeleteCertificateDialog(item) {
   setDeleteCertStatus("", "info");
   if (typeof deleteCertDialog.showModal === "function") {
     deleteCertDialog.showModal();
+  }
+}
+
+function closeResendEmailDialog() {
+  pendingResendCertificate = null;
+  if (resendEmailForm) resendEmailForm.reset();
+  setResendEmailStatus("", "info");
+  if (
+    resendEmailDialog &&
+    typeof resendEmailDialog.close === "function" &&
+    resendEmailDialog.open
+  ) {
+    resendEmailDialog.close();
+  }
+}
+
+function openResendEmailDialog(item) {
+  if (!resendEmailDialog || !resendEmailForm || !canResendCertificateEmail(item)) return;
+
+  pendingResendCertificate = item;
+  const participantName = sanitizeText(item.nome) || "participante selecionado";
+  const email = sanitizeText(item.email);
+
+  if (resendEmailMessage) {
+    resendEmailMessage.textContent = `O certificado de ${participantName} será enviado novamente.`;
+  }
+  if (resendEmailSummary) {
+    resendEmailSummary.innerHTML = "";
+    const name = document.createElement("strong");
+    name.textContent = participantName;
+    const details = document.createElement("p");
+    details.className = "duplicate-cert-meta";
+    details.textContent = `Destino: ${email}`;
+    resendEmailSummary.append(name, details);
+  }
+
+  setResendEmailStatus("", "info");
+  if (typeof resendEmailDialog.showModal === "function") {
+    resendEmailDialog.showModal();
   }
 }
 

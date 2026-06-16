@@ -209,7 +209,7 @@ async function prepareBatchCertificates(file) {
   };
 }
 
-function openBatchConfirmDialog(prepared) {
+async function openBatchConfirmDialog(prepared) {
   const total = prepared.certificates.length;
   const ignoredCount = prepared.invalidRows.length;
   const moldeInfo = assets.template
@@ -227,7 +227,13 @@ function openBatchConfirmDialog(prepared) {
     !batchConfirmForm ||
     typeof batchConfirmDialog.showModal !== "function"
   ) {
-    if (window.confirm(`${prepared.fileName}\n\n${summary}`)) {
+    const confirmed = await openConfirmActionDialog({
+      title: "Gerar lote?",
+      message: `Confirme a geração do lote da planilha ${prepared.fileName}.`,
+      summary,
+      confirmLabel: "Gerar lote",
+    });
+    if (confirmed) {
       void executeBatchGeneration(prepared);
     }
     return;
@@ -561,7 +567,7 @@ async function handleBatchGenerate() {
         "info"
       );
     }
-    openBatchConfirmDialog(prepared);
+    await openBatchConfirmDialog(prepared);
   } catch (error) {
     console.error(error);
     if (error && error.status === 401) {

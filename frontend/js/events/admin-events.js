@@ -431,8 +431,16 @@ function registerAdminEvents() {
 
 async function deleteReplyEmail(replyEmail) {
   if (!replyEmail || !isAdminSession()) return;
-  const label = `${replyEmail.nome || "Email"} <${replyEmail.email || "-"}>`;
-  if (!window.confirm(`Excluir ${label}?`)) return;
+  const confirmed = await openConfirmActionDialog({
+    title: "Excluir e-mail de resposta?",
+    message: `${replyEmail.email || "E-mail selecionado"} será removido das opções da secretaria.`,
+    summary: replyEmail.nome
+      ? `Setor exibido no e-mail: ${replyEmail.nome}`
+      : "Este endereço deixará de aparecer no campo Responder para.",
+    confirmLabel: "Excluir e-mail",
+    danger: true,
+  });
+  if (!confirmed) return;
 
   try {
     setReplyEmailFormStatus("Excluindo email de resposta...", "info");

@@ -525,9 +525,13 @@ async function offerResendEditedCertificateEmail(payload, codigo) {
   }
 
   const targetCode = sanitizeText(payload.codigo || codigo).toUpperCase();
-  const confirmed = window.confirm(
-    `Certificado ${targetCode} atualizado com sucesso. Deseja reenviar o certificado atualizado por e-mail para ${payload.email}?`
-  );
+  const participantName = sanitizeText(payload.nome) || "participante selecionado";
+  const confirmed = await openConfirmActionDialog({
+    title: "Reenviar certificado atualizado?",
+    message: `O certificado de ${participantName} foi atualizado com sucesso.`,
+    summary: `Destino: ${payload.email}`,
+    confirmLabel: "Reenviar e-mail",
+  });
   if (!confirmed) {
     return {
       attempted: false,

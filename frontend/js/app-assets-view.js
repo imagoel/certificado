@@ -632,9 +632,13 @@ async function deleteSecretariaAsset(asset) {
 async function deleteUser(usuario) {
   if (!usuario || !isAdminSession()) return;
 
-  const confirmed = window.confirm(
-    `Excluir o usuário ${usuario.username}? Os certificados já emitidos continuarão no histórico, mas ficarão sem vínculo com esse usuário.`
-  );
+  const confirmed = await openConfirmActionDialog({
+    title: "Excluir usuário?",
+    message: `${usuario.nome || usuario.username} será removido do acesso ao sistema.`,
+    summary: "Certificados já emitidos continuam no histórico, mas ficam sem vínculo com esse usuário.",
+    confirmLabel: "Excluir usuário",
+    danger: true,
+  });
   if (!confirmed) return;
 
   try {
@@ -668,9 +672,14 @@ async function deleteUser(usuario) {
 async function deleteSecretaria(secretaria) {
   if (!secretaria || !isAdminSession()) return;
 
-  const confirmed = window.confirm(
-    `Excluir a secretaria ${secretaria.sigla}? Isso removerá os moldes dela e desvinculará os usuários. Se houver certificados emitidos, a exclusão será bloqueada.`
-  );
+  const confirmed = await openConfirmActionDialog({
+    title: "Excluir secretaria?",
+    message: `${secretaria.sigla} - ${secretaria.nome} será removida do sistema.`,
+    summary:
+      "Isso remove moldes, itens visuais e vínculos de usuários. Se houver certificados emitidos, a exclusão será bloqueada.",
+    confirmLabel: "Excluir secretaria",
+    danger: true,
+  });
   if (!confirmed) return;
 
   try {

@@ -482,6 +482,11 @@ button[disabled] {
   line-height: 1.5;
 }
 
+.confirm-summary strong {
+  display: block;
+  color: #143a67;
+}
+
 .duplicate-cert-list {
   display: grid;
   gap: 10px;

@@ -489,7 +489,7 @@ async function handleAssetChange(input, key, options = {}) {
     }
     void renderLastCertificate();
   } catch (error) {
-    alert(error.message);
+    console.error(error);
     input.value = "";
     assets[key] = null;
     syncTemplateControls();

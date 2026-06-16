@@ -306,7 +306,7 @@ function renderCertificateRows(items) {
           "Reenviar e-mail",
           () => {
             menu.open = false;
-            void resendCertificateEmail(item);
+            openResendEmailDialog(item);
           },
           "action-menu-item"
         );
@@ -359,11 +359,6 @@ function renderCertificateRows(items) {
 async function resendCertificateEmail(item) {
   if (!item || !item.codigo || !canResendCertificateEmail(item)) return;
 
-  const confirmed = window.confirm(
-    `Reenviar o certificado ${item.codigo} por e-mail para ${item.email}?`
-  );
-  if (!confirmed) return;
-
   try {
     setCertListStatus(`Reenviando e-mail do certificado ${item.codigo}...`, "info");
     const payload = await apiJsonRequest(
@@ -402,9 +397,12 @@ async function resendCertificateEmail(item) {
 async function restoreCertificate(item) {
   if (!item || !item.codigo || !isAdminSession()) return;
 
-  const confirmed = window.confirm(
-    `Restaurar o certificado ${item.codigo}? O link de validacao voltara a funcionar.`
-  );
+  const confirmed = await openConfirmActionDialog({
+    title: "Restaurar certificado?",
+    message: `O certificado de ${item.nome || "participante selecionado"} voltará para a lista ativa.`,
+    summary: "O link de validação voltará a funcionar após a restauração.",
+    confirmLabel: "Restaurar certificado",
+  });
   if (!confirmed) return;
 
   try {
@@ -629,10 +627,14 @@ function renderTemplatesTable() {
     actionsWrap.appendChild(
       createInlineButton(
         "Excluir",
-        () => {
-          const confirmado = window.confirm(
-            `Excluir o molde ${template.nome} da secretaria ${template.secretaria_sigla}?`
-          );
+        async () => {
+          const confirmado = await openConfirmActionDialog({
+            title: "Excluir molde?",
+            message: `O molde ${template.nome} será removido da secretaria ${template.secretaria_sigla}.`,
+            summary: "Esta ação remove o molde cadastrado e não altera certificados já emitidos.",
+            confirmLabel: "Excluir molde",
+            danger: true,
+          });
           if (!confirmado) return;
           void deleteTemplate(template);
         },
@@ -720,9 +722,13 @@ function renderSecretariaAssetsTable() {
       createInlineButton(
         "Excluir",
         async () => {
-          const confirmado = window.confirm(
-            `Excluir ${getSecretariaAssetDisplayLabel(asset.tipo)} ${asset.nome} da secretaria ${asset.secretaria_sigla}?`
-          );
+          const confirmado = await openConfirmActionDialog({
+            title: "Excluir item visual?",
+            message: `${capitalizeLabel(getSecretariaAssetDisplayLabel(asset.tipo))} ${asset.nome} será removida da secretaria ${asset.secretaria_sigla}.`,
+            summary: "Esta ação remove o item cadastrado e não altera certificados já emitidos.",
+            confirmLabel: "Excluir item",
+            danger: true,
+          });
           if (!confirmado) return;
           await deleteSecretariaAsset(asset);
         },

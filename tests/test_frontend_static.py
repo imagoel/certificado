@@ -229,11 +229,17 @@ def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
 
     assert 'class="cert-col-email-status"' in html
     assert 'class="email-status-legend"' in html
+    assert 'id="resend-email-dialog"' in html
+    assert 'id="resend-email-summary"' in html
     for label in ["Enviado", "Pendente", "Nao enviado", "Falha no envio"]:
         assert label in html or label in source
 
     assert "function getCertificateEmailDeliveryState" in source
     assert "function resendCertificateEmail" in source
+    assert "function openResendEmailDialog" in source
+    assert "pendingResendCertificate" in source
+    assert "Destino:" in source
+    assert "Reenviar o certificado ${item.codigo}" not in source
     assert "reenviar-email" in source
     assert "email_tentativa_em" in source
     assert "email_reply_to" in source
@@ -246,11 +252,30 @@ def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
     assert ".certificates-table .cert-col-code {\n  min-width: 132px;" in tables_css
 
 
+def test_frontend_uses_system_dialogs_instead_of_browser_confirmations():
+    html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
+    source = _frontend_source()
+
+    assert "window.confirm" not in source
+    assert "window.alert" not in source
+    assert "window.prompt" not in source
+    assert "confirm(" not in source
+    assert "alert(" not in source
+    assert "prompt(" not in source
+    assert 'id="confirm-action-dialog"' in html
+    assert 'id="confirm-action-summary"' in html
+    assert "function openConfirmActionDialog" in source
+    assert "function resolveConfirmAction" in source
+    assert "pendingConfirmAction" in source
+    assert "confirmActionSubmitBtn" in source
+
+
 def test_certificate_edit_offers_optional_email_resend_after_success():
     source = _frontend_source()
 
     assert "function offerResendEditedCertificateEmail" in source
-    assert "Deseja reenviar o certificado atualizado por e-mail" in source
+    assert "Reenviar certificado atualizado?" in source
+    assert "O certificado de ${participantName} foi atualizado com sucesso." in source
     assert "E-mail nao reenviado" in source
     assert "atualizado e e-mail reenviado com sucesso" in source
     assert "const resendResult = await offerResendEditedCertificateEmail(payload, codigo)" in source
