@@ -55,6 +55,7 @@ Resumo importante:
 - geracao em lote por planilha
 - email opcional do participante em emissao individual e lote
 - envio automatico do certificado por SMTP quando o PNG e salvo
+- reenvio manual de email para certificados ja emitidos
 - download do PNG individual
 - download do lote em `.zip`
 - pre-visualizacao da planilha antes do lote
@@ -65,6 +66,8 @@ Resumo importante:
 - alerta de possivel duplicidade antes da geracao individual
 - filtros rapidos em `Certificados` e `Auditoria`
 - reimpressao e visualizacao dos certificados ja emitidos
+- edicao administrativa de dados do certificado emitido, com preservacao de auditoria
+- lixeira administrativa para certificados excluidos, com restauracao e limpeza controlada
 - pagina publica de validacao por QR Code
 
 ### Administracao
@@ -85,6 +88,7 @@ Resumo importante:
 - logo temporaria por tela de geracao
 - assinatura temporaria por tela de geracao
 - assinatura 2 e assinatura 3 opcionais como itens extras da geracao
+- layouts salvos por secretaria para reaplicar posicoes, assets selecionados e textos de assinatura
 - aba propria de auditoria visivel apenas para `admin_global`
 - auditoria de login, emissao, upload, exclusao e acoes administrativas
 
@@ -134,6 +138,7 @@ O sistema ja esta preparado para:
 - gravar qual usuario emitiu o certificado
 - manter moldes por secretaria
 - manter logos, assinaturas e instituicoes por secretaria
+- manter layouts salvos por secretaria
 - permitir que operadores cuidem dos assets visuais das suas proprias secretarias sem permissao global
 
 Secretarias padrao do seed:
@@ -197,6 +202,26 @@ Formatos aceitos:
 - `jpeg`
 - `webp`
 
+## Layouts Salvos
+
+O gerador permite salvar layouts por secretaria para reduzir retrabalho em emissoes recorrentes.
+
+Um layout salvo guarda:
+
+- posicoes e tamanhos de logo, QR Code, assinaturas, instituicao e selos
+- molde selecionado
+- assets visuais selecionados
+- textos das assinaturas
+- preferencia de ocultar o titulo quando o molde ja traz essa informacao
+
+Regras:
+
+- layouts ficam vinculados a secretaria ativa
+- operadores so listam e salvam layouts das secretarias vinculadas ao proprio usuario
+- salvar com o mesmo nome atualiza o layout existente
+- certificados emitidos tambem guardam um snapshot do layout usado, permitindo reabrir a edicao com a composicao original
+- o backend continua armazenando o PNG final gerado pelo frontend; ele nao renderiza o certificado completo
+
 ## Geracao em Lote
 
 Formatos suportados:
@@ -234,6 +259,9 @@ Eventos auditados incluem:
 - PNG enviado
 - PNG acessado
 - certificado excluido
+- certificado restaurado
+- email enviado ou com falha
+- layout salvo ou atualizado
 - acoes administrativas de usuarios, secretarias, moldes, logos, assinaturas e instituicoes
 
 Observacoes:
@@ -265,9 +293,14 @@ Observacoes:
 - `POST /api/certificados`
 - `POST /api/certificados/lote`
 - `POST /api/certificados/{codigo}/arquivo`
+- `POST /api/certificados/{codigo}/reenviar-email`
+- `DELETE /api/certificados/{codigo}/pendente`
 - `GET /api/templates`
 - `GET /api/secretaria-assets`
 - `GET /api/secretaria-assets/{id}/arquivo`
+- `GET /api/layout-presets`
+- `POST /api/layout-presets`
+- `PATCH /api/layout-presets/{preset_id}`
 
 ### Gestao Visual da Secretaria (`admin_global` ou operador vinculado)
 
@@ -292,6 +325,11 @@ Observacao: para operadores, esses endpoints retornam e aceitam somente secretar
 - `POST /api/admin/usuarios`
 - `PATCH /api/admin/usuarios/{id}`
 - `DELETE /api/admin/usuarios/{id}`
+- `PATCH /api/admin/certificados/{codigo}`
+- `DELETE /api/admin/certificados/{codigo}`
+- `DELETE /api/admin/certificados`
+- `POST /api/admin/certificados/{codigo}/restaurar`
+- `DELETE /api/admin/certificados/lixeira`
 - `GET /api/admin/auditoria`
 - `GET /docs` (somente admin autenticado, se habilitado)
 - `GET /openapi.json` (somente admin autenticado, se habilitado)
@@ -308,6 +346,7 @@ Observacao: para operadores, esses endpoints retornam e aceitam somente secretar
 - `api/routes_public.py`: `health`, QR Code e validacao publica
 - `api/routes_templates.py`: moldes por secretaria
 - `api/routes_secretaria_assets.py`: logos, assinaturas e instituicoes por secretaria
+- `api/routes_layout_presets.py`: layouts salvos por secretaria
 - `api/certificate_sequences.py`: reserva atomica de codigos
 - `api/models.py`: modelos SQLAlchemy
 - `api/schemas.py`: contratos da API
@@ -493,12 +532,16 @@ Cobertura atual:
 - autenticacao e autorizacao
 - criacao e validacao publica de certificados
 - exclusao administrativa
+- lixeira, restauracao e limpeza de certificados excluidos
+- edicao administrativa e reenvio de email
 - duplicidade
 - lotes
 - auditoria
 - templates
+- layouts salvos por secretaria
 - logos, assinaturas e instituicoes por secretaria
 - permissao de operador para gerenciar assets visuais apenas das secretarias vinculadas
+- permissao de operador para gerenciar emails de resposta e layouts apenas no proprio escopo
 - migracoes Alembic
 - compatibilidade entre hash legado e HMAC
 
@@ -529,8 +572,8 @@ Compatibilidade:
 ## Limitacoes Conhecidas
 
 - o backend nao gera o certificado completo, apenas guarda o PNG final enviado pelo frontend
-- o layout do certificado continua fixo; o molde so atua como fundo visual
-- ainda nao ha personalizacao avancada de posicoes de texto por secretaria
+- a composicao final ainda depende do renderizador em canvas no frontend
+- layouts salvos cobrem posicoes de elementos visuais e textos de assinatura, mas nao substituem um editor livre completo de todos os textos do certificado
 - reimpressao e segunda via usam o certificado ja salvo; a prevencao de duplicidade trabalha por alerta e confirmacao, nao por bloqueio absoluto
 
 ## Refinamentos de UX Recentes
@@ -542,14 +585,18 @@ Compatibilidade:
 - a tabela de certificados ficou mais compacta em telas pequenas, com detalhes secundarios embutidos na celula principal
 - `Molde`, `Logo` e `Assinatura` foram simplificados em tres blocos mais enxutos, com sobrescrita temporaria apenas quando necessario
 - ajustes de logo, QR Code, assinaturas, selos e instituicao sao feitos por painel contextual ao clicar nos itens da previa
+- layouts salvos permitem reaplicar composicoes por secretaria
 - `Itens extras` permitem usar assinatura 2, assinatura 3 e ate quatro selos com posicionamento independente
+- modais do sistema substituem confirmacoes nativas do navegador em fluxos sensiveis
+- lixeira e restauracao reduzem risco em exclusoes administrativas
+- status e reenvio de email dao mais controle sobre comunicacao com participantes
 - o foco visual de inputs, botoes e controles foi reforcado para melhorar navegacao por teclado
 
 ## Proximas Evolucoes Naturais
 
 - relatorios operacionais
 - politica de retencao/arquivamento da auditoria
-- personalizacao visual mais avancada por secretaria
+- editor visual mais completo para textos e regras de layout por secretaria
 - testes automatizados adicionais no frontend
 - maior refinamento de UX mobile conforme uso real
 
