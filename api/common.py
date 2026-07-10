@@ -1,8 +1,10 @@
 import json
 import os
 import re
+import secrets
 import time
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
 from pathlib import Path
 from threading import Lock
 from uuid import uuid4
@@ -10,6 +12,7 @@ from uuid import uuid4
 from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session, object_session
 
 from bootstrap import run_startup_bootstrap
@@ -59,6 +62,7 @@ TEMPLATES_MEDIA_DIR = Path(
     os.getenv("TEMPLATES_MEDIA_DIR", DEFAULT_TEMPLATES_MEDIA_DIR)
 ).resolve()
 MAX_TEMPLATE_UPLOAD_BYTES = int(os.getenv("TEMPLATES_MAX_UPLOAD_BYTES", "10485760"))
+MAX_IMAGE_PIXELS = max(1, int(os.getenv("MAX_IMAGE_PIXELS", "25000000")))
 APP_ENV = (os.getenv("APP_ENV", "development").strip().lower() or "development")
 IS_PRODUCTION = APP_ENV in {"prod", "production"}
 SESSION_SECRET = os.getenv("SESSION_SECRET", "troque-esta-chave-de-sessao")
@@ -91,6 +95,7 @@ ROLE_ADMIN_GLOBAL = "admin_global"
 DEFAULT_DEV_SESSION_SECRET = "troque-esta-chave-de-sessao"
 
 BASE_DIR = Path(__file__).resolve().parent
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 if SESSION_SAME_SITE not in {"lax", "strict", "none"}:
     SESSION_SAME_SITE = "lax"
@@ -225,6 +230,33 @@ def clear_all_login_attempts_for_username(username: str) -> None:
         keys_to_remove = [key for key in LOGIN_ATTEMPTS if key.startswith(prefix)]
         for key in keys_to_remove:
             LOGIN_ATTEMPTS.pop(key, None)
+
+
+def ensure_csrf_token(request: Request) -> str:
+    token = request.session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        request.session["csrf_token"] = token
+    return token
+
+
+def require_csrf_protection(request: Request) -> None:
+    if request.method.upper() in {"GET", "HEAD", "OPTIONS"}:
+        return
+
+    if request.url.path == "/api/auth/login":
+        return
+
+    if not request.session.get("user_id"):
+        return
+
+    expected_token = request.session.get("csrf_token")
+    received_token = request.headers.get("x-csrf-token", "")
+    if not expected_token or not received_token:
+        raise HTTPException(status_code=403, detail="Token de seguranca ausente.")
+
+    if not secrets.compare_digest(str(expected_token), received_token):
+        raise HTTPException(status_code=403, detail="Token de seguranca invalido.")
 
 
 def run_startup_tasks() -> None:
@@ -385,6 +417,39 @@ def parse_render_snapshot_payload(raw_value: str | dict | None) -> dict | None:
         raise HTTPException(status_code=422, detail="Snapshot de renderizacao deve ser um objeto.")
 
     return payload
+
+
+def verify_uploaded_image_content(
+    content: bytes,
+    *,
+    allowed_formats: set[str],
+    invalid_detail: str,
+) -> str:
+    try:
+        with Image.open(BytesIO(content)) as image:
+            image_format = (image.format or "").upper()
+            width, height = image.size
+            total_pixels = width * height
+
+            if image_format not in allowed_formats:
+                raise HTTPException(status_code=415, detail=invalid_detail)
+            if width <= 0 or height <= 0:
+                raise HTTPException(status_code=415, detail=invalid_detail)
+            if total_pixels > MAX_IMAGE_PIXELS:
+                raise HTTPException(
+                    status_code=413,
+                    detail=(
+                        "Imagem muito grande em dimensoes. "
+                        f"Limite atual: {MAX_IMAGE_PIXELS} pixels."
+                    ),
+                )
+
+            image.verify()
+            return image_format
+    except HTTPException:
+        raise
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise HTTPException(status_code=415, detail=invalid_detail) from exc
 
 
 def replace_certificate_png_safely(cert: Certificate, content: bytes) -> CertificatePngReplacement:
@@ -810,6 +875,7 @@ def build_session_response(request: Request, db: Session, usuario: Usuario) -> S
         usuario=build_user_session_response(usuario),
         secretarias=[build_secretaria_response(secretaria) for secretaria in secretarias],
         secretaria_ativa_id=secretaria_ativa.id if secretaria_ativa else None,
+        csrf_token=ensure_csrf_token(request),
         configuracoes=SessionRuntimeConfigResponse(
             certificados_max_upload_bytes=MAX_UPLOAD_BYTES,
             certificados_max_batch_items=max(
@@ -1110,6 +1176,12 @@ def validate_png_upload(uploaded: UploadFile, content: bytes) -> None:
     if not content.startswith(b"\x89PNG\r\n\x1a\n"):
         raise HTTPException(status_code=415, detail="Arquivo invalido. Envie um PNG valido.")
 
+    verify_uploaded_image_content(
+        content,
+        allowed_formats={"PNG"},
+        invalid_detail="Arquivo invalido. Envie um PNG valido.",
+    )
+
 
 def validate_template_upload(uploaded: UploadFile, content: bytes) -> None:
     if not uploaded.filename:
@@ -1140,6 +1212,12 @@ def validate_template_upload(uploaded: UploadFile, content: bytes) -> None:
             status_code=415,
             detail="Somente imagens podem ser usadas como molde.",
         )
+
+    verify_uploaded_image_content(
+        content,
+        allowed_formats={"PNG", "JPEG", "WEBP"},
+        invalid_detail="Arquivo de imagem invalido. Use PNG, JPG, JPEG ou WEBP.",
+    )
 
 
 def build_certificate_file_response(

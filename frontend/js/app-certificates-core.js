@@ -286,6 +286,9 @@ async function uploadCertificateImage(codigo, pngBlob, fileName, options = {}) {
         {
           method: "POST",
           credentials: "include",
+          headers: {
+            ...getCsrfHeaders("POST"),
+          },
           body: formData,
         }
       );

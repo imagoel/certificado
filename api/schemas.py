@@ -196,6 +196,7 @@ class SessionResponse(BaseModel):
     usuario: Optional[UserSessionResponse] = None
     secretarias: list[SecretariaResponse] = Field(default_factory=list)
     secretaria_ativa_id: Optional[int] = None
+    csrf_token: Optional[str] = None
     configuracoes: SessionRuntimeConfigResponse = Field(default_factory=SessionRuntimeConfigResponse)
 
 

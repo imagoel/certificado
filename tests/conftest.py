@@ -2,6 +2,7 @@ import importlib
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from urllib.parse import urlparse
 
 import pytest
 from fastapi.testclient import TestClient
@@ -34,6 +35,38 @@ MODULES_TO_RELOAD = [
     "routes_public",
     "main",
 ]
+
+
+class CsrfTestClient(TestClient):
+    csrf_token: str | None = None
+
+    def request(self, method: str, url, **kwargs):
+        normalized_method = method.upper()
+        path = urlparse(str(url)).path or str(url)
+        headers = dict(kwargs.pop("headers", {}) or {})
+        header_names = {key.lower() for key in headers}
+
+        if (
+            normalized_method not in {"GET", "HEAD", "OPTIONS"}
+            and path != "/api/auth/login"
+            and self.csrf_token
+            and "x-csrf-token" not in header_names
+        ):
+            headers["X-CSRF-Token"] = self.csrf_token
+
+        response = super().request(method, url, headers=headers, **kwargs)
+
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = None
+
+        if isinstance(payload, dict) and payload.get("csrf_token"):
+            self.csrf_token = payload["csrf_token"]
+        elif path == "/api/auth/logout" and response.status_code < 400:
+            self.csrf_token = None
+
+        return response
 
 
 def load_app_modules() -> SimpleNamespace:
@@ -94,7 +127,7 @@ def app_ctx(tmp_path, monkeypatch):
 
 @pytest.fixture()
 def client(app_ctx):
-    with TestClient(app_ctx.main.app) as test_client:
+    with CsrfTestClient(app_ctx.main.app) as test_client:
         yield test_client
 
 

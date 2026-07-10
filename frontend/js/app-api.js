@@ -15,6 +15,16 @@ function getPreviewQrText() {
   return `${window.location.origin.replace(/\/+$/, "")}/validar/ABC-2026-00000`;
 }
 
+function isUnsafeHttpMethod(method = "GET") {
+  return !["GET", "HEAD", "OPTIONS"].includes(String(method || "GET").toUpperCase());
+}
+
+function getCsrfHeaders(method = "GET") {
+  const token = sessionState && sessionState.csrf_token ? sanitizeText(sessionState.csrf_token) : "";
+  if (!token || !isUnsafeHttpMethod(method)) return {};
+  return { "X-CSRF-Token": token };
+}
+
 function getCertificateUploadMaxBytes() {
   const fromSession = Number.parseInt(
     sessionState &&
@@ -63,11 +73,13 @@ function summarizePngFailure(errorMessage) {
 }
 
 async function apiJsonRequest(path, options = {}) {
+  const method = options.method || "GET";
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     credentials: "include",
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...getCsrfHeaders(method),
       ...(options.headers || {}),
     },
   });
@@ -92,11 +104,13 @@ async function apiJsonRequest(path, options = {}) {
 }
 
 async function apiFormRequest(path, formData, options = {}) {
+  const method = options.method || "POST";
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     credentials: "include",
     ...options,
     body: formData,
     headers: {
+      ...getCsrfHeaders(method),
       ...(options.headers || {}),
     },
   });
