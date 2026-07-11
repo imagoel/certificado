@@ -321,7 +321,7 @@ def create_certificate_form(
         reply_email_id=reply_email.id if reply_email else None,
         token=token,
         ativo=payload.ativo,
-        email_obrigatorio=payload.email_obrigatorio,
+        email_obrigatorio=True,
         campos_extras=normalize_extra_fields(payload.campos_extras),
         criado_por_usuario_id=usuario.id,
     )
@@ -374,8 +374,7 @@ def update_certificate_form(
         form.concluido = payload.concluido
     if payload.ativo is not None:
         form.ativo = payload.ativo
-    if payload.email_obrigatorio is not None:
-        form.email_obrigatorio = payload.email_obrigatorio
+    form.email_obrigatorio = True
     if payload.campos_extras is not None:
         form.campos_extras = normalize_extra_fields(payload.campos_extras)
     form.atualizado_em = utc_now()
@@ -467,7 +466,7 @@ def get_public_certificate_form(
         concluido=form.concluido,
         secretaria_sigla=form.secretaria.sigla if form.secretaria else None,
         secretaria_nome=form.secretaria.nome if form.secretaria else None,
-        email_obrigatorio=form.email_obrigatorio,
+        email_obrigatorio=True,
         campos_extras=normalize_extra_fields(form.campos_extras),
     )
 
@@ -489,7 +488,7 @@ def submit_public_certificate_form_response(
 
     ip = check_form_rate_limit(request, token)
     email = payload.email
-    if form.email_obrigatorio and not email:
+    if not email:
         raise HTTPException(status_code=422, detail="Email e obrigatorio.")
 
     extra_fields = normalize_extra_fields(form.campos_extras)

@@ -173,6 +173,52 @@
   margin-top: 1px;
 }
 
+.forms-mode-tabs {
+  width: fit-content;
+  margin: 10px 0 14px;
+}
+
+.forms-mode-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.forms-mode-panel[hidden] {
+  display: none;
+}
+
+.checkbox-pill,
+.tiny-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid rgba(191, 214, 243, 0.9);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #143a67;
+  font-weight: 700;
+}
+
+.tiny-check {
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: 0.88rem;
+}
+
+.checkbox-pill input[type="checkbox"],
+.tiny-check input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: #1a4f8b;
+}
+
 .admin-inline-checks {
   display: flex;
   gap: 8px;

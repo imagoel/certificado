@@ -230,7 +230,7 @@ class CertificateFormCreate(BaseModel):
     concluido: date
     reply_email_id: Optional[int] = Field(default=None, ge=1)
     ativo: bool = True
-    email_obrigatorio: bool = False
+    email_obrigatorio: bool = True
     campos_extras: list[CertificateFormExtraField] = Field(default_factory=list, max_length=5)
 
 

@@ -114,15 +114,13 @@
           </div>
 
           <div class="field">
-            <label for="email">
-              E-mail{% if not formulario.email_obrigatorio %} (opcional){% endif %}
-            </label>
+            <label for="email">E-mail</label>
             <input
               id="email"
               name="email"
               type="email"
               maxlength="254"
-              {% if formulario.email_obrigatorio %}required{% endif %}
+              required
             />
           </div>
 

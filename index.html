@@ -765,24 +765,18 @@
             </div>
           </div>
 
-          <div class="admin-split-layout forms-layout">
-            <div class="admin-form-shell">
+          <div class="admin-module-tabs forms-mode-tabs" role="tablist" aria-label="Formulários">
+            <button id="forms-mode-create" class="admin-module-tab is-active" type="button" aria-pressed="true">Novo formulário</button>
+            <button id="forms-mode-manage" class="admin-module-tab" type="button" aria-pressed="false">Formulários</button>
+          </div>
+
+          <div id="forms-create-panel" class="forms-mode-panel">
+            <div class="admin-form-shell admin-form-shell-wide">
               <form id="certificate-form-form" class="form admin-compact-form">
                 <input id="certificate-form-edit-id" type="hidden" />
 
                 <div class="field-stack">
-                  <label for="certificate-form-secretaria">Secretaria responsável (interno)</label>
-                  <select id="certificate-form-secretaria" required></select>
-                  <p class="hint">Define quem gerencia o formulário. Não aparece como pergunta para o participante.</p>
-                </div>
-
-                <div class="field-stack">
-                  <label for="certificate-form-title">Título do formulário</label>
-                  <input id="certificate-form-title" type="text" placeholder="Ex.: Inscrição - Introdução aos projetos administrativos" required />
-                </div>
-
-                <div class="field-stack">
-                  <label for="certificate-form-course">Curso embutido</label>
+                  <label for="certificate-form-course">Nome do curso</label>
                   <input id="certificate-form-course" type="text" placeholder="Ex.: Introdução aos projetos administrativos" required />
                 </div>
 
@@ -803,11 +797,6 @@
                   <select id="certificate-form-reply-email"></select>
                   <p class="hint">Usado depois na emissão dos certificados deste formulário.</p>
                 </div>
-
-                <label class="checkbox-pill">
-                  <input id="certificate-form-email-required" type="checkbox" />
-                  E-mail obrigatório
-                </label>
 
                 <label class="checkbox-pill">
                   <input id="certificate-form-active" type="checkbox" checked />
@@ -861,7 +850,9 @@
               </form>
               <p id="certificate-form-status" class="status" aria-live="polite"></p>
             </div>
+          </div>
 
+          <div id="forms-manage-panel" class="forms-mode-panel" hidden>
             <div class="admin-table-shell">
               <div class="table-wrap listing-table-card admin-table-card">
                 <table class="data-table forms-table">
@@ -882,39 +873,39 @@
                 </table>
               </div>
             </div>
-          </div>
 
-          <section id="form-responses-panel" class="panel nested-panel form-responses-panel" hidden>
-            <div class="listing-heading-row">
-              <div>
-                <h3 id="form-responses-title">Respostas</h3>
-                <p id="form-responses-summary" class="subtitle"></p>
+            <section id="form-responses-panel" class="panel nested-panel form-responses-panel" hidden>
+              <div class="listing-heading-row">
+                <div>
+                  <h3 id="form-responses-title">Respostas</h3>
+                  <p id="form-responses-summary" class="subtitle"></p>
+                </div>
+                <div class="listing-actions">
+                  <button id="form-copy-link" type="button" class="secondary-btn">Copiar link</button>
+                  <button id="form-download-qr" type="button" class="secondary-btn">Baixar QR Code</button>
+                  <button id="form-export-csv" type="button" class="secondary-btn">Exportar CSV</button>
+                  <button id="form-load-generator" type="button">Gerar certificados</button>
+                </div>
               </div>
-              <div class="listing-actions">
-                <button id="form-copy-link" type="button" class="secondary-btn">Copiar link</button>
-                <button id="form-download-qr" type="button" class="secondary-btn">Baixar QR Code</button>
-                <button id="form-export-csv" type="button" class="secondary-btn">Exportar CSV</button>
-                <button id="form-load-generator" type="button">Gerar certificados</button>
+              <p id="form-responses-status" class="status" aria-live="polite"></p>
+              <div class="table-wrap listing-table-card">
+                <table class="data-table form-responses-table">
+                  <thead>
+                    <tr>
+                      <th>Participante</th>
+                      <th>Respondido em</th>
+                      <th>Certificado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="form-responses-list-body">
+                    <tr>
+                      <td colspan="3" class="empty-state">Selecione um formulário.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-            <p id="form-responses-status" class="status" aria-live="polite"></p>
-            <div class="table-wrap listing-table-card">
-              <table class="data-table form-responses-table">
-                <thead>
-                  <tr>
-                    <th>Participante</th>
-                    <th>Respondido em</th>
-                    <th>Certificado</th>
-                  </tr>
-                </thead>
-                <tbody id="form-responses-list-body">
-                  <tr>
-                    <td colspan="3" class="empty-state">Selecione um formulário.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
+            </section>
+          </div>
         </section>
       </section>
 

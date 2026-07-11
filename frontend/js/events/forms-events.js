@@ -18,9 +18,15 @@
     });
   }
 
-  if (certificateFormSecretariaSelect) {
-    certificateFormSecretariaSelect.addEventListener("change", () => {
-      populateCertificateFormReplyEmails();
+  if (formsCreateModeBtn) {
+    formsCreateModeBtn.addEventListener("click", () => {
+      switchFormsMode("create");
+    });
+  }
+
+  if (formsManageModeBtn) {
+    formsManageModeBtn.addEventListener("click", () => {
+      switchFormsMode("manage");
     });
   }
 
@@ -58,4 +64,6 @@
       loadSelectedFormResponsesIntoGenerator();
     });
   }
+
+  syncFormsModeUi();
 }

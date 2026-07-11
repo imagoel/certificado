@@ -45,6 +45,7 @@ const formsState = {
   items: [],
   responses: [],
   selectedFormId: "",
+  mode: "create",
   isLoading: false,
 };
 

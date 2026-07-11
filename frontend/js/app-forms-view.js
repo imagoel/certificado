@@ -19,22 +19,15 @@ function getSelectedCertificateForm() {
   return formsState.items.find((item) => Number(item.id) === id) || null;
 }
 
-function populateCertificateFormSecretarias(selectedValue = "") {
-  const secretarias = sessionState && Array.isArray(sessionState.secretarias)
-    ? sessionState.secretarias
-    : [];
-  populateSecretariaOptions(certificateFormSecretariaSelect, secretarias, selectedValue, false);
-  if (!selectedValue && certificateFormSecretariaSelect && secretarias.length) {
-    const activeId = sessionState ? sessionState.secretaria_ativa_id : "";
-    certificateFormSecretariaSelect.value = String(activeId || secretarias[0].id);
-  }
-  populateCertificateFormReplyEmails();
+function populateCertificateFormSecretarias(selectedSecretariaId = "") {
+  populateCertificateFormReplyEmails("", selectedSecretariaId);
 }
 
-function populateCertificateFormReplyEmails(selectedValue = "") {
+function populateCertificateFormReplyEmails(selectedValue = "", secretariaId = "") {
   if (!certificateFormReplyEmailSelect) return;
 
-  const secretaria = getFormSecretariaById(certificateFormSecretariaSelect.value);
+  const selectedSecretariaId = secretariaId || (sessionState && sessionState.secretaria_ativa_id);
+  const secretaria = getFormSecretariaById(selectedSecretariaId);
   certificateFormReplyEmailSelect.innerHTML = "";
 
   const blank = document.createElement("option");
@@ -52,6 +45,33 @@ function populateCertificateFormReplyEmails(selectedValue = "") {
     option.selected = String(item.id) === String(selectedValue || "");
     certificateFormReplyEmailSelect.appendChild(option);
   });
+}
+
+function buildDefaultCertificateFormTitle(courseName) {
+  const course = sanitizeText(courseName);
+  return course ? `Inscrição para o curso ${course}` : "Inscrição para curso";
+}
+
+function syncFormsModeUi() {
+  const isCreate = formsState.mode !== "manage";
+  if (formsCreatePanel) formsCreatePanel.hidden = !isCreate;
+  if (formsManagePanel) formsManagePanel.hidden = isCreate;
+  if (formsCreateModeBtn) {
+    formsCreateModeBtn.classList.toggle("is-active", isCreate);
+    formsCreateModeBtn.setAttribute("aria-pressed", isCreate ? "true" : "false");
+  }
+  if (formsManageModeBtn) {
+    formsManageModeBtn.classList.toggle("is-active", !isCreate);
+    formsManageModeBtn.setAttribute("aria-pressed", !isCreate ? "true" : "false");
+  }
+}
+
+function switchFormsMode(mode) {
+  formsState.mode = mode === "manage" ? "manage" : "create";
+  syncFormsModeUi();
+  if (formsState.mode === "manage") {
+    void loadCertificateForms();
+  }
 }
 
 function getCertificateFormExtraFieldControls() {
@@ -111,18 +131,18 @@ function getCertificateFormExtraFieldsPayload() {
 }
 
 function buildCertificateFormPayload() {
+  const course = sanitizeText(certificateFormCourseInput ? certificateFormCourseInput.value : "");
+  const title = buildDefaultCertificateFormTitle(course);
   return {
-    secretaria_id: Number(certificateFormSecretariaSelect ? certificateFormSecretariaSelect.value : 0) || null,
-    titulo: sanitizeText(certificateFormTitleInput ? certificateFormTitleInput.value : ""),
-    curso: sanitizeText(certificateFormCourseInput ? certificateFormCourseInput.value : ""),
+    secretaria_id: null,
+    titulo: title,
+    curso: course,
     concluido: sanitizeText(certificateFormDateInput ? certificateFormDateInput.value : ""),
     carga_h: Number.parseInt(certificateFormHoursInput ? certificateFormHoursInput.value : "0", 10) || 0,
     reply_email_id:
       Number.parseInt(certificateFormReplyEmailSelect ? certificateFormReplyEmailSelect.value : "", 10) || null,
     ativo: Boolean(certificateFormActiveInput && certificateFormActiveInput.checked),
-    email_obrigatorio: Boolean(
-      certificateFormEmailRequiredInput && certificateFormEmailRequiredInput.checked
-    ),
+    email_obrigatorio: true,
     campos_extras: getCertificateFormExtraFieldsPayload(),
   };
 }
@@ -146,6 +166,7 @@ async function saveCertificateForm() {
     );
     resetCertificateForm();
     await loadCertificateForms();
+    switchFormsMode("manage");
   } catch (error) {
     console.error(error);
     setCertificateFormStatus(error.message || "Nao foi possivel salvar o formulario.", "error");
@@ -190,16 +211,12 @@ function resetCertificateForm() {
 function fillCertificateFormForm(item) {
   if (!item) return;
   if (certificateFormEditIdInput) certificateFormEditIdInput.value = item.id;
-  populateCertificateFormSecretarias(item.secretaria_id);
-  if (certificateFormTitleInput) certificateFormTitleInput.value = item.titulo || "";
+  switchFormsMode("create");
   if (certificateFormCourseInput) certificateFormCourseInput.value = item.curso || "";
   if (certificateFormDateInput) certificateFormDateInput.value = item.concluido || "";
   if (certificateFormHoursInput) certificateFormHoursInput.value = String(item.carga_h || 0);
   if (certificateFormReplyEmailSelect) {
-    populateCertificateFormReplyEmails(item.reply_email_id || "");
-  }
-  if (certificateFormEmailRequiredInput) {
-    certificateFormEmailRequiredInput.checked = Boolean(item.email_obrigatorio);
+    populateCertificateFormReplyEmails(item.reply_email_id || "", item.secretaria_id || "");
   }
   if (certificateFormActiveInput) certificateFormActiveInput.checked = Boolean(item.ativo);
 

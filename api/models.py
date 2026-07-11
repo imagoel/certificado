@@ -228,7 +228,7 @@ class CertificateForm(Base):
     )
     token: Mapped[str] = mapped_column(String(80), unique=True, index=True, nullable=False)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    email_obrigatorio: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    email_obrigatorio: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     campos_extras: Mapped[list | None] = mapped_column(JSON, nullable=True)
     criado_por_usuario_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuarios.id"), nullable=True

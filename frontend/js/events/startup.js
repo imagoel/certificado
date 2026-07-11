@@ -14,6 +14,7 @@ function initializeApp() {
   syncPreviewHotspotToggle();
   syncAdvancedControlVisibility();
   resetCertificateForm();
+  syncFormsModeUi();
   setTemplateStatus("", "info");
   setLogoStatus("", "info");
   setAssinaturaStatus("", "info");

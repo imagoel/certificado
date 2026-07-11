@@ -33,6 +33,7 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
     form = _create_form(client, seed_data)
 
     assert form["secretaria_id"] == seed_data["seafi_id"]
+    assert form["email_obrigatorio"] is True
     assert form["token"]
     assert not form["token"].isdigit()
     assert "/formularios/f/" in form["public_url"]
@@ -95,6 +96,7 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
 def test_formulario_inativo_nao_recebe_respostas(client, seed_data, login):
     login("operador", seed_data["operador_password"])
     form = _create_form(client, seed_data, ativo=False, email_obrigatorio=False, campos_extras=[])
+    assert form["email_obrigatorio"] is True
 
     public_response = client.get(f"/api/formularios/publico/{form['token']}")
     assert public_response.status_code == 410
@@ -116,10 +118,17 @@ def test_formulario_inativo_nao_recebe_respostas(client, seed_data, login):
     public_response_after_activate = client.get(f"/api/formularios/publico/{form['token']}")
     assert public_response_after_activate.status_code == 200
 
+    missing_email_response = client.post(
+        f"/api/formularios/publico/{form['token']}/respostas",
+        json={"nome": "Aluno", "email": None, "dados_extras": {}},
+    )
+    assert missing_email_response.status_code == 422
+
 
 def test_lote_gera_certificado_a_partir_de_resposta_de_formulario(client, seed_data, login):
     login("operador", seed_data["operador_password"])
     form = _create_form(client, seed_data, email_obrigatorio=False, campos_extras=[])
+    assert form["email_obrigatorio"] is True
 
     submit_response = client.post(
         f"/api/formularios/publico/{form['token']}/respostas",
