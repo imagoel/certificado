@@ -23,6 +23,7 @@ if (!form || !downloadBtn || !canvas || !ctx) {
 
 registerSectionEvents();
 registerListingEvents();
+registerFormsEvents();
 registerAdminEvents();
 registerSessionEvents();
 registerDialogEvents();

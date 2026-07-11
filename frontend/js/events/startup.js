@@ -13,6 +13,7 @@ function initializeApp() {
   syncTemplateControls();
   syncPreviewHotspotToggle();
   syncAdvancedControlVisibility();
+  resetCertificateForm();
   setTemplateStatus("", "info");
   setLogoStatus("", "info");
   setAssinaturaStatus("", "info");

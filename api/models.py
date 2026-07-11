@@ -45,6 +45,7 @@ class Secretaria(Base):
         back_populates="secretarias",
     )
     certificados: Mapped[list["Certificate"]] = relationship(back_populates="secretaria")
+    formularios: Mapped[list["CertificateForm"]] = relationship(back_populates="secretaria")
     moldes: Mapped[list["CertificateTemplate"]] = relationship(back_populates="secretaria")
     assets: Mapped[list["SecretariaAsset"]] = relationship(back_populates="secretaria")
     reply_emails: Mapped[list["SecretariaReplyEmail"]] = relationship(
@@ -95,6 +96,10 @@ class Usuario(Base):
     certificados_emitidos: Mapped[list["Certificate"]] = relationship(
         back_populates="emitido_por",
         foreign_keys="Certificate.emitido_por_usuario_id",
+    )
+    formularios_criados: Mapped[list["CertificateForm"]] = relationship(
+        back_populates="criado_por",
+        foreign_keys="CertificateForm.criado_por_usuario_id",
     )
     certificados_atualizados: Mapped[list["Certificate"]] = relationship(
         back_populates="atualizado_por",
@@ -205,6 +210,71 @@ class CertificateSequence(Base):
     ultimo_numero: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class CertificateForm(Base):
+    __tablename__ = "certificate_forms"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    secretaria_id: Mapped[int] = mapped_column(
+        ForeignKey("secretarias.id"), index=True, nullable=False
+    )
+    titulo: Mapped[str] = mapped_column(String(200), nullable=False)
+    curso: Mapped[str] = mapped_column(String(200), nullable=False)
+    carga_h: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    concluido: Mapped[date] = mapped_column(Date, nullable=False)
+    reply_email_id: Mapped[int | None] = mapped_column(
+        ForeignKey("secretaria_reply_emails.id"), nullable=True
+    )
+    token: Mapped[str] = mapped_column(String(80), unique=True, index=True, nullable=False)
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    email_obrigatorio: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    campos_extras: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    criado_por_usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id"), nullable=True
+    )
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        nullable=False,
+    )
+
+    secretaria: Mapped[Secretaria] = relationship(back_populates="formularios")
+    reply_email: Mapped[SecretariaReplyEmail | None] = relationship(
+        foreign_keys=[reply_email_id],
+    )
+    criado_por: Mapped[Usuario | None] = relationship(
+        back_populates="formularios_criados",
+        foreign_keys=[criado_por_usuario_id],
+    )
+    respostas: Mapped[list["CertificateFormResponse"]] = relationship(
+        back_populates="formulario",
+        cascade="all, delete-orphan",
+    )
+
+
+class CertificateFormResponse(Base):
+    __tablename__ = "certificate_form_responses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    formulario_id: Mapped[int] = mapped_column(
+        ForeignKey("certificate_forms.id"), index=True, nullable=False
+    )
+    nome: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
+    dados_extras: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    certificado_id: Mapped[int | None] = mapped_column(
+        ForeignKey("certificados.id"), nullable=True
+    )
+    certificado_codigo: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, index=True, default=utc_now, nullable=False)
+    certificado_gerado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    formulario: Mapped[CertificateForm] = relationship(back_populates="respostas")
+    certificado: Mapped[Certificate | None] = relationship(foreign_keys=[certificado_id])
 
 
 class CertificateTemplate(Base):

@@ -98,9 +98,9 @@ def validate_certificate_html(
 
     if not cert or cert.arquivo_pendente:
         return templates.TemplateResponse(
+            request,
             "validacao.html",
             {
-                "request": request,
                 "status": "nao_encontrado",
                 "codigo": normalized_code,
                 "certificado": None,
@@ -109,9 +109,9 @@ def validate_certificate_html(
         )
     if is_certificate_deleted(cert):
         return templates.TemplateResponse(
+            request,
             "validacao.html",
             {
-                "request": request,
                 "status": "excluido",
                 "codigo": normalized_code,
                 "certificado": None,
@@ -131,9 +131,9 @@ def validate_certificate_html(
     file_available = is_certificate_ready(cert)
 
     return templates.TemplateResponse(
+        request,
         "validacao.html",
         {
-            "request": request,
             "status": "valido" if valido else "invalido",
             "codigo": cert.codigo,
             "certificado": cert,

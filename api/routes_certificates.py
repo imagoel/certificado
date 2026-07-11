@@ -34,7 +34,7 @@ from common import (
 from certificate_sequences import build_reserved_codes, reserve_sequence_block
 from database import get_db
 from email_delivery import send_certificate_email_if_needed
-from models import AuditEvent, Certificate, Secretaria, Usuario
+from models import AuditEvent, Certificate, CertificateFormResponse, Secretaria, Usuario
 from schemas import (
     ActionResponse,
     CertificateBatchCreate,
@@ -46,6 +46,46 @@ from security import calculate_certificate_hash
 
 
 router = APIRouter()
+
+
+def get_form_response_for_certificate(
+    db: Session,
+    *,
+    response_id: int | None,
+    secretaria: Secretaria,
+) -> CertificateFormResponse | None:
+    if not response_id:
+        return None
+
+    response = (
+        db.query(CertificateFormResponse)
+        .filter(CertificateFormResponse.id == response_id)
+        .first()
+    )
+    if not response:
+        raise HTTPException(status_code=404, detail="Resposta de formulario nao encontrada.")
+    if not response.formulario or response.formulario.secretaria_id != secretaria.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Resposta de formulario nao pertence a secretaria ativa.",
+        )
+    if response.certificado_id or response.certificado_codigo:
+        raise HTTPException(
+            status_code=409,
+            detail="Resposta de formulario ja possui certificado gerado.",
+        )
+    return response
+
+
+def mark_form_response_certificate(
+    response: CertificateFormResponse | None,
+    cert: Certificate,
+) -> None:
+    if not response:
+        return
+    response.certificado_id = cert.id
+    response.certificado_codigo = cert.codigo
+    response.certificado_gerado_em = utc_now()
 
 
 @router.get("/api/certificados", response_model=PaginatedCertificateResponse)
@@ -221,6 +261,11 @@ def create_certificate(
         secretaria,
         payload.reply_email_id,
     )
+    form_response = get_form_response_for_certificate(
+        db,
+        response_id=payload.formulario_resposta_id,
+        secretaria=secretaria,
+    )
 
     cert = Certificate(
         codigo=codigo,
@@ -241,8 +286,8 @@ def create_certificate(
     )
 
     db.add(cert)
-    db.commit()
-    db.refresh(cert)
+    db.flush()
+    mark_form_response_certificate(form_response, cert)
     record_audit_event(
         db,
         evento="certificado_criado",
@@ -253,6 +298,20 @@ def create_certificate(
         entidade_tipo="certificado",
         entidade_id=cert.id,
     )
+    if form_response:
+        record_audit_event(
+            db,
+            evento="formulario_certificado_gerado",
+            descricao=(
+                f"Certificado {cert.codigo} gerado a partir da resposta "
+                f"{form_response.id} do formulario {form_response.formulario.titulo}."
+            ),
+            usuario=usuario,
+            secretaria=secretaria,
+            certificado=cert,
+            entidade_tipo="formulario_resposta",
+            entidade_id=form_response.id,
+        )
     db.commit()
     db.refresh(cert)
     return to_response(cert, request)
@@ -272,10 +331,26 @@ def create_certificates_batch(
     prefix = normalize_prefix(payload.prefixo)
     automatic_count_by_key: dict[tuple[str, int], int] = {}
     created: list[Certificate] = []
+    response_by_item_index: dict[int, CertificateFormResponse] = {}
+    seen_form_response_ids: set[int] = set()
 
-    for item in payload.itens:
+    for index, item in enumerate(payload.itens):
         key = (prefix, item.concluido.year)
         automatic_count_by_key[key] = automatic_count_by_key.get(key, 0) + 1
+        if item.formulario_resposta_id:
+            if item.formulario_resposta_id in seen_form_response_ids:
+                raise HTTPException(
+                    status_code=409,
+                    detail="A mesma resposta de formulario foi enviada mais de uma vez no lote.",
+                )
+            seen_form_response_ids.add(item.formulario_resposta_id)
+        form_response = get_form_response_for_certificate(
+            db,
+            response_id=item.formulario_resposta_id,
+            secretaria=secretaria,
+        )
+        if form_response:
+            response_by_item_index[index] = form_response
 
     automatic_codes_by_key: dict[tuple[str, int], list[str]] = {}
     for (auto_prefix, auto_year), quantidade in automatic_count_by_key.items():
@@ -287,7 +362,7 @@ def create_certificates_batch(
             start_sequence,
         )
 
-    for item in payload.itens:
+    for index, item in enumerate(payload.itens):
         key = (prefix, item.concluido.year)
         codigo = automatic_codes_by_key[key].pop(0)
         if not CODE_REGEX.match(codigo) or code_exists(db, codigo):
@@ -331,14 +406,9 @@ def create_certificates_batch(
             reply_to_email=reply_to_email,
         )
         db.add(cert)
+        db.flush()
+        mark_form_response_certificate(response_by_item_index.get(index), cert)
         created.append(cert)
-
-    db.commit()
-
-    responses: list[CertificateResponse] = []
-    for cert in created:
-        db.refresh(cert)
-        responses.append(to_response(cert, request))
 
     first_code = created[0].codigo if created else "-"
     last_code = created[-1].codigo if created else "-"
@@ -354,7 +424,30 @@ def create_certificates_batch(
         entidade_tipo="certificado_lote",
         entidade_id=len(created),
     )
+    for index, cert in enumerate(created):
+        form_response = response_by_item_index.get(index)
+        if not form_response:
+            continue
+        record_audit_event(
+            db,
+            evento="formulario_certificado_gerado",
+            descricao=(
+                f"Certificado {cert.codigo} gerado a partir da resposta "
+                f"{form_response.id} do formulario {form_response.formulario.titulo}."
+            ),
+            usuario=usuario,
+            secretaria=secretaria,
+            certificado=cert,
+            entidade_tipo="formulario_resposta",
+            entidade_id=form_response.id,
+        )
     db.commit()
+
+    responses: list[CertificateResponse] = []
+    for cert in created:
+        db.refresh(cert)
+        responses.append(to_response(cert, request))
+
     return responses
 
 

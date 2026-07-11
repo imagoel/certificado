@@ -4,6 +4,7 @@ function registerSectionEvents() {
       const { section } = button.dataset;
       if (isAdminOnlySection(section) && !isAdminSession()) return;
       if (section === "emails" && !canManageReplyEmails()) return;
+      if (section === "forms" && !canManageCertificateForms()) return;
       if (section === "admin" && !canManageVisualAssets()) return;
       switchSection(section || "generator");
       if (section === "certificates" && sessionState) {
@@ -17,6 +18,9 @@ function registerSectionEvents() {
       }
       if (section === "emails" && sessionState && canManageReplyEmails()) {
         void loadAdminData();
+      }
+      if (section === "forms" && sessionState && canManageCertificateForms()) {
+        void loadCertificateForms();
       }
     });
   });

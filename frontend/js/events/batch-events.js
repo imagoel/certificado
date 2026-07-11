@@ -2,6 +2,7 @@ function registerBatchEvents() {
   if (planilhaInput) {
     planilhaInput.addEventListener("change", () => {
       closeBatchConfirmDialog();
+      loadedExternalBatch = null;
       const file = planilhaInput.files && planilhaInput.files[0];
       if (!file) {
         setBatchStatus("", "info");

@@ -63,7 +63,8 @@ function renderSession(session) {
   if (
     (!isAdminSession(session) && isAdminOnlySection(currentSection)) ||
     (currentSection === "admin" && !canManageVisualAssets(session)) ||
-    (currentSection === "emails" && !canManageReplyEmails(session))
+    (currentSection === "emails" && !canManageReplyEmails(session)) ||
+    (currentSection === "forms" && !canManageCertificateForms(session))
   ) {
     switchSection("generator");
   }
@@ -140,6 +141,7 @@ function clearSessionUi(message = "") {
   if (auditSummary) auditSummary.textContent = "";
   if (auditPageIndicator) auditPageIndicator.textContent = "Página 1";
   if (adminTab) adminTab.hidden = true;
+  if (formsTab) formsTab.hidden = true;
   if (emailsTab) emailsTab.hidden = true;
   if (auditTab) auditTab.hidden = true;
   if (userListBody) {

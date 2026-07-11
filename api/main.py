@@ -25,6 +25,7 @@ from common import (
 from routes_admin import router as admin_router
 from routes_auth import router as auth_router
 from routes_certificates import router as certificates_router
+from routes_forms import router as forms_router
 from routes_layout_presets import router as layout_presets_router
 from routes_public import router as public_router
 from routes_secretaria_assets import router as secretaria_assets_router
@@ -97,6 +98,7 @@ app.include_router(public_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(certificates_router)
+app.include_router(forms_router)
 app.include_router(templates_router)
 app.include_router(secretaria_assets_router)
 app.include_router(layout_presets_router)

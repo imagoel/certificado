@@ -41,9 +41,17 @@ const auditState = {
   },
 };
 
+const formsState = {
+  items: [],
+  responses: [],
+  selectedFormId: "",
+  isLoading: false,
+};
+
 const viewSections = {
   generator: generatorSection,
   certificates: certificatesSection,
+  forms: formsSection,
   emails: emailsSection,
   audit: auditSection,
   admin: adminSection,

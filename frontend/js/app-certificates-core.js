@@ -241,6 +241,7 @@ async function registerBatchCertificates(items) {
       curso: item.curso,
       carga_h: Number.isFinite(item.carga_h) ? item.carga_h : 0,
       concluido: item.data,
+      formulario_resposta_id: item.formularioRespostaId || null,
     })),
   };
 

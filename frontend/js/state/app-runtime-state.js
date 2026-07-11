@@ -34,6 +34,7 @@ let editingCertificate = null;
 let pendingCertificateEditConfirmation = null;
 let isCertificateEditSaving = false;
 let pendingBatchGeneration = null;
+let loadedExternalBatch = null;
 
 let selectedPreviewAdjustTarget = "";
 let isPreviewAdjustPanelApplying = false;

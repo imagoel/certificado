@@ -10,6 +10,10 @@ function canManageReplyEmails(session = sessionState) {
   return Boolean(session && Array.isArray(session.secretarias) && session.secretarias.length > 0);
 }
 
+function canManageCertificateForms(session = sessionState) {
+  return Boolean(session && Array.isArray(session.secretarias) && session.secretarias.length > 0);
+}
+
 function isAdminOnlySection(sectionName) {
   return sectionName === "audit";
 }
@@ -101,6 +105,10 @@ function syncAdminSectionVisibility(session = sessionState) {
   const admin = isAdminSession(session);
   const canManageAssets = canManageVisualAssets(session);
   const canManageEmails = canManageReplyEmails(session);
+  const canManageForms = canManageCertificateForms(session);
+  if (formsTab) {
+    formsTab.hidden = !canManageForms;
+  }
   if (emailsTab) {
     emailsTab.hidden = !canManageEmails;
   }
@@ -114,6 +122,9 @@ function syncAdminSectionVisibility(session = sessionState) {
 function switchSection(sectionName) {
   let targetSection = viewSections[sectionName] ? sectionName : "generator";
   if (targetSection === "emails" && !canManageReplyEmails()) {
+    targetSection = "generator";
+  }
+  if (targetSection === "forms" && !canManageCertificateForms()) {
     targetSection = "generator";
   }
   currentSection = targetSection;

@@ -142,6 +142,37 @@
   font-size: 0.84rem;
 }
 
+.form-extra-fields-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.form-extra-field-card {
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(191, 214, 243, 0.86);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.form-extra-field-card > label:first-child {
+  color: #1a4f8b;
+  font-weight: 700;
+}
+
+.form-extra-field-card textarea {
+  min-height: 72px;
+}
+
+.form-extra-field-card textarea[hidden] {
+  display: none;
+}
+
+.form-extra-field-card .tiny-check {
+  width: fit-content;
+  margin-top: 1px;
+}
+
 .admin-inline-checks {
   display: flex;
   gap: 8px;

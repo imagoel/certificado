@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from email_utils import normalize_optional_email
 
 
-MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500")))
+MAX_BATCH_ITEMS = max(1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "800")))
 MAX_CERTIFICATE_UPLOAD_BYTES = max(1, int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "8388608")))
 MAX_TEMPLATE_UPLOAD_BYTES = max(1, int(os.getenv("TEMPLATES_MAX_UPLOAD_BYTES", "10485760")))
 UserRole = Literal["admin_global", "operador"]
@@ -22,6 +22,7 @@ class CertificateCreate(BaseModel):
     curso: str = Field(min_length=2, max_length=200)
     carga_h: int = Field(default=0, ge=0, le=2000)
     concluido: date
+    formulario_resposta_id: Optional[int] = Field(default=None, ge=1)
 
     @field_validator("email")
     @classmethod
@@ -176,6 +177,138 @@ class CertificateLayoutPresetResponse(BaseModel):
     atualizado_em: datetime
     criado_por_usuario_id: Optional[int] = None
     criado_por_username: Optional[str] = None
+
+
+class CertificateFormExtraField(BaseModel):
+    nome: str = Field(min_length=2, max_length=80)
+    rotulo: Optional[str] = Field(default=None, max_length=160)
+    tipo: Literal["texto", "selecao"] = "texto"
+    opcoes: list[str] = Field(default_factory=list, max_length=50)
+    obrigatorio: bool = False
+
+    @field_validator("opcoes", mode="before")
+    @classmethod
+    def normalize_options(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            raw_options = value.replace("\r", "\n").replace(";", "\n").split("\n")
+        elif isinstance(value, list):
+            raw_options = value
+        else:
+            return []
+
+        options: list[str] = []
+        seen: set[str] = set()
+        for item in raw_options:
+            option = str(item or "").strip()
+            if not option:
+                continue
+            key = option.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            options.append(option[:120])
+            if len(options) >= 50:
+                break
+        return options
+
+    @field_validator("rotulo")
+    @classmethod
+    def normalize_label(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        label = value.strip()
+        return label or None
+
+
+class CertificateFormCreate(BaseModel):
+    secretaria_id: Optional[int] = Field(default=None, ge=1)
+    titulo: str = Field(min_length=2, max_length=200)
+    curso: str = Field(min_length=2, max_length=200)
+    carga_h: int = Field(default=0, ge=0, le=2000)
+    concluido: date
+    reply_email_id: Optional[int] = Field(default=None, ge=1)
+    ativo: bool = True
+    email_obrigatorio: bool = False
+    campos_extras: list[CertificateFormExtraField] = Field(default_factory=list, max_length=5)
+
+
+class CertificateFormUpdate(BaseModel):
+    secretaria_id: Optional[int] = Field(default=None, ge=1)
+    titulo: Optional[str] = Field(default=None, min_length=2, max_length=200)
+    curso: Optional[str] = Field(default=None, min_length=2, max_length=200)
+    carga_h: Optional[int] = Field(default=None, ge=0, le=2000)
+    concluido: Optional[date] = None
+    reply_email_id: Optional[int] = Field(default=None, ge=1)
+    ativo: Optional[bool] = None
+    email_obrigatorio: Optional[bool] = None
+    campos_extras: Optional[list[CertificateFormExtraField]] = Field(default=None, max_length=5)
+
+
+class CertificateFormResponseCreate(BaseModel):
+    nome: str = Field(min_length=2, max_length=200)
+    email: Optional[str] = Field(default=None, max_length=254)
+    dados_extras: dict[str, str] = Field(default_factory=dict)
+    website: Optional[str] = Field(default=None, max_length=200)
+
+    @field_validator("email")
+    @classmethod
+    def validate_form_email(cls, value: Optional[str]) -> Optional[str]:
+        return normalize_optional_email(value)
+
+
+class CertificateFormResponseItem(BaseModel):
+    id: int
+    formulario_id: int
+    nome: str
+    email: Optional[str] = None
+    dados_extras: dict[str, Any] = Field(default_factory=dict)
+    criado_em: datetime
+    certificado_id: Optional[int] = None
+    certificado_codigo: Optional[str] = None
+    certificado_gerado_em: Optional[datetime] = None
+
+
+class CertificateFormResponse(BaseModel):
+    id: int
+    secretaria_id: int
+    secretaria_sigla: Optional[str] = None
+    secretaria_nome: Optional[str] = None
+    titulo: str
+    curso: str
+    carga_h: int
+    concluido: date
+    reply_email_id: Optional[int] = None
+    reply_email_nome: Optional[str] = None
+    reply_email_email: Optional[str] = None
+    token: str
+    public_url: str
+    ativo: bool
+    email_obrigatorio: bool
+    campos_extras: list[dict[str, Any]] = Field(default_factory=list)
+    respostas_total: int = 0
+    respostas_pendentes: int = 0
+    criado_em: datetime
+    atualizado_em: datetime
+    criado_por_usuario_id: Optional[int] = None
+    criado_por_username: Optional[str] = None
+
+
+class CertificateFormPublicResponse(BaseModel):
+    titulo: str
+    curso: str
+    carga_h: int
+    concluido: date
+    secretaria_sigla: Optional[str] = None
+    secretaria_nome: Optional[str] = None
+    email_obrigatorio: bool
+    campos_extras: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class CertificateFormSubmitResponse(BaseModel):
+    message: str
+    protocolo: int
 
 
 class UserSessionResponse(BaseModel):

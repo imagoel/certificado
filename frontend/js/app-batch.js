@@ -77,6 +77,7 @@ function getBatchDefaults() {
 }
 
 function resetBatchPreview() {
+  loadedExternalBatch = null;
   if (batchPreviewPanel) batchPreviewPanel.hidden = true;
   if (batchPreviewSummary) {
     batchPreviewSummary.textContent = "Selecione uma planilha e clique em Pré-visualizar.";
@@ -88,6 +89,27 @@ function resetBatchPreview() {
       </tr>
     `;
   }
+}
+
+function resetBatchPreviewViewOnly() {
+  if (batchPreviewPanel) batchPreviewPanel.hidden = true;
+  if (batchPreviewSummary) {
+    batchPreviewSummary.textContent = "Selecione uma planilha e clique em Pré-visualizar.";
+  }
+  if (batchPreviewBody) {
+    batchPreviewBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-state">Nenhuma prévia carregada.</td>
+      </tr>
+    `;
+  }
+}
+
+function loadExternalBatchIntoGenerator(prepared) {
+  loadedExternalBatch = prepared;
+  if (planilhaInput) planilhaInput.value = "";
+  renderBatchPreview(prepared);
+  setBatchButtonsDisabled(false);
 }
 
 function renderBatchPreview(prepared) {
@@ -477,22 +499,31 @@ async function handleBatchPreview() {
   const cargaError = getFormCargaHorariaError();
   if (cargaError) {
     setBatchStatus(cargaError, "error");
-    resetBatchPreview();
+    resetBatchPreviewViewOnly();
     if (cargaHInput && typeof cargaHInput.reportValidity === "function") {
       cargaHInput.reportValidity();
     }
     return;
   }
 
+  if (loadedExternalBatch) {
+    renderBatchPreview(loadedExternalBatch);
+    setBatchStatus(
+      `Previa pronta: ${loadedExternalBatch.certificates.length} certificado(s) carregado(s) de formulario.`,
+      "success"
+    );
+    return;
+  }
+
   const file = planilhaInput.files && planilhaInput.files[0];
   if (!file) {
-    setBatchStatus("Selecione uma planilha antes de pré-visualizar.", "error");
-    resetBatchPreview();
+    setBatchStatus("Selecione uma planilha antes de pre-visualizar.", "error");
+    resetBatchPreviewViewOnly();
     return;
   }
 
   try {
-    setBatchStatus("Lendo planilha para pré-visualização...", "info");
+    setBatchStatus("Lendo planilha para pre-visualizacao...", "info");
     const prepared = await prepareBatchCertificates(file);
     renderBatchPreview(prepared);
     if (prepared.invalidRows.length) {
@@ -504,13 +535,13 @@ async function handleBatchPreview() {
       return;
     }
     setBatchStatus(
-      `Prévia pronta: ${prepared.certificates.length} certificado(s) válido(s) em ${prepared.fileName}.`,
+      `Previa pronta: ${prepared.certificates.length} certificado(s) valido(s) em ${prepared.fileName}.`,
       "success"
     );
   } catch (error) {
     console.error(error);
-    setBatchStatus(error.message || "Falha ao pré-visualizar a planilha.", "error");
-    resetBatchPreview();
+    setBatchStatus(error.message || "Falha ao pre-visualizar a planilha.", "error");
+    resetBatchPreviewViewOnly();
   }
 }
 
@@ -529,7 +560,7 @@ async function handleBatchGenerate() {
   const cargaError = getFormCargaHorariaError();
   if (cargaError) {
     setBatchStatus(cargaError, "error");
-    resetBatchPreview();
+    resetBatchPreviewViewOnly();
     if (cargaHInput && typeof cargaHInput.reportValidity === "function") {
       cargaHInput.reportValidity();
     }
@@ -537,18 +568,18 @@ async function handleBatchGenerate() {
   }
 
   const file = planilhaInput.files && planilhaInput.files[0];
-  if (!file) {
-    setBatchStatus("Selecione uma planilha antes de gerar o lote.", "error");
-    resetBatchPreview();
+  if (!loadedExternalBatch && !file) {
+    setBatchStatus("Selecione uma planilha ou carregue respostas de um formulario antes de gerar o lote.", "error");
+    resetBatchPreviewViewOnly();
     return;
   }
 
   try {
-    setBatchStatus("Validando planilha antes da geração...", "info");
+    setBatchStatus("Validando lote antes da geracao...", "info");
     if (!window.JSZip) {
-      throw new Error("Falha: biblioteca ZIP não carregou.");
+      throw new Error("Falha: biblioteca ZIP nao carregou.");
     }
-    const prepared = await prepareBatchCertificates(file);
+    const prepared = loadedExternalBatch || await prepareBatchCertificates(file);
     renderBatchPreview(prepared);
 
     if (!prepared.certificates.length) {

@@ -247,6 +247,9 @@ def require_csrf_protection(request: Request) -> None:
     if request.url.path == "/api/auth/login":
         return
 
+    if request.url.path.startswith("/api/formularios/publico/"):
+        return
+
     if not request.session.get("user_id"):
         return
 
@@ -879,7 +882,7 @@ def build_session_response(request: Request, db: Session, usuario: Usuario) -> S
         configuracoes=SessionRuntimeConfigResponse(
             certificados_max_upload_bytes=MAX_UPLOAD_BYTES,
             certificados_max_batch_items=max(
-                1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "500"))
+                1, int(os.getenv("CERTIFICADOS_MAX_BATCH_ITEMS", "800"))
             ),
             templates_max_upload_bytes=MAX_TEMPLATE_UPLOAD_BYTES,
         ),

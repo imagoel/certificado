@@ -85,6 +85,7 @@
       <section class="panel section-switcher">
         <button id="tab-generator" class="section-tab is-active" type="button" data-section="generator">Gerar</button>
         <button id="tab-certificates" class="section-tab" type="button" data-section="certificates">Certificados</button>
+        <button id="tab-forms" class="section-tab" type="button" data-section="forms" hidden>Formulários</button>
         <button id="tab-emails" class="section-tab" type="button" data-section="emails" hidden>E-mails</button>
         <button id="tab-audit" class="section-tab" type="button" data-section="audit" hidden>Auditoria</button>
         <button id="tab-admin" class="section-tab" type="button" data-section="admin" hidden>Administração</button>
@@ -749,6 +750,171 @@
             <span id="cert-page-indicator" class="pagination-indicator">Página 1</span>
             <button id="cert-next-page" type="button" class="secondary-btn">Próxima</button>
           </div>
+        </section>
+      </section>
+
+      <section id="forms-section" class="stack-section listing-section forms-section" hidden>
+        <section class="panel listing-panel">
+          <div class="listing-heading-row">
+            <div>
+              <h2>Formulários</h2>
+              <p class="subtitle">Crie links públicos para coletar participantes e carregar respostas no lote.</p>
+            </div>
+            <div class="listing-actions">
+              <button id="forms-refresh" type="button" class="secondary-btn">Atualizar</button>
+            </div>
+          </div>
+
+          <div class="admin-split-layout forms-layout">
+            <div class="admin-form-shell">
+              <form id="certificate-form-form" class="form admin-compact-form">
+                <input id="certificate-form-edit-id" type="hidden" />
+
+                <div class="field-stack">
+                  <label for="certificate-form-secretaria">Secretaria responsável (interno)</label>
+                  <select id="certificate-form-secretaria" required></select>
+                  <p class="hint">Define quem gerencia o formulário. Não aparece como pergunta para o participante.</p>
+                </div>
+
+                <div class="field-stack">
+                  <label for="certificate-form-title">Título do formulário</label>
+                  <input id="certificate-form-title" type="text" placeholder="Ex.: Inscrição - Introdução aos projetos administrativos" required />
+                </div>
+
+                <div class="field-stack">
+                  <label for="certificate-form-course">Curso embutido</label>
+                  <input id="certificate-form-course" type="text" placeholder="Ex.: Introdução aos projetos administrativos" required />
+                </div>
+
+                <div class="form-grid-compact">
+                  <div class="field-stack">
+                    <label for="certificate-form-date">Data de conclusão</label>
+                    <input id="certificate-form-date" type="date" required />
+                  </div>
+
+                  <div class="field-stack">
+                    <label for="certificate-form-hours">Carga horária</label>
+                    <input id="certificate-form-hours" type="number" min="0" max="2000" step="1" value="0" />
+                  </div>
+                </div>
+
+                <div class="field-stack">
+                  <label for="certificate-form-reply-email">Responder para</label>
+                  <select id="certificate-form-reply-email"></select>
+                  <p class="hint">Usado depois na emissão dos certificados deste formulário.</p>
+                </div>
+
+                <label class="checkbox-pill">
+                  <input id="certificate-form-email-required" type="checkbox" />
+                  E-mail obrigatório
+                </label>
+
+                <label class="checkbox-pill">
+                  <input id="certificate-form-active" type="checkbox" checked />
+                  Formulário ativo
+                </label>
+
+                <fieldset class="form-fieldset compact-extra-fields">
+                  <legend>Campos extras públicos</legend>
+                  <p class="hint">Use somente quando precisar coletar informações para relatório interno. Todos são opcionais, a menos que você marque obrigatório.</p>
+                  <div class="form-extra-fields-grid">
+                    <div class="field-stack form-extra-field-card">
+                      <label for="certificate-form-extra-1">Campo extra 1</label>
+                      <input id="certificate-form-extra-1" type="text" placeholder="Nome da coluna. Ex.: Secretaria" />
+                      <input id="certificate-form-extra-1-label" type="text" placeholder="Pergunta. Ex.: Qual secretaria faz parte?" />
+                      <select id="certificate-form-extra-1-type" aria-label="Tipo do campo extra 1">
+                        <option value="texto">Texto livre</option>
+                        <option value="selecao">Seleção com opções</option>
+                      </select>
+                      <textarea id="certificate-form-extra-1-options" rows="3" placeholder="Opções, uma por linha" hidden></textarea>
+                      <label class="tiny-check"><input id="certificate-form-extra-1-required" type="checkbox" /> obrigatório</label>
+                    </div>
+                    <div class="field-stack form-extra-field-card">
+                      <label for="certificate-form-extra-2">Campo extra 2</label>
+                      <input id="certificate-form-extra-2" type="text" placeholder="Nome da coluna. Ex.: Cargo" />
+                      <input id="certificate-form-extra-2-label" type="text" placeholder="Pergunta exibida no formulário" />
+                      <select id="certificate-form-extra-2-type" aria-label="Tipo do campo extra 2">
+                        <option value="texto">Texto livre</option>
+                        <option value="selecao">Seleção com opções</option>
+                      </select>
+                      <textarea id="certificate-form-extra-2-options" rows="3" placeholder="Opções, uma por linha" hidden></textarea>
+                      <label class="tiny-check"><input id="certificate-form-extra-2-required" type="checkbox" /> obrigatório</label>
+                    </div>
+                    <div class="field-stack form-extra-field-card">
+                      <label for="certificate-form-extra-3">Campo extra 3</label>
+                      <input id="certificate-form-extra-3" type="text" placeholder="Nome da coluna. Ex.: Matrícula" />
+                      <input id="certificate-form-extra-3-label" type="text" placeholder="Pergunta exibida no formulário" />
+                      <select id="certificate-form-extra-3-type" aria-label="Tipo do campo extra 3">
+                        <option value="texto">Texto livre</option>
+                        <option value="selecao">Seleção com opções</option>
+                      </select>
+                      <textarea id="certificate-form-extra-3-options" rows="3" placeholder="Opções, uma por linha" hidden></textarea>
+                      <label class="tiny-check"><input id="certificate-form-extra-3-required" type="checkbox" /> obrigatório</label>
+                    </div>
+                  </div>
+                </fieldset>
+
+                <div class="actions">
+                  <button id="certificate-form-submit" type="submit">Salvar formulário</button>
+                  <button id="certificate-form-reset" type="button" class="secondary-btn">Limpar</button>
+                </div>
+              </form>
+              <p id="certificate-form-status" class="status" aria-live="polite"></p>
+            </div>
+
+            <div class="admin-table-shell">
+              <div class="table-wrap listing-table-card admin-table-card">
+                <table class="data-table forms-table">
+                  <thead>
+                    <tr>
+                      <th>Formulário</th>
+                      <th>Secretaria</th>
+                      <th>Respostas</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="certificate-form-list-body">
+                    <tr>
+                      <td colspan="5" class="empty-state">Carregando formulários...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <section id="form-responses-panel" class="panel nested-panel form-responses-panel" hidden>
+            <div class="listing-heading-row">
+              <div>
+                <h3 id="form-responses-title">Respostas</h3>
+                <p id="form-responses-summary" class="subtitle"></p>
+              </div>
+              <div class="listing-actions">
+                <button id="form-copy-link" type="button" class="secondary-btn">Copiar link</button>
+                <button id="form-download-qr" type="button" class="secondary-btn">Baixar QR Code</button>
+                <button id="form-export-csv" type="button" class="secondary-btn">Exportar CSV</button>
+                <button id="form-load-generator" type="button">Gerar certificados</button>
+              </div>
+            </div>
+            <p id="form-responses-status" class="status" aria-live="polite"></p>
+            <div class="table-wrap listing-table-card">
+              <table class="data-table form-responses-table">
+                <thead>
+                  <tr>
+                    <th>Participante</th>
+                    <th>Respondido em</th>
+                    <th>Certificado</th>
+                  </tr>
+                </thead>
+                <tbody id="form-responses-list-body">
+                  <tr>
+                    <td colspan="3" class="empty-state">Selecione um formulário.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </section>
       </section>
 
@@ -1576,6 +1742,7 @@
   <script src="frontend/js/app-admin-view.js?v=20260616-3"></script>
   <script src="frontend/js/app-certificates-view.js?v=20260616-3"></script>
   <script src="frontend/js/app-audit-view.js?v=20260616-3"></script>
+  <script src="frontend/js/app-forms-view.js?v=20260616-3"></script>
   <script src="frontend/js/app-assets-view.js?v=20260616-3"></script>
   <script src="frontend/js/app-layout-presets.js?v=20260616-3"></script>
   <script src="frontend/js/app-certificates-core.js?v=20260616-3"></script>
@@ -1589,6 +1756,7 @@
   <script src="frontend/js/events/batch-events.js?v=20260616-3"></script>
   <script src="frontend/js/events/section-events.js?v=20260616-3"></script>
   <script src="frontend/js/events/listing-events.js?v=20260616-3"></script>
+  <script src="frontend/js/events/forms-events.js?v=20260616-3"></script>
   <script src="frontend/js/events/admin-events.js?v=20260616-3"></script>
   <script src="frontend/js/events/session-events.js?v=20260616-3"></script>
   <script src="frontend/js/events/dialog-events.js?v=20260616-3"></script>
