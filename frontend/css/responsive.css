@@ -89,6 +89,10 @@
     grid-template-columns: 1fr;
   }
 
+  .forms-section .form-extra-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
   .admin-form-shell-wide {
     max-width: none;
   }
@@ -103,6 +107,11 @@
   .form-fieldset-grid {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .forms-section .admin-compact-form,
+  .forms-section .form-grid-compact {
+    grid-template-columns: 1fr;
   }
 
   .container {

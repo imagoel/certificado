@@ -29,15 +29,18 @@ function populateCertificateFormReplyEmails(selectedValue = "", secretariaId = "
   const selectedSecretariaId = secretariaId || (sessionState && sessionState.secretaria_ativa_id);
   const secretaria = getFormSecretariaById(selectedSecretariaId);
   certificateFormReplyEmailSelect.innerHTML = "";
-
-  const blank = document.createElement("option");
-  blank.value = "";
-  blank.textContent = "Usar e-mail padrão da secretaria";
-  certificateFormReplyEmailSelect.appendChild(blank);
-
   const replyEmails = secretaria && Array.isArray(secretaria.reply_emails)
     ? secretaria.reply_emails.filter((item) => item.ativo)
     : [];
+  const defaultReplyEmail = replyEmails.find((item) => item.padrao) || null;
+
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = defaultReplyEmail
+    ? `${defaultReplyEmail.email} (padrão da secretaria)`
+    : "Usar e-mail padrão da secretaria";
+  certificateFormReplyEmailSelect.appendChild(blank);
+
   replyEmails.forEach((item) => {
     const option = document.createElement("option");
     option.value = String(item.id);
@@ -56,6 +59,7 @@ function syncFormsModeUi() {
   const isCreate = formsState.mode !== "manage";
   if (formsCreatePanel) formsCreatePanel.hidden = !isCreate;
   if (formsManagePanel) formsManagePanel.hidden = isCreate;
+  if (formsRefreshBtn) formsRefreshBtn.hidden = isCreate;
   if (formsCreateModeBtn) {
     formsCreateModeBtn.classList.toggle("is-active", isCreate);
     formsCreateModeBtn.setAttribute("aria-pressed", isCreate ? "true" : "false");
@@ -133,6 +137,10 @@ function getCertificateFormExtraFieldsPayload() {
 function buildCertificateFormPayload() {
   const course = sanitizeText(certificateFormCourseInput ? certificateFormCourseInput.value : "");
   const title = buildDefaultCertificateFormTitle(course);
+  const editingId = sanitizeText(certificateFormEditIdInput ? certificateFormEditIdInput.value : "");
+  const currentForm = editingId
+    ? formsState.items.find((item) => String(item.id) === String(editingId))
+    : null;
   return {
     secretaria_id: null,
     titulo: title,
@@ -141,7 +149,7 @@ function buildCertificateFormPayload() {
     carga_h: Number.parseInt(certificateFormHoursInput ? certificateFormHoursInput.value : "0", 10) || 0,
     reply_email_id:
       Number.parseInt(certificateFormReplyEmailSelect ? certificateFormReplyEmailSelect.value : "", 10) || null,
-    ativo: Boolean(certificateFormActiveInput && certificateFormActiveInput.checked),
+    ativo: currentForm ? Boolean(currentForm.ativo) : true,
     email_obrigatorio: true,
     campos_extras: getCertificateFormExtraFieldsPayload(),
   };
@@ -200,7 +208,6 @@ async function toggleCertificateFormActive(item) {
 function resetCertificateForm() {
   if (certificateFormForm) certificateFormForm.reset();
   if (certificateFormEditIdInput) certificateFormEditIdInput.value = "";
-  if (certificateFormActiveInput) certificateFormActiveInput.checked = true;
   if (certificateFormHoursInput) certificateFormHoursInput.value = "0";
   if (certificateFormDateInput) certificateFormDateInput.value = toDateInputValue(new Date());
   syncCertificateFormExtraOptionsVisibility();
@@ -218,7 +225,6 @@ function fillCertificateFormForm(item) {
   if (certificateFormReplyEmailSelect) {
     populateCertificateFormReplyEmails(item.reply_email_id || "", item.secretaria_id || "");
   }
-  if (certificateFormActiveInput) certificateFormActiveInput.checked = Boolean(item.ativo);
 
   const extras = Array.isArray(item.campos_extras) ? item.campos_extras : [];
   getCertificateFormExtraFieldControls().forEach((

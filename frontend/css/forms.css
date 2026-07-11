@@ -113,6 +113,42 @@
   gap: 9px;
 }
 
+.forms-section .listing-heading-row {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.forms-section .listing-heading-row h2 {
+  margin-bottom: 4px;
+}
+
+.forms-section .listing-actions[hidden] {
+  display: none;
+}
+
+.forms-section .admin-form-shell-wide {
+  width: min(100%, 1040px);
+}
+
+.forms-section .admin-compact-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.forms-section .form-field-wide,
+.forms-section .form-grid-compact,
+.forms-section .compact-extra-fields,
+.forms-section .actions,
+.forms-section .status {
+  grid-column: 1 / -1;
+}
+
+.forms-section .form-grid-compact {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.7fr) minmax(150px, 0.4fr);
+  gap: 9px 10px;
+}
+
 .admin-compact-form .grid-two,
 .admin-compact-form .grid-three {
   gap: 9px 10px;
@@ -145,11 +181,12 @@
 .form-extra-fields-grid {
   display: grid;
   gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .form-extra-field-card {
   gap: 7px;
-  padding: 10px;
+  padding: 9px;
   border: 1px solid rgba(191, 214, 243, 0.86);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.64);
@@ -175,7 +212,7 @@
 
 .forms-mode-tabs {
   width: fit-content;
-  margin: 10px 0 14px;
+  margin: 8px 0 12px;
 }
 
 .forms-mode-panel {
