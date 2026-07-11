@@ -232,6 +232,22 @@ def test_frontend_dockerfile_publishes_email_static_assets():
     assert (ROOT_DIR / "assets" / "email" / "logo-prefeitura.png").is_file()
 
 
+def test_nginx_routes_public_forms_to_api():
+    nginx_conf = (ROOT_DIR / "nginx.conf").read_text(encoding="utf-8")
+
+    assert "location /formularios/" in nginx_conf
+    assert "proxy_pass http://certificado-api:8000;" in nginx_conf
+
+
+def test_forms_delete_action_is_admin_only_in_frontend():
+    source = _frontend_source()
+
+    assert "function deleteCertificateForm" in source
+    assert 'method: "DELETE"' in source
+    assert 'textContent = "Excluir"' in source
+    assert "if (isAdminSession())" in source
+
+
 def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
     html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
     source = _frontend_source()

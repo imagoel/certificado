@@ -393,6 +393,36 @@ def update_certificate_form(
     return build_form_response(request, form)
 
 
+@router.delete("/api/formularios/{form_id}", response_model=ActionResponse)
+def delete_certificate_form(
+    form_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> ActionResponse:
+    if not is_admin(usuario):
+        raise HTTPException(status_code=403, detail="Apenas admin global pode excluir formularios.")
+
+    form = get_form_by_id(db, form_id)
+    title = form.titulo
+    secretaria = form.secretaria
+    responses_count = len(form.respostas or [])
+    db.delete(form)
+    record_audit_event(
+        db,
+        evento="formulario_excluido",
+        descricao=(
+            f"Formulario {title} excluido por {usuario.username}. "
+            f"{responses_count} resposta(s) removida(s)."
+        ),
+        usuario=usuario,
+        secretaria=secretaria,
+        entidade_tipo="formulario",
+        entidade_id=form_id,
+    )
+    db.commit()
+    return ActionResponse(message="Formulario excluido com sucesso.")
+
+
 @router.get("/api/formularios/{form_id}/respostas", response_model=list[CertificateFormResponseItem])
 def list_certificate_form_responses(
     form_id: int,

@@ -205,6 +205,37 @@ async function toggleCertificateFormActive(item) {
   }
 }
 
+async function deleteCertificateForm(item) {
+  if (!item || !isAdminSession()) return;
+  const confirmed = await openConfirmActionDialog({
+    title: "Excluir formulário?",
+    message: `Excluir o formulário "${item.titulo || item.curso || "selecionado"}"?`,
+    summary:
+      "As respostas coletadas por este formulário serão removidas. Certificados já gerados não serão apagados.",
+    confirmLabel: "Excluir formulário",
+    danger: true,
+  });
+  if (!confirmed) return;
+
+  try {
+    setCertificateFormStatus("Excluindo formulario...", "info");
+    await apiJsonRequest(`/api/formularios/${item.id}`, {
+      method: "DELETE",
+      body: "{}",
+    });
+    if (String(formsState.selectedFormId) === String(item.id)) {
+      formsState.selectedFormId = "";
+      formsState.responses = [];
+      renderFormResponsesPanel();
+    }
+    await loadCertificateForms();
+    setCertificateFormStatus("Formulario excluido com sucesso.", "success");
+  } catch (error) {
+    console.error(error);
+    setCertificateFormStatus(error.message || "Nao foi possivel excluir o formulario.", "error");
+  }
+}
+
 function resetCertificateForm() {
   if (certificateFormForm) certificateFormForm.reset();
   if (certificateFormEditIdInput) certificateFormEditIdInput.value = "";
@@ -335,6 +366,16 @@ function renderCertificateFormsTable() {
     });
 
     actionsCell.append(responsesBtn, editBtn, toggleBtn);
+    if (isAdminSession()) {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "danger-btn compact-action";
+      deleteBtn.textContent = "Excluir";
+      deleteBtn.addEventListener("click", () => {
+        void deleteCertificateForm(item);
+      });
+      actionsCell.appendChild(deleteBtn);
+    }
     row.append(titleCell, secretariaCell, responsesCell, statusCell, actionsCell);
     certificateFormListBody.appendChild(row);
   });

@@ -125,6 +125,22 @@ def test_formulario_inativo_nao_recebe_respostas(client, seed_data, login):
     assert missing_email_response.status_code == 422
 
 
+def test_apenas_admin_global_exclui_formulario(client, seed_data, login):
+    login("operador", seed_data["operador_password"])
+    form = _create_form(client, seed_data, campos_extras=[])
+
+    operator_delete_response = client.request("DELETE", f"/api/formularios/{form['id']}", json={})
+    assert operator_delete_response.status_code == 403
+
+    login("admin", seed_data["admin_password"])
+    admin_delete_response = client.request("DELETE", f"/api/formularios/{form['id']}", json={})
+    assert admin_delete_response.status_code == 200
+    assert "excluido com sucesso" in admin_delete_response.json()["message"].lower()
+
+    public_response = client.get(f"/api/formularios/publico/{form['token']}")
+    assert public_response.status_code == 404
+
+
 def test_lote_gera_certificado_a_partir_de_resposta_de_formulario(client, seed_data, login):
     login("operador", seed_data["operador_password"])
     form = _create_form(client, seed_data, email_obrigatorio=False, campos_extras=[])
