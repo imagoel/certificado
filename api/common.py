@@ -1104,20 +1104,50 @@ def code_exists(db: Session, codigo: str) -> bool:
     return db.query(Certificate.id).filter(Certificate.codigo == codigo).first() is not None
 
 
+_EMAIL_ATTEMPT_NOT_PROVIDED = object()
+
+
+def get_latest_certificate_email_attempts(
+    db: Session, certificate_ids: list[int]
+) -> dict[int, CertificateEmailAttempt]:
+    if not certificate_ids:
+        return {}
+
+    attempts = (
+        db.query(CertificateEmailAttempt)
+        .filter(CertificateEmailAttempt.certificado_id.in_(certificate_ids))
+        .order_by(
+            CertificateEmailAttempt.certificado_id.asc(),
+            CertificateEmailAttempt.criado_em.desc(),
+            CertificateEmailAttempt.id.desc(),
+        )
+        .all()
+    )
+    latest_by_certificate_id: dict[int, CertificateEmailAttempt] = {}
+    for attempt in attempts:
+        if attempt.certificado_id not in latest_by_certificate_id:
+            latest_by_certificate_id[attempt.certificado_id] = attempt
+    return latest_by_certificate_id
+
+
 def to_response(
-    cert: Certificate, request: Request, validation_url: str | None = None
+    cert: Certificate,
+    request: Request,
+    validation_url: str | None = None,
+    last_email_attempt: CertificateEmailAttempt | None | object = _EMAIL_ATTEMPT_NOT_PROVIDED,
 ) -> CertificateResponse:
     file_available = is_certificate_ready(cert)
     internal_file_available = not bool(cert.arquivo_pendente) and has_certificate_file(cert)
-    db = object_session(cert)
-    last_email_attempt = (
-        db.query(CertificateEmailAttempt)
-        .filter(CertificateEmailAttempt.certificado_id == cert.id)
-        .order_by(CertificateEmailAttempt.criado_em.desc(), CertificateEmailAttempt.id.desc())
-        .first()
-        if db is not None
-        else None
-    )
+    if last_email_attempt is _EMAIL_ATTEMPT_NOT_PROVIDED:
+        db = object_session(cert)
+        last_email_attempt = (
+            db.query(CertificateEmailAttempt)
+            .filter(CertificateEmailAttempt.certificado_id == cert.id)
+            .order_by(CertificateEmailAttempt.criado_em.desc(), CertificateEmailAttempt.id.desc())
+            .first()
+            if db is not None
+            else None
+        )
     return CertificateResponse(
         id=cert.id,
         codigo=cert.codigo,

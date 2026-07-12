@@ -15,6 +15,7 @@ from common import (
     ensure_certificate_access,
     get_accessible_secretarias,
     get_current_user,
+    get_latest_certificate_email_attempts,
     has_certificate_file,
     is_admin,
     is_certificate_deleted,
@@ -183,13 +184,23 @@ def list_certificates(
         .limit(por_pagina)
         .all()
     )
+    latest_email_attempts = get_latest_certificate_email_attempts(
+        db, [cert.id for cert in certificates]
+    )
 
     return PaginatedCertificateResponse(
         total=total,
         pagina=pagina,
         por_pagina=por_pagina,
         paginas=paginas,
-        itens=[to_response(cert, request) for cert in certificates],
+        itens=[
+            to_response(
+                cert,
+                request,
+                last_email_attempt=latest_email_attempts.get(cert.id),
+            )
+            for cert in certificates
+        ],
     )
 
 
