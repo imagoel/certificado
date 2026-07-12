@@ -35,6 +35,8 @@ EXPECTED_FRONTEND_SCRIPT_ORDER = [
     "frontend/js/app-session-view.js",
     "frontend/js/app-admin-view.js",
     "frontend/js/app-certificates-view.js",
+    "frontend/js/app-admin-tables.js",
+    "frontend/js/app-audit-table.js",
     "frontend/js/app-audit-view.js",
     "frontend/js/app-forms-view.js",
     "frontend/js/app-assets-view.js",

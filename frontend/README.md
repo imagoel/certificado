@@ -21,24 +21,26 @@ Eles compartilham o mesmo escopo global do navegador, por isso a ordem abaixo de
 14. `app-session-view.js`: sessao, login, status e dialogos principais.
 15. `app-admin-view.js`: formularios administrativos e preenchimento de edicao.
 16. `app-certificates-view.js`: tabela e relatorio CSV de certificados.
-17. `app-audit-view.js`: filtros, CSV e impressao/PDF da auditoria.
-18. `app-assets-view.js`: carregamentos, catalogos visuais, templates, assets e exclusoes administrativas.
-19. `app-certificates-core.js`: registro, upload e descarte de certificados pendentes.
-20. `app-canvas.js`: desenho do certificado, layout visual, QR Code e canvas.
-21. `app-assets.js`: templates, logos, assinaturas, selos e controles visuais.
-22. `app-spreadsheets.js`: leitura, normalizacao e validacao de planilhas.
-23. `app-batch.js`: preview, confirmacao, geracao em lote, download e helpers de arquivo.
-24. `events/generator-events.js`: eventos do formulario principal, campos de texto e download.
-25. `events/preview-events.js`: eventos da previa e dos controles de layout.
-26. `events/asset-events.js`: eventos de upload, selecao e remocao de itens visuais.
-27. `events/batch-events.js`: eventos de planilha, previa e confirmacao de lote.
-28. `events/section-events.js`: eventos das abas principais e subtabs administrativas.
-29. `events/listing-events.js`: eventos de Certificados e Auditoria.
-30. `events/admin-events.js`: eventos dos formularios administrativos.
-31. `events/session-events.js`: login, logout e troca de secretaria ativa.
-32. `events/dialog-events.js`: dialogos de duplicidade e exclusao.
-33. `events/startup.js`: sincronizacao inicial da interface.
-34. `app-bootstrap.js`: checagem minima e chamada dos registros de eventos.
+17. `app-admin-tables.js`: tabelas de usuarios, secretarias, moldes e itens visuais.
+18. `app-audit-table.js`: linhas da tabela de auditoria e estado dos botoes de relatorio.
+19. `app-audit-view.js`: filtros, CSV e impressao/PDF da auditoria.
+20. `app-assets-view.js`: carregamentos, catalogos visuais, templates, assets e exclusoes administrativas.
+21. `app-certificates-core.js`: registro, upload e descarte de certificados pendentes.
+22. `app-canvas.js`: desenho do certificado, layout visual, QR Code e canvas.
+23. `app-assets.js`: templates, logos, assinaturas, selos e controles visuais.
+24. `app-spreadsheets.js`: leitura, normalizacao e validacao de planilhas.
+25. `app-batch.js`: preview, confirmacao, geracao em lote, download e helpers de arquivo.
+26. `events/generator-events.js`: eventos do formulario principal, campos de texto e download.
+27. `events/preview-events.js`: eventos da previa e dos controles de layout.
+28. `events/asset-events.js`: eventos de upload, selecao e remocao de itens visuais.
+29. `events/batch-events.js`: eventos de planilha, previa e confirmacao de lote.
+30. `events/section-events.js`: eventos das abas principais e subtabs administrativas.
+31. `events/listing-events.js`: eventos de Certificados e Auditoria.
+32. `events/admin-events.js`: eventos dos formularios administrativos.
+33. `events/session-events.js`: login, logout e troca de secretaria ativa.
+34. `events/dialog-events.js`: dialogos de duplicidade e exclusao.
+35. `events/startup.js`: sincronizacao inicial da interface.
+36. `app-bootstrap.js`: checagem minima e chamada dos registros de eventos.
 
 Os estilos em `frontend/css/` sao carregados em ordem pelo `index.html` e dependem da cascata.
 Para novas mudancas visuais, prefira mexer no arquivo CSS correspondente ao dominio da tela e no HTML da secao afetada.
