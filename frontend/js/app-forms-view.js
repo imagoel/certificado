@@ -376,6 +376,8 @@ function renderCertificateFormsTable() {
 
     const actionsCell = document.createElement("td");
     actionsCell.className = "actions-cell";
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "inline-actions form-actions";
 
     const copyBtn = createInlineButton(
       "Copiar link",
@@ -406,7 +408,7 @@ function renderCertificateFormsTable() {
       "secondary-btn compact-action"
     );
 
-    actionsCell.append(copyBtn, qrBtn, responsesBtn, editBtn);
+    actionsWrap.append(copyBtn, qrBtn, responsesBtn, editBtn);
     const menu = document.createElement("details");
     menu.className = "action-menu";
     menu.addEventListener("toggle", () => {
@@ -461,10 +463,41 @@ function renderCertificateFormsTable() {
       );
     }
     menu.append(summary, menuContent);
-    actionsCell.appendChild(menu);
+    actionsWrap.appendChild(menu);
+    actionsCell.appendChild(actionsWrap);
     row.append(titleCell, secretariaCell, responsesCell, statusCell, actionsCell);
     certificateFormListBody.appendChild(row);
   });
+}
+
+function buildFormConfirmationStatusBadge(item) {
+  const status = item ? item.email_confirmacao_status : null;
+  const badge = document.createElement("span");
+  badge.className = "cert-email-status-badge is-pending";
+  badge.textContent = "Pendente";
+
+  const details = [];
+  if (item && item.email_confirmacao_reply_to) {
+    details.push(`Responder para: ${item.email_confirmacao_reply_to}`);
+  }
+  if (status === "enviado") {
+    badge.className = "cert-email-status-badge is-sent";
+    badge.textContent = "Enviado";
+    if (item.email_confirmacao_em) {
+      details.unshift(`Enviado em: ${formatDateTime(item.email_confirmacao_em)}`);
+    }
+  } else if (status === "falhou") {
+    badge.className = "cert-email-status-badge is-error";
+    badge.textContent = "Falha";
+    if (item.email_confirmacao_erro) {
+      details.push(`Motivo: ${item.email_confirmacao_erro}`);
+    }
+  } else {
+    details.push("Aguardando tentativa de envio da confirmação.");
+  }
+
+  badge.title = details.filter(Boolean).join("\n");
+  return badge;
 }
 
 async function loadFormResponses(formId) {
@@ -500,7 +533,7 @@ function renderFormResponsesPanel() {
   if (!formsState.responses.length) {
     formResponsesListBody.innerHTML = `
       <tr>
-        <td colspan="3" class="empty-state">Nenhuma resposta recebida ainda.</td>
+        <td colspan="4" class="empty-state">Nenhuma resposta recebida ainda.</td>
       </tr>
     `;
     return;
@@ -525,10 +558,13 @@ function renderFormResponsesPanel() {
     const createdCell = document.createElement("td");
     createdCell.textContent = formatDateTime(item.criado_em);
 
+    const emailStatusCell = document.createElement("td");
+    emailStatusCell.appendChild(buildFormConfirmationStatusBadge(item));
+
     const certCell = document.createElement("td");
     certCell.textContent = item.certificado_codigo || "Pendente";
 
-    row.append(personCell, createdCell, certCell);
+    row.append(personCell, createdCell, emailStatusCell, certCell);
     formResponsesListBody.appendChild(row);
   });
 }

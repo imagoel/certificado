@@ -199,6 +199,58 @@ def test_apenas_admin_global_exclui_formulario(client, seed_data, login):
     assert public_response.status_code == 404
 
 
+def test_operador_lista_e_edita_apenas_formularios_da_propria_secretaria(
+    client, seed_data, login
+):
+    login("admin", seed_data["admin_password"])
+    form_seafi = _create_form(client, seed_data, secretaria_id=seed_data["seafi_id"], campos_extras=[])
+    form_semed = _create_form(client, seed_data, secretaria_id=seed_data["semed_id"], campos_extras=[])
+
+    client.post("/api/auth/logout")
+    login("operador", seed_data["operador_password"])
+
+    list_response = client.get("/api/formularios")
+    assert list_response.status_code == 200
+    visible_ids = {item["id"] for item in list_response.json()}
+    assert form_seafi["id"] in visible_ids
+    assert form_semed["id"] not in visible_ids
+
+    create_other_secretaria = client.post(
+        "/api/formularios",
+        json={
+            "secretaria_id": seed_data["semed_id"],
+            "titulo": "Formulario SEMED Bloqueado",
+            "curso": "Curso SEMED Bloqueado",
+            "carga_h": 8,
+            "concluido": "2026-07-10",
+            "reply_email_id": None,
+            "ativo": True,
+            "email_obrigatorio": True,
+            "campos_extras": [],
+        },
+    )
+    assert create_other_secretaria.status_code == 403
+
+    toggle_own_response = client.patch(
+        f"/api/formularios/{form_seafi['id']}",
+        json={"ativo": False},
+    )
+    assert toggle_own_response.status_code == 200
+    assert toggle_own_response.json()["ativo"] is False
+
+    toggle_other_response = client.patch(
+        f"/api/formularios/{form_semed['id']}",
+        json={"ativo": False},
+    )
+    assert toggle_other_response.status_code == 403
+
+    responses_other = client.get(f"/api/formularios/{form_semed['id']}/respostas")
+    assert responses_other.status_code == 403
+
+    csv_other = client.get(f"/api/formularios/{form_semed['id']}/respostas.csv")
+    assert csv_other.status_code == 403
+
+
 def test_lote_gera_certificado_a_partir_de_resposta_de_formulario(client, seed_data, login):
     login("operador", seed_data["operador_password"])
     form = _create_form(client, seed_data, email_obrigatorio=False, campos_extras=[])

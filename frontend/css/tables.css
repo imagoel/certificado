@@ -421,6 +421,16 @@
   min-width: 142px;
 }
 
+.form-actions {
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: max-content;
+}
+
+.form-actions .compact-action {
+  white-space: nowrap;
+}
+
 .certificates-table .cert-col-actions {
   min-width: 142px;
   width: 142px;

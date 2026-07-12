@@ -251,6 +251,8 @@ def test_forms_delete_action_is_admin_only_in_frontend():
 
 def test_forms_listing_exposes_link_qr_and_secondary_actions():
     source = _frontend_source()
+    html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
+    tables_css = (ROOT_DIR / "frontend" / "css" / "tables.css").read_text(encoding="utf-8")
 
     assert '"Copiar link"' in source
     assert '"QR Code"' in source
@@ -258,7 +260,11 @@ def test_forms_listing_exposes_link_qr_and_secondary_actions():
     assert '"Desativar formulário"' in source
     assert "function copyFormLink" in source
     assert "function downloadFormQrCode" in source
+    assert "function buildFormConfirmationStatusBadge" in source
     assert "aguardando certificado" in source
+    assert "Confirmação" in html
+    assert "form-actions" in tables_css
+    assert "flex-wrap: nowrap;" in tables_css
 
 
 def test_forms_options_parser_preserves_line_breaks():
