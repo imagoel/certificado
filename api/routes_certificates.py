@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from audit_service import record_audit_event
 from common import (
     CODE_REGEX,
     DEFAULT_PREFIX,
@@ -22,7 +23,6 @@ from common import (
     normalize_prefix,
     parse_render_snapshot_payload,
     purge_expired_deleted_certificates,
-    record_audit_event,
     require_active_secretaria,
     replace_certificate_png_safely,
     resolve_media_path,

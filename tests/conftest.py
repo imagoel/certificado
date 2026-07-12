@@ -24,6 +24,7 @@ MODULES_TO_RELOAD = [
     "security",
     "bootstrap",
     "migrations",
+    "audit_service",
     "reply_email_service",
     "common",
     "email_config",

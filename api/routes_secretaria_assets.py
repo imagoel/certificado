@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Reques
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from audit_service import record_audit_event
 from common import (
     build_secretaria_asset_file_response,
     build_secretaria_asset_relative_path,
@@ -11,7 +12,6 @@ from common import (
     get_current_user,
     is_admin,
     normalize_secretaria_asset_type,
-    record_audit_event,
     require_active_secretaria,
     resolve_template_media_path,
     validate_template_upload,

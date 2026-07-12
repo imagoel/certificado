@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from audit_service import record_audit_event
 from common import (
     build_session_response,
     clear_login_attempts,
     get_accessible_secretarias,
     get_current_user,
     get_login_block_remaining_seconds,
-    record_audit_event,
     register_failed_login_attempt,
     resolve_active_secretaria,
     utc_now,

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from common import record_audit_event, utc_now
+from audit_service import record_audit_event
+from common import utc_now
 from email_config import EMAIL_STATUS_FAILED, EMAIL_STATUS_SENT
 from models import (
     Certificate,

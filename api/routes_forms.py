@@ -9,12 +9,12 @@ from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from audit_service import record_audit_event
 from common import (
     get_accessible_secretarias,
     get_current_user,
     get_request_ip,
     is_admin,
-    record_audit_event,
     resolve_active_secretaria,
     templates,
     utc_now,

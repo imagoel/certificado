@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from audit_service import record_audit_event
 from common import (
     build_layout_preset_response,
     get_accessible_secretarias,
     get_current_user,
     is_admin,
-    record_audit_event,
     require_active_secretaria,
     utc_now,
 )

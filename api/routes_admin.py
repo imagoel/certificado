@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Reques
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from audit_service import build_audit_response, record_audit_event
 from common import (
-    build_audit_response,
     build_certificate_trash_expiration,
     build_secretaria_response,
     build_user_admin_response,
@@ -19,7 +19,6 @@ from common import (
     normalize_secretaria_sigla,
     parse_render_snapshot_payload,
     purge_expired_deleted_certificates,
-    record_audit_event,
     require_admin_user,
     replace_certificate_png_safely,
     resolve_template_media_path,
