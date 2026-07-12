@@ -23,6 +23,36 @@ function populateCertificateFormSecretarias(selectedSecretariaId = "") {
   populateCertificateFormReplyEmails("", selectedSecretariaId);
 }
 
+function updateCertificateFormReplyEmailHint(secretaria, selectedValue = "") {
+  if (!certificateFormReplyEmailHint) return;
+  const replyEmails = secretaria && Array.isArray(secretaria.reply_emails)
+    ? secretaria.reply_emails.filter((item) => item.ativo)
+    : [];
+  const defaultReplyEmail = replyEmails.find((item) => item.padrao) || replyEmails[0] || null;
+  const selectedText =
+    selectedValue === null || selectedValue === undefined ? "" : String(selectedValue);
+  const selected =
+    replyEmails.find((item) => String(item.id || "") === selectedText) ||
+    (selectedText ? null : defaultReplyEmail);
+
+  if (!selected) {
+    certificateFormReplyEmailHint.textContent =
+      "Cadastre um e-mail de resposta para esta secretaria antes de divulgar o formulário.";
+    certificateFormReplyEmailHint.className = "hint status error";
+    return;
+  }
+
+  const issuerLabel =
+    typeof buildReplyEmailIssuerLabel === "function"
+      ? buildReplyEmailIssuerLabel(secretaria, selected)
+      : selected.nome || secretaria.sigla || "";
+  const defaultHint = selected.padrao ? " padrão" : "";
+  certificateFormReplyEmailHint.textContent =
+    `Respostas irão para ${selected.email}${defaultHint}. ` +
+    `No e-mail aparecerá: ${issuerLabel}.`;
+  certificateFormReplyEmailHint.className = "hint";
+}
+
 function populateCertificateFormReplyEmails(selectedValue = "", secretariaId = "") {
   if (!certificateFormReplyEmailSelect) return;
 
@@ -48,6 +78,7 @@ function populateCertificateFormReplyEmails(selectedValue = "", secretariaId = "
     option.selected = String(item.id) === String(selectedValue || "");
     certificateFormReplyEmailSelect.appendChild(option);
   });
+  updateCertificateFormReplyEmailHint(secretaria, selectedValue);
 }
 
 function buildDefaultCertificateFormTitle(courseName) {

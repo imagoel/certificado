@@ -1,6 +1,57 @@
 ﻿from urllib.parse import urlparse
 
 
+def configure_smtp_env(monkeypatch) -> None:
+    monkeypatch.setenv("SMTP_ENABLED", "true")
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.test")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    monkeypatch.setenv("SMTP_USERNAME", "certificados@amargosa.ba.gov.br")
+    monkeypatch.setenv("SMTP_PASSWORD", "senha-smtp")
+    monkeypatch.setenv("SMTP_FROM_EMAIL", "certificados@amargosa.ba.gov.br")
+    monkeypatch.setenv("SMTP_FROM_NAME", "Certificados PMA")
+    monkeypatch.setenv("SMTP_STARTTLS", "true")
+    monkeypatch.setenv("SMTP_TIMEOUT_SECONDS", "7")
+    monkeypatch.delenv("EMAIL_LOGO_URL", raising=False)
+    monkeypatch.setenv("EMAIL_INSTITUTION_NAME", "Prefeitura Municipal de Amargosa")
+
+
+def install_fake_smtp(monkeypatch, *, fail_message: str | None = None) -> list:
+    import email_delivery
+
+    sent_messages = []
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout):
+            self.host = host
+            self.port = port
+            self.timeout = timeout
+            sent_messages.append({"smtp": self, "message": None})
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def ehlo(self):
+            return None
+
+        def starttls(self, context):
+            self.started_tls = True
+
+        def login(self, username, password):
+            self.username = username
+            self.password = password
+
+        def send_message(self, message):
+            if fail_message:
+                raise RuntimeError(fail_message)
+            sent_messages[-1]["message"] = message
+
+    monkeypatch.setattr(email_delivery.smtplib, "SMTP", FakeSMTP)
+    return sent_messages
+
+
 def _create_form(client, seed_data, **overrides):
     payload = {
         "secretaria_id": seed_data["seafi_id"],
@@ -54,6 +105,7 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
     assert "Dados do participante" in page_response.text
     assert "Confirmar inscrição" in page_response.text
     assert "Enviar resposta" not in page_response.text
+    assert "Número da inscrição" not in page_response.text
     assert "Qual secretaria faz parte?" in page_response.text
     assert "<select" in page_response.text
 
@@ -88,13 +140,15 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
         },
     )
     assert submit_response.status_code == 201
-    assert submit_response.json()["protocolo"] > 0
+    assert "protocolo" not in submit_response.json()
+    assert submit_response.json()["email_confirmacao_status"] == "falhou"
 
     responses = client.get(f"/api/formularios/{form['id']}/respostas")
     assert responses.status_code == 200
     assert responses.json()[0]["nome"] == "Aluno Form"
     assert responses.json()[0]["email"] == "ALUNO@example.com"
     assert responses.json()[0]["dados_extras"] == {"Secretaria": "SEAFI"}
+    assert responses.json()[0]["email_confirmacao_status"] == "falhou"
 
 
 def test_formulario_inativo_nao_recebe_respostas(client, seed_data, login):
@@ -155,7 +209,9 @@ def test_lote_gera_certificado_a_partir_de_resposta_de_formulario(client, seed_d
         json={"nome": "Aluno Certificado", "email": "aluno@exemplo.com", "dados_extras": {}},
     )
     assert submit_response.status_code == 201
-    resposta_id = submit_response.json()["protocolo"]
+    responses_before_batch = client.get(f"/api/formularios/{form['id']}/respostas")
+    assert responses_before_batch.status_code == 200
+    resposta_id = responses_before_batch.json()[0]["id"]
 
     batch_response = client.post(
         "/api/certificados/lote",
@@ -199,3 +255,120 @@ def test_lote_gera_certificado_a_partir_de_resposta_de_formulario(client, seed_d
         },
     )
     assert duplicate_response.status_code == 409
+
+
+def test_formulario_envia_email_de_confirmacao(
+    client, seed_data, login, monkeypatch, app_ctx
+):
+    configure_smtp_env(monkeypatch)
+    sent_messages = install_fake_smtp(monkeypatch)
+    login("operador", seed_data["operador_password"])
+    form = _create_form(client, seed_data, campos_extras=[])
+
+    submit_response = client.post(
+        f"/api/formularios/publico/{form['token']}/respostas",
+        json={
+            "nome": "Aluno Confirmacao",
+            "email": "aluno.confirmacao@example.com",
+            "dados_extras": {},
+        },
+    )
+    assert submit_response.status_code == 201, submit_response.text
+    payload = submit_response.json()
+    assert payload["email_confirmacao_status"] == "enviado"
+    assert payload["email_confirmacao_enviado_em"]
+    assert payload["email_confirmacao_erro"] is None
+    assert len(sent_messages) == 1
+
+    message = sent_messages[0]["message"]
+    assert message["To"] == "aluno.confirmacao@example.com"
+    assert message["Reply-To"] == "seafi@amargosa.ba.gov.br"
+    assert message["Subject"] == f"Confirmação de inscrição - {form['curso']}"
+    text_body = message.get_body(preferencelist=("plain",)).get_content()
+    assert "Sua inscrição no curso Introducao aos Projetos Administrativos" in text_body
+    assert "Emitido por: SEAFI - Secretaria de Administracao e Financas" in text_body
+
+    responses = client.get(f"/api/formularios/{form['id']}/respostas")
+    assert responses.status_code == 200
+    response_item = responses.json()[0]
+    assert response_item["email_confirmacao_status"] == "enviado"
+    assert response_item["email_confirmacao_em"]
+    assert response_item["email_confirmacao_reply_to"] == "seafi@amargosa.ba.gov.br"
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        attempts = db.query(app_ctx.models.CertificateFormEmailAttempt).all()
+        assert len(attempts) == 1
+        assert attempts[0].status == "enviado"
+        assert attempts[0].destinatario == "aluno.confirmacao@example.com"
+    finally:
+        db.close()
+
+
+def test_formulario_confirmacao_usa_rodape_do_email_selecionado(
+    client, seed_data, login, monkeypatch
+):
+    configure_smtp_env(monkeypatch)
+    sent_messages = install_fake_smtp(monkeypatch)
+    login("operador", seed_data["operador_password"])
+
+    reply_response = client.post(
+        f"/api/secretarias/{seed_data['seafi_id']}/reply-emails",
+        json={
+            "nome": "DIVISA",
+            "email": "divisa@amargosa.ba.gov.br",
+            "ativo": True,
+            "padrao": False,
+        },
+    )
+    assert reply_response.status_code == 201, reply_response.text
+    reply_email_id = reply_response.json()["id"]
+    form = _create_form(
+        client,
+        seed_data,
+        reply_email_id=reply_email_id,
+        campos_extras=[],
+    )
+
+    submit_response = client.post(
+        f"/api/formularios/publico/{form['token']}/respostas",
+        json={
+            "nome": "Aluno DIVISA",
+            "email": "aluno.divisa@example.com",
+            "dados_extras": {},
+        },
+    )
+    assert submit_response.status_code == 201, submit_response.text
+    assert submit_response.json()["email_confirmacao_status"] == "enviado"
+
+    message = sent_messages[0]["message"]
+    assert message["Reply-To"] == "divisa@amargosa.ba.gov.br"
+    text_body = message.get_body(preferencelist=("plain",)).get_content()
+    assert "Emitido por: DIVISA - Secretaria de Administracao e Financas" in text_body
+
+
+def test_formulario_salva_resposta_mesmo_com_falha_no_email(
+    client, seed_data, login, monkeypatch
+):
+    configure_smtp_env(monkeypatch)
+    install_fake_smtp(monkeypatch, fail_message="smtp indisponivel")
+    login("operador", seed_data["operador_password"])
+    form = _create_form(client, seed_data, campos_extras=[])
+
+    submit_response = client.post(
+        f"/api/formularios/publico/{form['token']}/respostas",
+        json={
+            "nome": "Aluno Email Falhou",
+            "email": "aluno.falha@example.com",
+            "dados_extras": {},
+        },
+    )
+    assert submit_response.status_code == 201, submit_response.text
+    payload = submit_response.json()
+    assert payload["email_confirmacao_status"] == "falhou"
+    assert "smtp indisponivel" in payload["email_confirmacao_erro"]
+
+    responses = client.get(f"/api/formularios/{form['id']}/respostas")
+    assert responses.status_code == 200
+    assert responses.json()[0]["nome"] == "Aluno Email Falhou"
+    assert responses.json()[0]["email_confirmacao_status"] == "falhou"

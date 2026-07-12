@@ -12,6 +12,14 @@
     });
   }
 
+  if (certificateFormReplyEmailSelect) {
+    certificateFormReplyEmailSelect.addEventListener("change", () => {
+      const secretariaId = sessionState && sessionState.secretaria_ativa_id;
+      const secretaria = getFormSecretariaById(secretariaId);
+      updateCertificateFormReplyEmailHint(secretaria, certificateFormReplyEmailSelect.value);
+    });
+  }
+
   if (formsRefreshBtn) {
     formsRefreshBtn.addEventListener("click", () => {
       void loadCertificateForms();

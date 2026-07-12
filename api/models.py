@@ -275,6 +275,33 @@ class CertificateFormResponse(Base):
 
     formulario: Mapped[CertificateForm] = relationship(back_populates="respostas")
     certificado: Mapped[Certificate | None] = relationship(foreign_keys=[certificado_id])
+    email_tentativas: Mapped[list["CertificateFormEmailAttempt"]] = relationship(
+        back_populates="formulario_resposta",
+        cascade="all, delete-orphan",
+    )
+
+
+class CertificateFormEmailAttempt(Base):
+    __tablename__ = "certificate_form_email_tentativas"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    formulario_resposta_id: Mapped[int | None] = mapped_column(
+        ForeignKey("certificate_form_responses.id"), index=True, nullable=True
+    )
+    formulario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("certificate_forms.id"), index=True, nullable=True
+    )
+    destinatario: Mapped[str] = mapped_column(String(254), nullable=False)
+    reply_to: Mapped[str | None] = mapped_column(String(254), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    erro: Mapped[str | None] = mapped_column(Text, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    enviado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    formulario_resposta: Mapped[CertificateFormResponse | None] = relationship(
+        back_populates="email_tentativas"
+    )
+    formulario: Mapped[CertificateForm | None] = relationship(foreign_keys=[formulario_id])
 
 
 class CertificateTemplate(Base):

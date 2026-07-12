@@ -20,6 +20,7 @@ from common import (
     utc_now,
 )
 from database import get_db
+from email_delivery import send_form_confirmation_email_if_needed
 from email_utils import normalize_optional_email
 from models import (
     CertificateForm,
@@ -228,6 +229,9 @@ def build_form_response(
 
 
 def build_response_item(response: CertificateFormResponse) -> CertificateFormResponseItem:
+    last_email_attempt = None
+    if response.email_tentativas:
+        last_email_attempt = max(response.email_tentativas, key=lambda item: item.criado_em)
     return CertificateFormResponseItem(
         id=response.id,
         formulario_id=response.formulario_id,
@@ -238,6 +242,10 @@ def build_response_item(response: CertificateFormResponse) -> CertificateFormRes
         certificado_id=response.certificado_id,
         certificado_codigo=response.certificado_codigo,
         certificado_gerado_em=response.certificado_gerado_em,
+        email_confirmacao_status=last_email_attempt.status if last_email_attempt else None,
+        email_confirmacao_em=last_email_attempt.enviado_em if last_email_attempt else None,
+        email_confirmacao_erro=last_email_attempt.erro if last_email_attempt else None,
+        email_confirmacao_reply_to=last_email_attempt.reply_to if last_email_attempt else None,
     )
 
 
@@ -560,9 +568,12 @@ def submit_public_certificate_form_response(
     )
     db.commit()
     db.refresh(response)
+    email_attempt = send_form_confirmation_email_if_needed(db, response=response)
     return CertificateFormSubmitResponse(
         message="Resposta enviada com sucesso.",
-        protocolo=response.id,
+        email_confirmacao_status=email_attempt.status if email_attempt else None,
+        email_confirmacao_enviado_em=email_attempt.enviado_em if email_attempt else None,
+        email_confirmacao_erro=email_attempt.erro if email_attempt else None,
     )
 
 

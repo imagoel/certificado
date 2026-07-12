@@ -169,6 +169,31 @@
     }
     .success-panel p { margin: 0 0 8px; color: var(--muted); line-height: 1.5; }
     .success-panel strong { color: var(--ink); }
+    .success-icon {
+      display: inline-grid;
+      width: 38px;
+      height: 38px;
+      margin-bottom: 12px;
+      place-items: center;
+      border-radius: 999px;
+      background: #047857;
+      color: #fff;
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+    .success-details {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      list-style: none;
+    }
+    .success-details li { line-height: 1.45; }
+    .success-email-note { font-weight: 700; }
+    .success-email-note.is-error { color: var(--danger); }
     .success-panel button { margin-top: 8px; background: #526781; }
     .closed { text-align: center; }
     .footer-note {
@@ -275,9 +300,16 @@
         </form>
 
         <section id="success-panel" class="success-panel" aria-live="polite">
+          <div class="success-icon" aria-hidden="true">✓</div>
           <h2>Inscrição realizada com sucesso!</h2>
           <p id="success-message"></p>
-          <p id="success-protocol"></p>
+          <ul class="success-details" aria-label="Dados da inscrição">
+            <li><strong>Curso:</strong> <span id="success-course"></span></li>
+            <li><strong>Data da atividade:</strong> <span id="success-date"></span></li>
+            <li><strong>Carga horária:</strong> <span id="success-hours"></span></li>
+          </ul>
+          <p id="success-email-note" class="success-email-note"></p>
+          <p id="success-spam-note"></p>
           <button id="new-response-btn" type="button">Realizar outra inscrição</button>
         </section>
       {% endif %}
@@ -293,13 +325,36 @@
       const submitBtn = document.getElementById("submit-btn");
       const successPanel = document.getElementById("success-panel");
       const successMessage = document.getElementById("success-message");
-      const successProtocol = document.getElementById("success-protocol");
+      const successCourse = document.getElementById("success-course");
+      const successDate = document.getElementById("success-date");
+      const successHours = document.getElementById("success-hours");
+      const successEmailNote = document.getElementById("success-email-note");
+      const successSpamNote = document.getElementById("success-spam-note");
       const newResponseBtn = document.getElementById("new-response-btn");
       const courseName = {{ formulario.curso|tojson }};
+      const activityDate = {{ formulario.concluido.isoformat()|tojson }};
+      const workload = Number({{ formulario.carga_h|tojson }}) || 0;
 
       function setStatus(message, type) {
         statusEl.textContent = message || "";
         statusEl.className = type ? `status ${type}` : "status";
+      }
+
+      function formatActivityDate(value) {
+        const parts = String(value || "").split("-").map((item) => Number(item));
+        if (parts.length !== 3 || parts.some((item) => !Number.isFinite(item))) {
+          return value || "-";
+        }
+        return new Intl.DateTimeFormat("pt-BR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC",
+        }).format(new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])));
+      }
+
+      function formatWorkload(value) {
+        return value === 1 ? "1 hora" : `${value} horas`;
       }
 
       if (newResponseBtn) {
@@ -343,10 +398,28 @@
           form.hidden = true;
           setStatus("", "");
           if (successMessage) {
-            successMessage.textContent = `Olá, ${participantName}. Sua inscrição no curso ${courseName} foi registrada. A confirmação foi enviada para ${participantEmail}.`;
+            successMessage.textContent =
+              `Olá, ${participantName}. Sua inscrição foi registrada.`;
           }
-          if (successProtocol) {
-            successProtocol.textContent = `Número da inscrição: INS-{{ formulario.concluido.year }}-${String(payload.protocolo).padStart(5, "0")}`;
+          if (successCourse) successCourse.textContent = courseName;
+          if (successDate) successDate.textContent = formatActivityDate(activityDate);
+          if (successHours) successHours.textContent = formatWorkload(workload);
+          if (successEmailNote) {
+            successEmailNote.className = "success-email-note";
+            if (payload && payload.email_confirmacao_status === "enviado") {
+              successEmailNote.textContent =
+                `Uma confirmação foi enviada para ${participantEmail}.`;
+            } else {
+              successEmailNote.textContent =
+                "Não conseguimos enviar a confirmação por e-mail agora, mas sua inscrição foi salva normalmente.";
+              successEmailNote.classList.add("is-error");
+            }
+          }
+          if (successSpamNote) {
+            successSpamNote.textContent =
+              payload && payload.email_confirmacao_status === "enviado"
+                ? "Confira também a caixa de spam ou lixo eletrônico."
+                : "";
           }
           if (successPanel) successPanel.classList.add("is-visible");
         } catch (error) {

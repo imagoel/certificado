@@ -121,6 +121,7 @@ const certificateFormCourseInput = document.getElementById("certificate-form-cou
 const certificateFormDateInput = document.getElementById("certificate-form-date");
 const certificateFormHoursInput = document.getElementById("certificate-form-hours");
 const certificateFormReplyEmailSelect = document.getElementById("certificate-form-reply-email");
+const certificateFormReplyEmailHint = document.getElementById("certificate-form-reply-email-hint");
 const certificateFormExtra1Input = document.getElementById("certificate-form-extra-1");
 const certificateFormExtra1LabelInput = document.getElementById("certificate-form-extra-1-label");
 const certificateFormExtra1TypeSelect = document.getElementById("certificate-form-extra-1-type");

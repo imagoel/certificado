@@ -4,6 +4,7 @@ import os
 import smtplib
 import ssl
 from dataclasses import dataclass
+from datetime import date
 from email.message import EmailMessage
 from email.utils import formataddr
 from html import escape
@@ -19,7 +20,16 @@ from common import (
     resolve_media_path,
     utc_now,
 )
-from models import Certificate, CertificateEmailAttempt, Usuario
+from models import (
+    Certificate,
+    CertificateEmailAttempt,
+    CertificateForm,
+    CertificateFormEmailAttempt,
+    CertificateFormResponse,
+    Secretaria,
+    SecretariaReplyEmail,
+    Usuario,
+)
 
 
 EMAIL_STATUS_SENT = "enviado"
@@ -117,6 +127,57 @@ def build_email_issuer_label(cert: Certificate) -> str:
     if sigla and secretaria_nome:
         return f"{sigla} - {secretaria_nome}"
     return sigla or secretaria_nome
+
+
+def build_reply_email_issuer_label(
+    secretaria: Secretaria | None,
+    reply_email: SecretariaReplyEmail | None,
+) -> str:
+    sigla = (secretaria.sigla if secretaria else "").strip().upper()
+    secretaria_nome = (secretaria.nome if secretaria else "").strip()
+    setor_nome = (
+        ""
+        if is_generic_reply_name(reply_email.nome if reply_email else None)
+        else (reply_email.nome if reply_email else "").strip()
+    )
+
+    if setor_nome and secretaria_nome:
+        return f"{setor_nome} - {secretaria_nome}"
+    if setor_nome and sigla:
+        return f"{setor_nome} - {sigla}"
+    if setor_nome:
+        return setor_nome
+    if sigla and secretaria_nome:
+        return f"{sigla} - {secretaria_nome}"
+    return sigla or secretaria_nome
+
+
+def build_form_email_issuer_label(
+    db: Session,
+    form: CertificateForm,
+) -> str:
+    reply_email = form.reply_email if form.reply_email and form.reply_email.ativo else None
+    if not reply_email and form.secretaria:
+        reply_email = get_default_secretaria_reply_email(db, form.secretaria)
+    return build_reply_email_issuer_label(form.secretaria, reply_email)
+
+
+def format_brazilian_date(value: date) -> str:
+    months = [
+        "janeiro",
+        "fevereiro",
+        "março",
+        "abril",
+        "maio",
+        "junho",
+        "julho",
+        "agosto",
+        "setembro",
+        "outubro",
+        "novembro",
+        "dezembro",
+    ]
+    return f"{value.day} de {months[value.month - 1]} de {value.year}"
 
 
 def build_certificate_email_text_body(
@@ -240,6 +301,151 @@ def build_certificate_email_html_body(
 </html>"""
 
 
+def build_form_confirmation_email_text_body(
+    *,
+    response: CertificateFormResponse,
+    form: CertificateForm,
+    institution_name: str,
+    issuer_label: str,
+) -> str:
+    issuer_line = f"\nEmitido por: {issuer_label}" if issuer_label else ""
+    carga_text = f"{form.carga_h} hora" if form.carga_h == 1 else f"{form.carga_h} horas"
+    return (
+        f"Olá, {response.nome}.\n\n"
+        f"Sua inscrição no curso {form.curso} foi registrada com sucesso.\n\n"
+        f"Data da atividade: {format_brazilian_date(form.concluido)}\n"
+        f"Carga horária: {carga_text}\n\n"
+        "Guarde este e-mail para consulta futura.\n\n"
+        "Caso precise corrigir alguma informação, responda este e-mail para falar "
+        "com a equipe responsável.\n\n"
+        "Atenciosamente,\n"
+        f"{institution_name}\n"
+        f"{issuer_line}"
+    ).strip()
+
+
+def build_form_confirmation_email_html_body(
+    *,
+    response: CertificateFormResponse,
+    form: CertificateForm,
+    institution_name: str,
+    issuer_label: str,
+    logo_url: str,
+) -> str:
+    escaped_logo_url = escape(logo_url, quote=True)
+    escaped_institution = escape(institution_name)
+    escaped_name = escape(response.nome)
+    escaped_course = escape(form.curso)
+    escaped_date = escape(format_brazilian_date(form.concluido))
+    escaped_hours = escape(f"{form.carga_h} hora" if form.carga_h == 1 else f"{form.carga_h} horas")
+    escaped_issuer = escape(issuer_label)
+    logo_html = ""
+    if escaped_logo_url:
+        logo_html = f"""
+            <tr>
+              <td align="center" style="padding-bottom: 24px;">
+                <img
+                  src="{escaped_logo_url}"
+                  alt="{escaped_institution}"
+                  width="160"
+                  style="display: block; max-width: 160px; height: auto; border: 0;"
+                />
+              </td>
+            </tr>"""
+
+    issuer_html = ""
+    if escaped_issuer:
+        issuer_html = f"""
+                <p style="font-size: 15px; line-height: 1.6; margin: 20px 0 0; color: #374151;">
+                  <strong>Emitido por:</strong> {escaped_issuer}
+                </p>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Confirmação de inscrição</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: Arial, Helvetica, sans-serif; color: #333333;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 24px 0;">
+      <tr>
+        <td align="center">
+          <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; padding: 32px; max-width: 600px;">
+{logo_html}
+            <tr>
+              <td>
+                <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 22px; text-align: center;">
+                  Inscrição registrada com sucesso
+                </h2>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                  Olá, {escaped_name}.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                  Sua inscrição no curso <strong>{escaped_course}</strong> foi registrada com sucesso.
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border-radius: 8px; margin: 8px 0 24px; padding: 16px;">
+                  <tr>
+                    <td style="font-size: 15px; line-height: 1.7; color: #374151;">
+                      <strong>Data da atividade:</strong> {escaped_date}<br />
+                      <strong>Carga horária:</strong> {escaped_hours}
+                    </td>
+                  </tr>
+                </table>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                  Guarde este e-mail para consulta futura.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                  Caso precise corrigir alguma informação, responda este e-mail para falar com a equipe responsável.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin: 0;">
+                  Atenciosamente,<br />
+                  <strong>{escaped_institution}</strong>
+                </p>{issuer_html}
+              </td>
+            </tr>
+          </table>
+          <p style="font-size: 12px; color: #777777; margin: 16px 0 0; text-align: center;">
+            Este é um e-mail automático. Responda apenas se precisar falar com a secretaria responsável.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>"""
+
+
+def build_form_confirmation_email_message(
+    *,
+    config: SmtpConfig,
+    response: CertificateFormResponse,
+    form: CertificateForm,
+    reply_to: str,
+    issuer_label: str,
+) -> EmailMessage:
+    message = EmailMessage()
+    message["Subject"] = f"Confirmação de inscrição - {form.curso}"
+    message["From"] = formataddr((config.from_name, config.from_email))
+    message["To"] = response.email or ""
+    message["Reply-To"] = reply_to
+
+    text_body = build_form_confirmation_email_text_body(
+        response=response,
+        form=form,
+        institution_name=config.email_institution_name,
+        issuer_label=issuer_label,
+    )
+    html_body = build_form_confirmation_email_html_body(
+        response=response,
+        form=form,
+        institution_name=config.email_institution_name,
+        issuer_label=issuer_label,
+        logo_url=config.email_logo_url,
+    )
+    message.set_content(text_body)
+    message.add_alternative(html_body, subtype="html")
+    return message
+
+
 def build_certificate_email_message(
     *,
     config: SmtpConfig,
@@ -358,6 +564,158 @@ def safe_record_email_attempt(
     except Exception:
         db.rollback()
         return None
+
+
+def record_form_confirmation_email_attempt(
+    db: Session,
+    *,
+    response: CertificateFormResponse,
+    destinatario: str,
+    reply_to: str | None,
+    status: str,
+    erro: str | None = None,
+) -> CertificateFormEmailAttempt | None:
+    attempt = CertificateFormEmailAttempt(
+        formulario_resposta_id=response.id,
+        formulario_id=response.formulario_id,
+        destinatario=destinatario,
+        reply_to=reply_to,
+        status=status,
+        erro=erro,
+        criado_em=utc_now(),
+        enviado_em=utc_now() if status == EMAIL_STATUS_SENT else None,
+    )
+    db.add(attempt)
+    db.flush()
+    record_audit_event(
+        db,
+        evento=(
+            "formulario_email_confirmacao_enviado"
+            if status == EMAIL_STATUS_SENT
+            else "formulario_email_confirmacao_falhou"
+        ),
+        descricao=(
+            f"Confirmacao de inscricao do formulario {response.formulario.titulo} "
+            f"enviada para {destinatario}."
+            if status == EMAIL_STATUS_SENT
+            else (
+                f"Falha ao enviar confirmacao de inscricao do formulario "
+                f"{response.formulario.titulo} para {destinatario}: {erro}"
+            )
+        ),
+        secretaria=response.formulario.secretaria,
+        entidade_tipo="formulario_email",
+        entidade_id=attempt.id,
+    )
+    db.commit()
+    db.refresh(attempt)
+    return attempt
+
+
+def safe_record_form_confirmation_email_attempt(
+    db: Session,
+    *,
+    response: CertificateFormResponse,
+    destinatario: str,
+    reply_to: str | None,
+    status: str,
+    erro: str | None = None,
+) -> CertificateFormEmailAttempt | None:
+    try:
+        return record_form_confirmation_email_attempt(
+            db,
+            response=response,
+            destinatario=destinatario,
+            reply_to=reply_to,
+            status=status,
+            erro=erro,
+        )
+    except Exception:
+        db.rollback()
+        return None
+
+
+def resolve_form_confirmation_reply_to(
+    db: Session,
+    form: CertificateForm,
+) -> str | None:
+    if form.reply_email and form.reply_email.ativo:
+        return form.reply_email.email
+    default_reply = get_default_secretaria_reply_email(db, form.secretaria) if form.secretaria else None
+    return (
+        (default_reply.email if default_reply else None)
+        or (form.secretaria.email_resposta if form.secretaria else None)
+    )
+
+
+def send_form_confirmation_email_if_needed(
+    db: Session,
+    *,
+    response: CertificateFormResponse,
+) -> CertificateFormEmailAttempt | None:
+    if not response.email:
+        return None
+
+    config = load_smtp_config()
+    destinatario = response.email
+    reply_to = resolve_form_confirmation_reply_to(db, response.formulario)
+
+    if not config.enabled:
+        return safe_record_form_confirmation_email_attempt(
+            db,
+            response=response,
+            destinatario=destinatario,
+            reply_to=reply_to,
+            status=EMAIL_STATUS_FAILED,
+            erro="Envio por email desativado no sistema.",
+        )
+
+    config_error = validate_smtp_config(config)
+    if config_error:
+        return safe_record_form_confirmation_email_attempt(
+            db,
+            response=response,
+            destinatario=destinatario,
+            reply_to=reply_to,
+            status=EMAIL_STATUS_FAILED,
+            erro=config_error,
+        )
+    if not reply_to:
+        return safe_record_form_confirmation_email_attempt(
+            db,
+            response=response,
+            destinatario=destinatario,
+            reply_to=None,
+            status=EMAIL_STATUS_FAILED,
+            erro="Secretaria sem email de resposta cadastrado.",
+        )
+
+    try:
+        message = build_form_confirmation_email_message(
+            config=config,
+            response=response,
+            form=response.formulario,
+            reply_to=reply_to,
+            issuer_label=build_form_email_issuer_label(db, response.formulario),
+        )
+        send_smtp_message(config, message)
+    except Exception as exc:
+        return safe_record_form_confirmation_email_attempt(
+            db,
+            response=response,
+            destinatario=destinatario,
+            reply_to=reply_to,
+            status=EMAIL_STATUS_FAILED,
+            erro=summarize_email_error(exc),
+        )
+
+    return safe_record_form_confirmation_email_attempt(
+        db,
+        response=response,
+        destinatario=destinatario,
+        reply_to=reply_to,
+        status=EMAIL_STATUS_SENT,
+    )
 
 
 def send_certificate_email_if_needed(

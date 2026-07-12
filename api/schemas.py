@@ -268,6 +268,10 @@ class CertificateFormResponseItem(BaseModel):
     certificado_id: Optional[int] = None
     certificado_codigo: Optional[str] = None
     certificado_gerado_em: Optional[datetime] = None
+    email_confirmacao_status: Optional[str] = None
+    email_confirmacao_em: Optional[datetime] = None
+    email_confirmacao_erro: Optional[str] = None
+    email_confirmacao_reply_to: Optional[str] = None
 
 
 class CertificateFormResponse(BaseModel):
@@ -308,7 +312,9 @@ class CertificateFormPublicResponse(BaseModel):
 
 class CertificateFormSubmitResponse(BaseModel):
     message: str
-    protocolo: int
+    email_confirmacao_status: Optional[str] = None
+    email_confirmacao_enviado_em: Optional[datetime] = None
+    email_confirmacao_erro: Optional[str] = None
 
 
 class UserSessionResponse(BaseModel):
