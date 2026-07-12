@@ -465,7 +465,7 @@ def export_certificate_form_responses_csv(
     extra_fields = normalize_extra_fields(form.campos_extras)
     output = StringIO()
     writer = csv.writer(output, delimiter=";")
-    headers = ["Nome", "Email", "Curso", "Carga horaria", "Conclusao"]
+    headers = ["Nome", "Email", "Curso", "Carga hor\u00e1ria", "Data"]
     headers.extend(field["nome"] for field in extra_fields)
     headers.extend(["Respondido em", "Certificado"])
     writer.writerow(headers)
@@ -477,10 +477,10 @@ def export_certificate_form_responses_csv(
             response.email or "",
             form.curso,
             form.carga_h,
-            form.concluido.isoformat(),
+            form.concluido.strftime("%d/%m/%Y"),
         ]
         row.extend(str(data.get(field["nome"], "")) for field in extra_fields)
-        row.extend([response.criado_em.isoformat(), response.certificado_codigo or ""])
+        row.extend([response.criado_em.strftime("%d/%m/%Y %H:%M:%S"), response.certificado_codigo or ""])
         writer.writerow(row)
 
     filename = f"respostas-formulario-{form.id}.csv"

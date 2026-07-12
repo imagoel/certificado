@@ -672,10 +672,90 @@ async function copyFormLink(form, statusSetter = setCertificateFormStatus) {
   }
 }
 
+function getFormExportExtraFields(form) {
+  return Array.isArray(form && form.campos_extras)
+    ? form.campos_extras.filter((field) => sanitizeText(field && field.nome))
+    : [];
+}
+
+function buildFormResponsesExportRows(form, responses) {
+  const extraFields = getFormExportExtraFields(form);
+  const headers = [
+    "Nome",
+    "Email",
+    "Curso",
+    "Carga hor\u00e1ria",
+    "Data",
+    ...extraFields.map((field) => field.nome),
+    "Respondido em",
+    "Certificado",
+  ];
+  const rows = [headers];
+
+  (Array.isArray(responses) ? responses : []).forEach((item) => {
+    const extras = item.dados_extras || {};
+    rows.push([
+      item.nome || "",
+      item.email || "",
+      form.curso || "",
+      Number(form.carga_h) || 0,
+      formatDate(form.concluido),
+      ...extraFields.map((field) => extras[field.nome] || ""),
+      formatDateTime(item.criado_em),
+      item.certificado_codigo || "",
+    ]);
+  });
+
+  return rows;
+}
+
+function getFormResponsesColumnWidths(rows) {
+  const headers = Array.isArray(rows && rows[0]) ? rows[0] : [];
+  return headers.map((header, columnIndex) => {
+    const maxLength = rows.reduce((max, row) => {
+      const value = row && row[columnIndex] !== undefined && row[columnIndex] !== null
+        ? String(row[columnIndex])
+        : "";
+      return Math.max(max, value.length);
+    }, String(header || "").length);
+    return { wch: Math.min(Math.max(maxLength + 2, 12), 42) };
+  });
+}
+
+function downloadFormResponsesXlsx(form, responses) {
+  if (!window.XLSX || !window.XLSX.utils) {
+    throw new Error("Biblioteca de Excel indisponivel.");
+  }
+
+  const rows = buildFormResponsesExportRows(form, responses);
+  const worksheet = window.XLSX.utils.aoa_to_sheet(rows);
+  worksheet["!cols"] = getFormResponsesColumnWidths(rows);
+  worksheet["!autofilter"] = {
+    ref: window.XLSX.utils.encode_range({
+      s: { r: 0, c: 0 },
+      e: { r: Math.max(rows.length - 1, 0), c: Math.max((rows[0] || []).length - 1, 0) },
+    }),
+  };
+
+  const workbook = window.XLSX.utils.book_new();
+  window.XLSX.utils.book_append_sheet(workbook, worksheet, "Respostas");
+  const bytes = window.XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([bytes], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  downloadBlob(blob, `respostas-formulario-${form.id}-${buildTimestamp()}.xlsx`);
+}
+
 async function exportSelectedFormResponsesCsv() {
   const form = getSelectedCertificateForm();
   if (!form) return;
   try {
+    if (window.XLSX && window.XLSX.utils) {
+      downloadFormResponsesXlsx(form, formsState.responses);
+      setFormResponsesStatus("Planilha Excel exportada.", "success");
+      return;
+    }
+
     const response = await fetch(`${getApiBaseUrl()}/api/formularios/${form.id}/respostas.csv`, {
       credentials: "include",
     });
