@@ -743,7 +743,13 @@ function downloadFormResponsesXlsx(form, responses) {
   const blob = new Blob([bytes], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
-  downloadBlob(blob, `respostas-formulario-${form.id}-${buildTimestamp()}.xlsx`);
+  downloadBlob(blob, `${getFormResponsesExportFileBase(form)}.xlsx`);
+}
+
+function getFormResponsesExportFileBase(form) {
+  const courseName = form && form.curso ? form.curso : "";
+  const fallback = form && form.id ? `formulario_${form.id}` : "formulario_respostas";
+  return `respostas-formulario-${sanitizeFileName(courseName, fallback)}`;
 }
 
 async function exportSelectedFormResponsesCsv() {
@@ -761,7 +767,7 @@ async function exportSelectedFormResponsesCsv() {
     });
     if (!response.ok) throw new Error("Nao foi possivel exportar CSV.");
     const blob = await response.blob();
-    downloadBlob(blob, `respostas-formulario-${form.id}-${buildTimestamp()}.csv`);
+    downloadBlob(blob, `${getFormResponsesExportFileBase(form)}.csv`);
   } catch (error) {
     setFormResponsesStatus(error.message || "Nao foi possivel exportar CSV.", "error");
   }

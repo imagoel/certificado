@@ -1,8 +1,10 @@
 import csv
 import hashlib
+import re
 import secrets
 import time
 from io import StringIO
+from unicodedata import normalize as normalize_unicode
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
@@ -46,6 +48,13 @@ router = APIRouter()
 FORM_SUBMIT_WINDOW_SECONDS = 600
 FORM_SUBMIT_MAX_ATTEMPTS = 5
 FORM_RATE_LIMITS: dict[str, list[float]] = {}
+
+
+def sanitize_export_filename(text: str | None, fallback: str) -> str:
+    normalized = normalize_unicode("NFD", (text or "").strip())
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+    safe_text = re.sub(r"[^a-zA-Z0-9-_]+", "_", ascii_text).strip("_")
+    return safe_text or fallback
 
 
 def cleanup_form_rate_limits(now: float) -> None:
@@ -483,7 +492,8 @@ def export_certificate_form_responses_csv(
         row.extend([response.criado_em.strftime("%d/%m/%Y %H:%M:%S"), response.certificado_codigo or ""])
         writer.writerow(row)
 
-    filename = f"respostas-formulario-{form.id}.csv"
+    safe_course_name = sanitize_export_filename(form.curso, f"formulario-{form.id}")
+    filename = f"respostas-formulario-{safe_course_name}.csv"
     return Response(
         content=output.getvalue(),
         media_type="text/csv; charset=utf-8",
