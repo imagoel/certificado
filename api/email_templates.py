@@ -8,7 +8,6 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from common import get_default_secretaria_reply_email
 from email_config import SmtpConfig
 from models import (
     Certificate,
@@ -17,6 +16,7 @@ from models import (
     Secretaria,
     SecretariaReplyEmail,
 )
+from reply_email_service import get_default_secretaria_reply_email
 
 
 def is_generic_reply_name(value: str | None) -> bool:
@@ -399,4 +399,3 @@ def build_certificate_email_message(
         filename=f"{cert.codigo}.png",
     )
     return message
-

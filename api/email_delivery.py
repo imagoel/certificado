@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from common import (
     build_validation_url,
-    get_default_secretaria_reply_email,
     resolve_media_path,
 )
 from email_attempts import (
@@ -45,6 +44,7 @@ from models import (
     CertificateFormEmailAttempt,
     Usuario,
 )
+from reply_email_service import get_default_secretaria_reply_email
 from smtp_sender import send_smtp_message, smtplib
 
 

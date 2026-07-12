@@ -25,7 +25,6 @@ from common import (
     record_audit_event,
     require_active_secretaria,
     replace_certificate_png_safely,
-    resolve_secretaria_reply_choice,
     resolve_media_path,
     sanitize_code,
     to_response,
@@ -43,6 +42,7 @@ from schemas import (
     CertificateResponse,
     PaginatedCertificateResponse,
 )
+from reply_email_service import resolve_secretaria_reply_choice
 from security import calculate_certificate_hash
 
 
