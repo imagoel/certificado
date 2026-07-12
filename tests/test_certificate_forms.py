@@ -50,6 +50,10 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
 
     page_response = client.get(f"/formularios/f/{form['token']}")
     assert page_response.status_code == 200
+    assert "Prefeitura Municipal de Amargosa" in page_response.text
+    assert "Dados do participante" in page_response.text
+    assert "Confirmar inscricao" in page_response.text
+    assert "Enviar resposta" not in page_response.text
     assert "Qual secretaria faz parte?" in page_response.text
     assert "<select" in page_response.text
 
