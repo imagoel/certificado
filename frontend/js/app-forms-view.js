@@ -105,8 +105,9 @@ function getCertificateFormExtraFieldControls() {
 }
 
 function parseCertificateFormExtraOptions(value) {
-  return sanitizeText(value)
-    .split(/\r?\n|;/)
+  return String(value || "")
+    .replace(/\r/g, "\n")
+    .split(/\n|;/)
     .map((item) => sanitizeText(item))
     .filter(Boolean);
 }
@@ -329,8 +330,12 @@ function renderCertificateFormsTable() {
     const secretariaCell = document.createElement("td");
     secretariaCell.textContent = item.secretaria_sigla || "-";
 
+    const totalResponses = Number(item.respostas_total) || 0;
+    const pendingResponses = Number(item.respostas_pendentes) || 0;
     const responsesCell = document.createElement("td");
-    responsesCell.textContent = `${item.respostas_total || 0} total / ${item.respostas_pendentes || 0} pendente(s)`;
+    responsesCell.textContent =
+      `${totalResponses} resposta${totalResponses === 1 ? "" : "s"} • ` +
+      `${pendingResponses} aguardando certificado`;
 
     const statusCell = document.createElement("td");
     const status = document.createElement("span");
@@ -341,41 +346,91 @@ function renderCertificateFormsTable() {
     const actionsCell = document.createElement("td");
     actionsCell.className = "actions-cell";
 
-    const responsesBtn = document.createElement("button");
-    responsesBtn.type = "button";
-    responsesBtn.className = "secondary-btn compact-action";
-    responsesBtn.textContent = "Respostas";
-    responsesBtn.addEventListener("click", () => {
-      void loadFormResponses(item.id);
+    const copyBtn = createInlineButton(
+      "Copiar link",
+      () => {
+        void copyFormLink(item, setCertificateFormStatus);
+      },
+      "secondary-btn compact-action"
+    );
+    const qrBtn = createInlineButton(
+      "QR Code",
+      () => {
+        void downloadFormQrCode(item, setCertificateFormStatus);
+      },
+      "secondary-btn compact-action"
+    );
+    const responsesBtn = createInlineButton(
+      "Respostas",
+      () => {
+        void loadFormResponses(item.id);
+      },
+      "secondary-btn compact-action"
+    );
+    const editBtn = createInlineButton(
+      "Editar",
+      () => {
+        fillCertificateFormForm(item);
+      },
+      "secondary-btn compact-action"
+    );
+
+    actionsCell.append(copyBtn, qrBtn, responsesBtn, editBtn);
+    const menu = document.createElement("details");
+    menu.className = "action-menu";
+    menu.addEventListener("toggle", () => {
+      if (menu.open) {
+        closeOpenActionMenus(menu);
+        window.requestAnimationFrame(() => {
+          positionActionMenu(menu);
+        });
+      } else {
+        resetActionMenuPosition(menu);
+      }
     });
 
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "secondary-btn compact-action";
-    editBtn.textContent = "Editar";
-    editBtn.addEventListener("click", () => {
-      fillCertificateFormForm(item);
-    });
+    const summary = document.createElement("summary");
+    summary.className = "icon-btn action-menu-trigger";
+    summary.title = "Mais ações";
+    summary.setAttribute("aria-label", "Mais ações");
+    summary.appendChild(createIconSvg("more"));
 
-    const toggleBtn = document.createElement("button");
-    toggleBtn.type = "button";
-    toggleBtn.className = "secondary-btn compact-action";
-    toggleBtn.textContent = item.ativo ? "Desativar" : "Ativar";
-    toggleBtn.addEventListener("click", () => {
-      void toggleCertificateFormActive(item);
-    });
-
-    actionsCell.append(responsesBtn, editBtn, toggleBtn);
+    const menuContent = document.createElement("div");
+    menuContent.className = "action-menu-content";
+    menuContent.appendChild(
+      createInlineButton(
+        "Visualizar formulário",
+        () => {
+          menu.open = false;
+          window.open(item.public_url, "_blank", "noopener,noreferrer");
+        },
+        "action-menu-item"
+      )
+    );
+    menuContent.appendChild(
+      createInlineButton(
+        item.ativo ? "Desativar formulário" : "Ativar formulário",
+        () => {
+          menu.open = false;
+          void toggleCertificateFormActive(item);
+        },
+        "action-menu-item"
+      )
+    );
     if (isAdminSession()) {
-      const deleteBtn = document.createElement("button");
-      deleteBtn.type = "button";
-      deleteBtn.className = "danger-btn compact-action";
-      deleteBtn.textContent = "Excluir";
-      deleteBtn.addEventListener("click", () => {
-        void deleteCertificateForm(item);
-      });
-      actionsCell.appendChild(deleteBtn);
+      menuContent.appendChild(
+        createInlineButton(
+          "Excluir formulário",
+          () => {
+            menu.open = false;
+            void deleteCertificateForm(item);
+          },
+          "action-menu-item danger-action"
+        )
+      );
     }
+    menu.append(summary, menuContent);
+    actionsCell.appendChild(menu);
     row.append(titleCell, secretariaCell, responsesCell, statusCell, actionsCell);
     certificateFormListBody.appendChild(row);
   });
@@ -516,6 +571,11 @@ function loadSelectedFormResponsesIntoGenerator() {
 async function downloadSelectedFormQrCode() {
   const form = getSelectedCertificateForm();
   if (!form) return;
+  await downloadFormQrCode(form, setFormResponsesStatus);
+}
+
+async function downloadFormQrCode(form, statusSetter = setCertificateFormStatus) {
+  if (!form || !form.public_url) return;
   try {
     const response = await fetch(
       `${getApiBaseUrl()}/api/qrcode?texto=${encodeURIComponent(form.public_url)}`,
@@ -525,18 +585,23 @@ async function downloadSelectedFormQrCode() {
     const blob = await response.blob();
     downloadBlob(blob, `qr-formulario-${form.id}.png`);
   } catch (error) {
-    setFormResponsesStatus(error.message || "Nao foi possivel baixar o QR Code.", "error");
+    statusSetter(error.message || "Nao foi possivel baixar o QR Code.", "error");
   }
 }
 
 async function copySelectedFormLink() {
   const form = getSelectedCertificateForm();
   if (!form) return;
+  await copyFormLink(form, setFormResponsesStatus);
+}
+
+async function copyFormLink(form, statusSetter = setCertificateFormStatus) {
+  if (!form || !form.public_url) return;
   try {
     await navigator.clipboard.writeText(form.public_url);
-    setFormResponsesStatus("Link copiado.", "success");
+    statusSetter("Link do formulário copiado.", "success");
   } catch (_error) {
-    setFormResponsesStatus(form.public_url, "info");
+    statusSetter(form.public_url, "info");
   }
 }
 

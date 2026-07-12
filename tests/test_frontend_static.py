@@ -244,8 +244,31 @@ def test_forms_delete_action_is_admin_only_in_frontend():
 
     assert "function deleteCertificateForm" in source
     assert 'method: "DELETE"' in source
-    assert 'textContent = "Excluir"' in source
+    assert '"Excluir formulário"' in source
+    assert '"action-menu-item danger-action"' in source
     assert "if (isAdminSession())" in source
+
+
+def test_forms_listing_exposes_link_qr_and_secondary_actions():
+    source = _frontend_source()
+
+    assert '"Copiar link"' in source
+    assert '"QR Code"' in source
+    assert '"Visualizar formulário"' in source
+    assert '"Desativar formulário"' in source
+    assert "function copyFormLink" in source
+    assert "function downloadFormQrCode" in source
+    assert "aguardando certificado" in source
+
+
+def test_forms_options_parser_preserves_line_breaks():
+    forms_source = (FRONTEND_JS_DIR / "app-forms-view.js").read_text(encoding="utf-8")
+
+    assert "function parseCertificateFormExtraOptions" in forms_source
+    assert 'String(value || "")' in forms_source
+    assert '.replace(/\\r/g, "\\n")' in forms_source
+    assert ".split(/\\n|;/)" in forms_source
+    assert "sanitizeText(value)\n    .split" not in forms_source
 
 
 def test_certificate_email_status_and_resend_are_wired_in_listing_ui():
