@@ -22,6 +22,9 @@ function registerSectionEvents() {
       if (section === "forms" && sessionState && canManageCertificateForms()) {
         void loadCertificateForms();
       }
+      if (section === "generator" && sessionState) {
+        void refreshGeneratorCatalogs();
+      }
     });
   });
 
