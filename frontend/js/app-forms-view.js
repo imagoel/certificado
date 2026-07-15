@@ -772,3 +772,29 @@ async function exportSelectedFormResponsesCsv() {
     setFormResponsesStatus(error.message || "Nao foi possivel exportar CSV.", "error");
   }
 }
+
+async function normalizeSelectedFormResponseNames() {
+  const form = getSelectedCertificateForm();
+  if (!form) return;
+  const confirmed = await openConfirmActionDialog({
+    title: "Padronizar nomes?",
+    message: `Padronizar os nomes das respostas pendentes do formulário "${form.titulo || form.curso}"?`,
+    summary:
+      "Esta ação corrige maiúsculas/minúsculas apenas nas respostas que ainda não geraram certificado.",
+    confirmLabel: "Padronizar nomes",
+  });
+  if (!confirmed) return;
+
+  try {
+    setFormResponsesStatus("Padronizando nomes...", "info");
+    const response = await apiJsonRequest(`/api/formularios/${form.id}/respostas/padronizar-nomes`, {
+      method: "POST",
+      body: "{}",
+    });
+    await loadFormResponses(form.id);
+    setFormResponsesStatus(response.message || "Nomes padronizados.", "success");
+  } catch (error) {
+    console.error(error);
+    setFormResponsesStatus(error.message || "Nao foi possivel padronizar os nomes.", "error");
+  }
+}

@@ -151,6 +151,38 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
     assert responses.json()[0]["email_confirmacao_status"] == "falhou"
 
 
+def test_operador_padroniza_nomes_de_respostas_antigas(client, seed_data, login, app_ctx):
+    login("operador", seed_data["operador_password"])
+    form = _create_form(client, seed_data)
+
+    submit_response = client.post(
+        f"/api/formularios/publico/{form['token']}/respostas",
+        json={
+            "nome": "MARIA DAS DORES DE SOUZA",
+            "email": "maria@example.com",
+            "dados_extras": {"Secretaria": "SEAFI"},
+            "website": "",
+        },
+    )
+    assert submit_response.status_code == 201
+
+    db = app_ctx.database.SessionLocal()
+    try:
+        response = db.query(app_ctx.models.CertificateFormResponse).first()
+        response.nome = "MARIA DAS DORES DE SOUZA"
+        db.commit()
+    finally:
+        db.close()
+
+    normalize_response = client.post(f"/api/formularios/{form['id']}/respostas/padronizar-nomes")
+    assert normalize_response.status_code == 200
+    assert normalize_response.json()["message"] == "1 nome(s) pendente(s) padronizado(s)."
+
+    responses = client.get(f"/api/formularios/{form['id']}/respostas")
+    assert responses.status_code == 200
+    assert responses.json()[0]["nome"] == "Maria das Dores de Souza"
+
+
 def test_formulario_inativo_nao_recebe_respostas(client, seed_data, login):
     login("operador", seed_data["operador_password"])
     form = _create_form(client, seed_data, ativo=False, email_obrigatorio=False, campos_extras=[])

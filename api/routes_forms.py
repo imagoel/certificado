@@ -458,6 +458,50 @@ def list_certificate_form_responses(
     return [build_response_item(response) for response in responses]
 
 
+@router.post("/api/formularios/{form_id}/respostas/padronizar-nomes", response_model=ActionResponse)
+def normalize_certificate_form_response_names(
+    form_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> ActionResponse:
+    form = get_form_by_id(db, form_id)
+    ensure_form_access(db, usuario, form)
+    responses = (
+        db.query(CertificateFormResponse)
+        .filter(
+            CertificateFormResponse.formulario_id == form.id,
+            CertificateFormResponse.certificado_id.is_(None),
+        )
+        .order_by(CertificateFormResponse.criado_em.asc(), CertificateFormResponse.id.asc())
+        .all()
+    )
+
+    changed = 0
+    for response in responses:
+        normalized_name = normalize_participant_name(response.nome)
+        if normalized_name and normalized_name != response.nome:
+            response.nome = normalized_name
+            changed += 1
+
+    if changed:
+        form.atualizado_em = utc_now()
+        record_audit_event(
+            db,
+            evento="formulario_respostas_nomes_padronizados",
+            descricao=(
+                f"{changed} nome(s) de resposta do formulario {form.titulo} "
+                f"padronizado(s) por {usuario.username}."
+            ),
+            usuario=usuario,
+            secretaria=form.secretaria,
+            entidade_tipo="formulario",
+            entidade_id=form.id,
+        )
+        db.commit()
+
+    return ActionResponse(message=f"{changed} nome(s) pendente(s) padronizado(s).")
+
+
 @router.get("/api/formularios/{form_id}/respostas.csv")
 def export_certificate_form_responses_csv(
     form_id: int,

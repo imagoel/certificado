@@ -67,6 +67,12 @@
     });
   }
 
+  if (formNormalizeNamesBtn) {
+    formNormalizeNamesBtn.addEventListener("click", () => {
+      void normalizeSelectedFormResponseNames();
+    });
+  }
+
   if (formLoadGeneratorBtn) {
     formLoadGeneratorBtn.addEventListener("click", () => {
       loadSelectedFormResponsesIntoGenerator();

@@ -148,6 +148,7 @@ const formResponsesListBody = document.getElementById("form-responses-list-body"
 const formCopyLinkBtn = document.getElementById("form-copy-link");
 const formDownloadQrBtn = document.getElementById("form-download-qr");
 const formExportCsvBtn = document.getElementById("form-export-csv");
+const formNormalizeNamesBtn = document.getElementById("form-normalize-names");
 const formLoadGeneratorBtn = document.getElementById("form-load-generator");
 
 const userForm = document.getElementById("user-form");
