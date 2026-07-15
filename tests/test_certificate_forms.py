@@ -133,7 +133,7 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
     submit_response = client.post(
         f"/api/formularios/publico/{form['token']}/respostas",
         json={
-            "nome": "Aluno Form",
+            "nome": "ALUNO FORM DE TESTE",
             "email": "ALUNO@EXAMPLE.COM",
             "dados_extras": {"Secretaria": "SEAFI"},
             "website": "",
@@ -145,7 +145,7 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
 
     responses = client.get(f"/api/formularios/{form['id']}/respostas")
     assert responses.status_code == 200
-    assert responses.json()[0]["nome"] == "Aluno Form"
+    assert responses.json()[0]["nome"] == "Aluno Form de Teste"
     assert responses.json()[0]["email"] == "ALUNO@example.com"
     assert responses.json()[0]["dados_extras"] == {"Secretaria": "SEAFI"}
     assert responses.json()[0]["email_confirmacao_status"] == "falhou"

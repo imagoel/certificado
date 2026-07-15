@@ -93,7 +93,7 @@
 
       <section id="generator-section" class="stack-section">
         <section class="panel">
-          <form id="cert-form" class="form">
+          <form id="cert-form" class="form" novalidate>
             <section id="certificate-edit-banner" class="certificate-edit-banner" hidden>
               <div>
                 <strong id="certificate-edit-title">Editando certificado</strong>
@@ -510,8 +510,8 @@
               />
 
               <div class="actions">
-                <button id="batch-preview" type="button" class="secondary-btn">Pré-visualizar</button>
-                <button id="batch-generate" type="button">Gerar Lote (ZIP)</button>
+                <button id="batch-preview" type="button" class="secondary-btn" hidden>Pré-visualizar</button>
+                <button id="batch-generate" type="button" class="secondary-btn">Gerar e baixar ZIP</button>
               </div>
               <p id="batch-status" class="status" aria-live="polite"></p>
 
@@ -520,7 +520,7 @@
                   <div>
                     <h3>Prévia da planilha</h3>
                     <p id="batch-preview-summary" class="subtitle">
-                      Selecione uma planilha e clique em Pré-visualizar.
+                      Selecione uma planilha para carregar a prévia automaticamente.
                     </p>
                   </div>
                 </div>
@@ -1700,7 +1700,7 @@
       </div>
 
       <div class="actions">
-        <button type="submit">Gerar e salvar PNGs</button>
+        <button type="submit">Gerar certificados</button>
         <button id="batch-confirm-cancel" type="button" class="secondary-btn">Cancelar</button>
       </div>
       <p id="batch-confirm-status" class="status" aria-live="polite"></p>

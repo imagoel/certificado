@@ -627,7 +627,7 @@ function loadSelectedFormResponsesIntoGenerator() {
     loadExternalBatchIntoGenerator(prepared);
     switchSection("generator");
     setBatchStatus(
-      `Respostas do formulário "${form.titulo}" carregadas. Revise o certificado e clique em Gerar Lote (ZIP).`,
+      `Respostas do formulário "${form.titulo}" carregadas. Revise o certificado e clique em Gerar certificados ou Gerar e baixar ZIP.`,
       "success"
     );
   } catch (error) {

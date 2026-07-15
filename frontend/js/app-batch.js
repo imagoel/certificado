@@ -40,21 +40,40 @@ function buildIgnoredRowsSummary(invalidRows, limit = 5) {
 
 function setBatchButtonsDisabled(disabled) {
   const isEditing = Boolean(editingCertificate);
-  if (batchPreviewBtn) batchPreviewBtn.disabled = disabled || isEditing;
+  syncBatchSourceUi();
+  if (batchPreviewBtn) batchPreviewBtn.disabled = true;
   if (batchGenerateBtn) batchGenerateBtn.disabled = disabled || isEditing;
   syncGenerateSubmitButton();
+}
+
+function syncBatchSourceUi() {
+  if (batchPreviewBtn) {
+    batchPreviewBtn.hidden = true;
+    batchPreviewBtn.title = "A previa e carregada automaticamente.";
+  }
+  if (batchGenerateBtn) {
+    batchGenerateBtn.textContent = "Gerar e baixar ZIP";
+    batchGenerateBtn.title =
+      "Gera os certificados, salva os PNGs, tenta enviar os e-mails e baixa um ZIP.";
+  }
 }
 
 function syncGenerateSubmitButton() {
   if (!generateSubmitBtn) return;
   const isEditing = Boolean(editingCertificate);
+  const hasExternalBatch = Boolean(loadedExternalBatch);
   generateSubmitBtn.disabled =
     isBatchRunning || isSingleGenerationRunning || isCertificateEditSaving || isEditing;
+  generateSubmitBtn.title = hasExternalBatch
+    ? "Gera os certificados, salva os PNGs e tenta enviar os e-mails sem baixar ZIP."
+    : "";
   generateSubmitBtn.textContent = isEditing
     ? "Em edicao"
-    : isSingleGenerationRunning
-      ? "Gerando..."
-      : "Gerar Certificado";
+    : hasExternalBatch
+      ? "Gerar certificados"
+      : isSingleGenerationRunning
+        ? "Gerando..."
+        : "Gerar Certificado";
 }
 
 function getBatchDefaults() {
@@ -78,9 +97,10 @@ function getBatchDefaults() {
 
 function resetBatchPreview() {
   loadedExternalBatch = null;
+  syncBatchSourceUi();
   if (batchPreviewPanel) batchPreviewPanel.hidden = true;
   if (batchPreviewSummary) {
-    batchPreviewSummary.textContent = "Selecione uma planilha e clique em Pré-visualizar.";
+    batchPreviewSummary.textContent = "Selecione uma planilha para carregar a prévia automaticamente.";
   }
   if (batchPreviewBody) {
     batchPreviewBody.innerHTML = `
@@ -92,9 +112,10 @@ function resetBatchPreview() {
 }
 
 function resetBatchPreviewViewOnly() {
+  syncBatchSourceUi();
   if (batchPreviewPanel) batchPreviewPanel.hidden = true;
   if (batchPreviewSummary) {
-    batchPreviewSummary.textContent = "Selecione uma planilha e clique em Pré-visualizar.";
+    batchPreviewSummary.textContent = "Selecione uma planilha para carregar a prévia automaticamente.";
   }
   if (batchPreviewBody) {
     batchPreviewBody.innerHTML = `
@@ -108,6 +129,7 @@ function resetBatchPreviewViewOnly() {
 function loadExternalBatchIntoGenerator(prepared) {
   loadedExternalBatch = prepared;
   if (planilhaInput) planilhaInput.value = "";
+  syncBatchSourceUi();
   renderBatchPreview(prepared);
   setBatchButtonsDisabled(false);
 }
@@ -220,6 +242,7 @@ async function prepareBatchCertificates(file) {
   }
 
   return {
+    source: "file",
     fileName: file.name || "planilha",
     certificates,
     invalidRows,
@@ -231,7 +254,8 @@ async function prepareBatchCertificates(file) {
   };
 }
 
-async function openBatchConfirmDialog(prepared) {
+async function openBatchConfirmDialog(prepared, options = {}) {
+  const downloadZip = options.downloadZip !== false;
   const total = prepared.certificates.length;
   const ignoredCount = prepared.invalidRows.length;
   const moldeInfo = assets.template
@@ -242,7 +266,8 @@ async function openBatchConfirmDialog(prepared) {
   const ignoredInfo = ignoredCount
     ? ` ${ignoredCount} linha(s) com problema serao ignorada(s).`
     : "";
-  const summary = `${total} certificado(s) serao gerado(s), terao os PNGs salvos no servidor e um arquivo ZIP sera baixado neste navegador.${ignoredInfo}${moldeInfo}`;
+  const zipInfo = downloadZip ? " e um arquivo ZIP sera baixado neste navegador" : "";
+  const summary = `${total} certificado(s) serao gerado(s), terao os PNGs salvos no servidor, o envio por e-mail sera tentado quando houver e-mail cadastrado${zipInfo}.${ignoredInfo}${moldeInfo}`;
 
   if (
     !batchConfirmDialog ||
@@ -256,12 +281,12 @@ async function openBatchConfirmDialog(prepared) {
       confirmLabel: "Gerar lote",
     });
     if (confirmed) {
-      void executeBatchGeneration(prepared);
+      void executeBatchGeneration(prepared, { downloadZip });
     }
     return;
   }
 
-  pendingBatchGeneration = prepared;
+  pendingBatchGeneration = { prepared, downloadZip };
 
   if (batchConfirmMessage) {
     batchConfirmMessage.textContent = `Confirme a geração do lote da planilha ${prepared.fileName}.`;
@@ -276,13 +301,14 @@ async function openBatchConfirmDialog(prepared) {
   batchConfirmDialog.showModal();
 }
 
-async function executeBatchGeneration(prepared) {
+async function executeBatchGeneration(prepared, options = {}) {
+  const downloadZip = options.downloadZip !== false;
   if (!prepared || !Array.isArray(prepared.certificates) || !prepared.certificates.length) {
     setBatchStatus("Nenhum lote preparado para geração.", "error");
     return;
   }
 
-  if (!window.JSZip) {
+  if (downloadZip && !window.JSZip) {
     setBatchStatus("Falha: biblioteca ZIP não carregou.", "error");
     return;
   }
@@ -315,7 +341,7 @@ async function executeBatchGeneration(prepared) {
       certificates.map((cert) => [sanitizeText(cert.codigo).toUpperCase(), cert])
     );
 
-    const zip = new window.JSZip();
+    const zip = downloadZip ? new window.JSZip() : null;
 
     for (let index = 0; index < certificates.length; index += 1) {
       const cert = certificates[index];
@@ -359,7 +385,9 @@ async function executeBatchGeneration(prepared) {
         await uploadCertificateImage(cert.codigo, pngBlob, cert.fileName, {
           renderSnapshot: batchRenderSnapshot,
         });
-        zip.file(cert.fileName, pngBlob);
+        if (zip) {
+          zip.file(cert.fileName, pngBlob);
+        }
         successfulCertificates.push(cert);
         unresolvedCertificates.delete(cert.codigo);
       } catch (error) {
@@ -416,7 +444,7 @@ async function executeBatchGeneration(prepared) {
       });
     }
 
-    if (successfulCertificates.length) {
+    if (downloadZip && successfulCertificates.length && zip) {
       setBatchStatus("Compactando certificados em ZIP...", "info");
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const zipName = `certificados_lote_${buildTimestamp()}.zip`;
@@ -454,14 +482,16 @@ async function executeBatchGeneration(prepared) {
       const suffix = failedUploads.length > 3 ? ", ..." : "";
       const unresolvedCount = failedUploads.filter((item) => !item.discarded).length;
       const ignoredPreview = ignoredCount ? ` ${ignoredSummary}` : "";
+      const zipFailureLabel = downloadZip ? " e incluidos no ZIP" : "";
       setBatchStatus(
-        `Lote concluido com ressalvas: ${successfulCertificates.length} certificado(s) foram concluido(s) e incluidos no ZIP. ${discardedCertificates.length} certificado(s) foram descartado(s) automaticamente apos falha no PNG.${unresolvedCount ? ` ${unresolvedCount} pendente(s) nao puderam ser descartado(s) automaticamente.` : ""} Verifique: ${preview}${suffix}.${ignoredPreview}`,
+        `Lote concluido com ressalvas: ${successfulCertificates.length} certificado(s) foram concluido(s)${zipFailureLabel}. ${discardedCertificates.length} certificado(s) foram descartado(s) automaticamente apos falha no PNG.${unresolvedCount ? ` ${unresolvedCount} pendente(s) nao puderam ser descartado(s) automaticamente.` : ""} Verifique: ${preview}${suffix}.${ignoredPreview}`,
         "error"
       );
     } else {
       const ignoredPreview = ignoredCount ? ` ${ignoredSummary}` : "";
+      const zipSuccessLabel = downloadZip ? " e incluidos no ZIP" : "";
       setBatchStatus(
-        `Lote concluido: ${successfulCertificates.length} certificado(s) foram gerado(s), salvos no servidor e incluidos no ZIP com sucesso.${ignoredPreview}`,
+        `Lote concluido: ${successfulCertificates.length} certificado(s) foram gerado(s), salvos no servidor${zipSuccessLabel} com sucesso.${ignoredPreview}`,
         "success"
       );
     }
@@ -509,7 +539,7 @@ async function handleBatchPreview() {
   if (loadedExternalBatch) {
     renderBatchPreview(loadedExternalBatch);
     setBatchStatus(
-      `Previa pronta: ${loadedExternalBatch.certificates.length} certificado(s) carregado(s) de formulario.`,
+      `Prévia pronta: ${loadedExternalBatch.certificates.length} certificado(s) carregado(s).`,
       "success"
     );
     return;
@@ -517,7 +547,7 @@ async function handleBatchPreview() {
 
   const file = planilhaInput.files && planilhaInput.files[0];
   if (!file) {
-    setBatchStatus("Selecione uma planilha antes de pre-visualizar.", "error");
+    setBatchStatus("Selecione uma planilha para carregar a prévia.", "error");
     resetBatchPreviewViewOnly();
     return;
   }
@@ -525,27 +555,31 @@ async function handleBatchPreview() {
   try {
     setBatchStatus("Lendo planilha para pre-visualizacao...", "info");
     const prepared = await prepareBatchCertificates(file);
+    loadedExternalBatch = prepared;
+    syncBatchSourceUi();
+    syncGenerateSubmitButton();
     renderBatchPreview(prepared);
     if (prepared.invalidRows.length) {
       const ignoredSummary = buildIgnoredRowsSummary(prepared.invalidRows);
       setBatchStatus(
-        `Previa pronta: ${prepared.certificates.length} linha(s) valida(s). ${ignoredSummary}`,
+        `Prévia pronta: ${prepared.certificates.length} linha(s) válida(s). ${ignoredSummary}`,
         prepared.certificates.length ? "info" : "error"
       );
       return;
     }
     setBatchStatus(
-      `Previa pronta: ${prepared.certificates.length} certificado(s) valido(s) em ${prepared.fileName}.`,
+      `Prévia pronta: ${prepared.certificates.length} certificado(s) válido(s) em ${prepared.fileName}.`,
       "success"
     );
   } catch (error) {
     console.error(error);
-    setBatchStatus(error.message || "Falha ao pre-visualizar a planilha.", "error");
+    setBatchStatus(error.message || "Falha ao carregar a prévia da planilha.", "error");
     resetBatchPreviewViewOnly();
   }
 }
 
-async function handleBatchGenerate() {
+async function handleBatchGenerate(options = {}) {
+  const downloadZip = options.downloadZip !== false;
   if (!planilhaInput || !batchGenerateBtn) return;
   if (isBatchRunning) return;
   if (editingCertificate) {
@@ -576,7 +610,7 @@ async function handleBatchGenerate() {
 
   try {
     setBatchStatus("Validando lote antes da geracao...", "info");
-    if (!window.JSZip) {
+    if (downloadZip && !window.JSZip) {
       throw new Error("Falha: biblioteca ZIP nao carregou.");
     }
     const prepared = loadedExternalBatch || await prepareBatchCertificates(file);
@@ -598,7 +632,7 @@ async function handleBatchGenerate() {
         "info"
       );
     }
-    await openBatchConfirmDialog(prepared);
+    await openBatchConfirmDialog(prepared, { downloadZip });
   } catch (error) {
     console.error(error);
     if (error && error.status === 401) {

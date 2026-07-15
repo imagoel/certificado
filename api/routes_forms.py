@@ -31,6 +31,7 @@ from models import (
     SecretariaReplyEmail,
     Usuario,
 )
+from name_utils import normalize_participant_name
 from schemas import (
     ActionResponse,
     CertificateFormCreate,
@@ -558,9 +559,13 @@ def submit_public_certificate_form_response(
         if value:
             extras[name] = value[:300]
 
+    participant_name = normalize_participant_name(payload.nome)
+    if len(participant_name) < 2:
+        raise HTTPException(status_code=422, detail="Nome do participante e obrigatorio.")
+
     response = CertificateFormResponse(
         formulario_id=form.id,
-        nome=payload.nome.strip(),
+        nome=participant_name,
         email=normalize_optional_email(email),
         dados_extras=extras,
         ip_hash=hash_ip(ip),

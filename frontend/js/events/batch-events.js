@@ -10,7 +10,7 @@ function registerBatchEvents() {
         return;
       }
       resetBatchPreview();
-      setBatchStatus(`Planilha selecionada: ${file.name}. Use Pré-visualizar antes de gerar.`, "info");
+      void handleBatchPreview();
     });
   }
 
@@ -49,9 +49,9 @@ function registerBatchEvents() {
         return;
       }
 
-      const prepared = pendingBatchGeneration;
+      const { prepared, downloadZip } = pendingBatchGeneration;
       closeBatchConfirmDialog();
-      void executeBatchGeneration(prepared);
+      void executeBatchGeneration(prepared, { downloadZip });
     });
   }
 }

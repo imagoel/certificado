@@ -10,6 +10,10 @@ function registerGeneratorFormEvents() {
       setBatchStatus("Use Salvar alteracoes para concluir a edicao atual.", "info");
       return;
     }
+    if (loadedExternalBatch) {
+      await handleBatchGenerate({ downloadZip: false });
+      return;
+    }
 
     try {
       const prepared = getCertificateFormPrepared();
