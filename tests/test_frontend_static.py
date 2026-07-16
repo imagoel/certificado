@@ -41,6 +41,9 @@ EXPECTED_FRONTEND_SCRIPT_ORDER = [
     "frontend/js/app-admin-data.js",
     "frontend/js/app-audit-view.js",
     "frontend/js/app-forms-view.js",
+    "frontend/js/app-forms-builder.js",
+    "frontend/js/app-forms-list.js",
+    "frontend/js/app-form-responses.js",
     "frontend/js/app-assets-view.js",
     "frontend/js/app-layout-presets.js",
     "frontend/js/app-certificates-core.js",
@@ -272,7 +275,7 @@ def test_forms_listing_exposes_link_qr_and_secondary_actions():
 
 
 def test_forms_options_parser_preserves_line_breaks():
-    forms_source = (FRONTEND_JS_DIR / "app-forms-view.js").read_text(encoding="utf-8")
+    forms_source = (FRONTEND_JS_DIR / "app-forms-builder.js").read_text(encoding="utf-8")
 
     assert "function parseCertificateFormExtraOptions" in forms_source
     assert 'String(value || "")' in forms_source
