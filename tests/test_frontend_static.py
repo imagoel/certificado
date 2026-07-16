@@ -60,6 +60,8 @@ EXPECTED_FRONTEND_SCRIPT_ORDER = [
     "frontend/js/app-canvas.js",
     "frontend/js/app-assets.js",
     "frontend/js/app-spreadsheets.js",
+    "frontend/js/app-batch-utils.js",
+    "frontend/js/app-batch-preview.js",
     "frontend/js/app-batch.js",
     "frontend/js/events/generator-events.js",
     "frontend/js/events/preview-events.js",

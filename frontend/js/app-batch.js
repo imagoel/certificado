@@ -1,215 +1,19 @@
-
-function canvasToPngBlob() {
-  return new Promise((resolve, reject) => {
-    if (!canvas) {
-      reject(new Error("Canvas não disponível."));
-      return;
-    }
-
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error("Não foi possível converter o certificado para PNG."));
-        return;
-      }
-      resolve(blob);
-    }, "image/png");
-  });
-}
-
-function downloadBlob(blob, fileName) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function buildTimestamp() {
-  const now = new Date();
-  return `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
-}
-
-function buildIgnoredRowsSummary(invalidRows, limit = 5) {
-  if (!Array.isArray(invalidRows) || !invalidRows.length) return "";
-
-  const preview = invalidRows.slice(0, limit).join(", ");
-  const suffix = invalidRows.length > limit ? ", ..." : "";
-  return `${invalidRows.length} linha(s) serao ignorada(s): ${preview}${suffix}.`;
-}
-
-function setBatchButtonsDisabled(disabled) {
-  const isEditing = Boolean(editingCertificate);
-  syncBatchSourceUi();
-  if (batchPreviewBtn) batchPreviewBtn.disabled = true;
-  if (batchGenerateBtn) batchGenerateBtn.disabled = disabled || isEditing;
-  syncGenerateSubmitButton();
-}
-
-function syncBatchSourceUi() {
-  if (batchPreviewBtn) {
-    batchPreviewBtn.hidden = true;
-    batchPreviewBtn.title = "A previa e carregada automaticamente.";
-  }
-  if (batchGenerateBtn) {
-    batchGenerateBtn.textContent = "Gerar e baixar ZIP";
-    batchGenerateBtn.title =
-      "Gera os certificados, salva os PNGs, tenta enviar os e-mails e baixa um ZIP.";
-  }
-}
-
-function syncGenerateSubmitButton() {
-  if (!generateSubmitBtn) return;
-  const isEditing = Boolean(editingCertificate);
-  const hasExternalBatch = Boolean(loadedExternalBatch);
-  generateSubmitBtn.disabled =
-    isBatchRunning || isSingleGenerationRunning || isCertificateEditSaving || isEditing;
-  generateSubmitBtn.title = hasExternalBatch
-    ? "Gera os certificados, salva os PNGs e tenta enviar os e-mails sem baixar ZIP."
-    : "";
-  generateSubmitBtn.textContent = isEditing
-    ? "Em edicao"
-    : hasExternalBatch
-      ? "Gerar certificados"
-      : isSingleGenerationRunning
-        ? "Gerando..."
-        : "Gerar Certificado";
-}
-
-function getBatchDefaults() {
-  return {
-    curso: (() => {
-      const input = document.getElementById("curso");
-      return input ? input.value : "";
-    })(),
-    data: (() => {
-      const input = document.getElementById("data");
-      return input ? input.value : "";
-    })(),
-    carga_h: (() => {
-      const input = cargaHInput;
-      return input ? input.value : "";
-    })(),
-    linha1: sanitizeText(textoLinha1Input ? textoLinha1Input.value : ""),
-    linha2: sanitizeText(textoLinha2Input ? textoLinha2Input.value : ""),
-  };
-}
-
-function resetBatchPreview() {
-  loadedExternalBatch = null;
-  syncBatchSourceUi();
-  if (batchPreviewPanel) batchPreviewPanel.hidden = true;
-  if (batchPreviewSummary) {
-    batchPreviewSummary.textContent = "Selecione uma planilha para carregar a prévia automaticamente.";
-  }
-  if (batchPreviewBody) {
-    batchPreviewBody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty-state">Nenhuma prévia carregada.</td>
-      </tr>
-    `;
-  }
-}
-
-function resetBatchPreviewViewOnly() {
-  syncBatchSourceUi();
-  if (batchPreviewPanel) batchPreviewPanel.hidden = true;
-  if (batchPreviewSummary) {
-    batchPreviewSummary.textContent = "Selecione uma planilha para carregar a prévia automaticamente.";
-  }
-  if (batchPreviewBody) {
-    batchPreviewBody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty-state">Nenhuma prévia carregada.</td>
-      </tr>
-    `;
-  }
-}
-
-function loadExternalBatchIntoGenerator(prepared) {
-  loadedExternalBatch = prepared;
-  if (planilhaInput) planilhaInput.value = "";
-  syncBatchSourceUi();
-  renderBatchPreview(prepared);
-  setBatchButtonsDisabled(false);
-}
-
-function renderBatchPreview(prepared) {
-  if (!batchPreviewPanel || !batchPreviewSummary || !batchPreviewBody) return;
-
-  batchPreviewPanel.hidden = false;
-
-  const summaryParts = [
-    `${prepared.fileName}: ${prepared.nonEmptyRows} linha(s) preenchida(s)`,
-    `${prepared.certificates.length} válida(s)`,
-  ];
-  if (prepared.headerRowNumber) {
-    summaryParts.push(`cabecalho detectado na linha ${prepared.headerRowNumber}`);
-  }
-  if (prepared.invalidRows.length) {
-    summaryParts.push(`${prepared.invalidRows.length} ignorada(s)`);
-  }
-  if (prepared.skippedEmptyRows) {
-    summaryParts.push(`${prepared.skippedEmptyRows} vazia(s) ignorada(s)`);
-  }
-  batchPreviewSummary.textContent = `${summaryParts.join(", ")}. Exibindo até 5 registro(s).`;
-
-  batchPreviewBody.innerHTML = "";
-
-  if (!prepared.previewItems.length) {
-    batchPreviewBody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty-state">Nenhuma linha válida disponível para pré-visualização.</td>
-      </tr>
-    `;
-    return;
-  }
-
-  prepared.previewItems.forEach((item) => {
-    const row = document.createElement("tr");
-
-    const lineCell = document.createElement("td");
-    lineCell.textContent = String(item.rowNumber || "-");
-
-    const nameCell = document.createElement("td");
-    nameCell.textContent = item.nome || "-";
-
-    const emailCell = document.createElement("td");
-    emailCell.textContent = item.email || "-";
-
-    const courseCell = document.createElement("td");
-    courseCell.textContent = item.curso || "-";
-
-    const dateCell = document.createElement("td");
-    dateCell.textContent = formatDate(item.data);
-
-    const cargaCell = document.createElement("td");
-    cargaCell.textContent = `${item.carga_h || 0}h`;
-
-    const fileCell = document.createElement("td");
-    fileCell.textContent = item.fileName || "-";
-
-    row.append(lineCell, nameCell, emailCell, courseCell, dateCell, cargaCell, fileCell);
-    batchPreviewBody.appendChild(row);
-  });
-}
-
-async function prepareBatchCertificates(file) {
+﻿async function prepareBatchCertificates(file) {
   const isCsvFile = (file.name || "").toLowerCase().endsWith(".csv");
   if (!isCsvFile && !window.XLSX) {
-    throw new Error("Falha: biblioteca de planilha não carregou.");
+    throw new Error("Falha: biblioteca de planilha nÃ£o carregou.");
   }
 
   const rawRows = await readSpreadsheetRows(file);
   if (!rawRows.length) {
-    throw new Error("A planilha está vazia.");
+    throw new Error("A planilha estÃ¡ vazia.");
   }
 
   const batchDefaults = getBatchDefaults();
   const defaultCargaResult = normalizeCargaHorariaResult(batchDefaults.carga_h);
   if (defaultCargaResult.invalid) {
     throw new Error(
-      `A carga horária do formulário deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`
+      `A carga horÃ¡ria do formulÃ¡rio deve estar entre 0 e ${MAX_CARGA_HORARIA} horas.`
     );
   }
   const certificates = [];
@@ -276,7 +80,7 @@ async function openBatchConfirmDialog(prepared, options = {}) {
   ) {
     const confirmed = await openConfirmActionDialog({
       title: "Gerar lote?",
-      message: `Confirme a geração do lote da planilha ${prepared.fileName}.`,
+      message: `Confirme a geraÃ§Ã£o do lote da planilha ${prepared.fileName}.`,
       summary,
       confirmLabel: "Gerar lote",
     });
@@ -289,7 +93,7 @@ async function openBatchConfirmDialog(prepared, options = {}) {
   pendingBatchGeneration = { prepared, downloadZip };
 
   if (batchConfirmMessage) {
-    batchConfirmMessage.textContent = `Confirme a geração do lote da planilha ${prepared.fileName}.`;
+    batchConfirmMessage.textContent = `Confirme a geraÃ§Ã£o do lote da planilha ${prepared.fileName}.`;
   }
   if (batchConfirmSummary) {
     batchConfirmSummary.textContent = summary;
@@ -304,12 +108,12 @@ async function openBatchConfirmDialog(prepared, options = {}) {
 async function executeBatchGeneration(prepared, options = {}) {
   const downloadZip = options.downloadZip !== false;
   if (!prepared || !Array.isArray(prepared.certificates) || !prepared.certificates.length) {
-    setBatchStatus("Nenhum lote preparado para geração.", "error");
+    setBatchStatus("Nenhum lote preparado para geraÃ§Ã£o.", "error");
     return;
   }
 
   if (downloadZip && !window.JSZip) {
-    setBatchStatus("Falha: biblioteca ZIP não carregou.", "error");
+    setBatchStatus("Falha: biblioteca ZIP nÃ£o carregou.", "error");
     return;
   }
 
@@ -539,7 +343,7 @@ async function handleBatchPreview() {
   if (loadedExternalBatch) {
     renderBatchPreview(loadedExternalBatch);
     setBatchStatus(
-      `Prévia pronta: ${loadedExternalBatch.certificates.length} certificado(s) carregado(s).`,
+      `PrÃ©via pronta: ${loadedExternalBatch.certificates.length} certificado(s) carregado(s).`,
       "success"
     );
     return;
@@ -547,7 +351,7 @@ async function handleBatchPreview() {
 
   const file = planilhaInput.files && planilhaInput.files[0];
   if (!file) {
-    setBatchStatus("Selecione uma planilha para carregar a prévia.", "error");
+    setBatchStatus("Selecione uma planilha para carregar a prÃ©via.", "error");
     resetBatchPreviewViewOnly();
     return;
   }
@@ -562,18 +366,18 @@ async function handleBatchPreview() {
     if (prepared.invalidRows.length) {
       const ignoredSummary = buildIgnoredRowsSummary(prepared.invalidRows);
       setBatchStatus(
-        `Prévia pronta: ${prepared.certificates.length} linha(s) válida(s). ${ignoredSummary}`,
+        `PrÃ©via pronta: ${prepared.certificates.length} linha(s) vÃ¡lida(s). ${ignoredSummary}`,
         prepared.certificates.length ? "info" : "error"
       );
       return;
     }
     setBatchStatus(
-      `Prévia pronta: ${prepared.certificates.length} certificado(s) válido(s) em ${prepared.fileName}.`,
+      `PrÃ©via pronta: ${prepared.certificates.length} certificado(s) vÃ¡lido(s) em ${prepared.fileName}.`,
       "success"
     );
   } catch (error) {
     console.error(error);
-    setBatchStatus(error.message || "Falha ao carregar a prévia da planilha.", "error");
+    setBatchStatus(error.message || "Falha ao carregar a prÃ©via da planilha.", "error");
     resetBatchPreviewViewOnly();
   }
 }
