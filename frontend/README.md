@@ -23,39 +23,42 @@ Eles compartilham o mesmo escopo global do navegador, por isso a ordem abaixo de
 16. `app-dialogs.js`: dialogos de confirmacao, exclusao, reenvio, lixeira, duplicidade e lote.
 17. `app-session-reset.js`: limpeza da interface ao encerrar ou expirar sessao.
 18. `app-admin-view.js`: formularios administrativos e preenchimento de edicao.
-19. `app-certificates-view.js`: tabela e relatorio CSV de certificados.
-20. `app-admin-tables.js`: tabelas de usuarios, secretarias, moldes e itens visuais.
-21. `app-audit-table.js`: linhas da tabela de auditoria e estado dos botoes de relatorio.
-22. `app-list-loaders.js`: carregamento das listagens de Certificados e Auditoria.
-23. `app-admin-data.js`: carregamento administrativo e exclusoes de usuarios/secretarias.
-24. `app-audit-view.js`: filtros, CSV e impressao/PDF da auditoria.
-25. `app-forms-view.js`: helpers comuns e troca entre criar/gerenciar formularios.
-26. `app-forms-builder.js`: criacao, edicao e campos extras dos formularios.
-27. `app-forms-list.js`: tabela, acoes e carregamento da lista de formularios.
-28. `app-form-responses.js`: respostas, exportacao, QR Code e carga para geracao.
-29. `app-assets-view.js`: catalogos visuais, templates, assets e exclusoes visuais.
-30. `app-layout-presets.js`: layouts salvos da secretaria e aplicacao na previa.
-31. `app-certificates-core.js`: recarregamento de dados protegidos e catalogos do gerador.
-32. `app-certificate-upload.js`: upload de PNG, retry e helpers de espera.
-33. `app-pending-certificates.js`: descarte e limpeza de certificados pendentes.
-34. `app-certificate-generation.js`: preparacao, registro e geracao individual/lote.
-35. `app-certificate-edit.js`: modo de edicao admin e salvamento seguro.
-36. `app-canvas.js`: desenho do certificado, layout visual, QR Code e canvas.
-37. `app-assets.js`: templates, logos, assinaturas, selos e controles visuais.
-38. `app-spreadsheets.js`: leitura, normalizacao e validacao de planilhas.
-39. `app-batch.js`: preview, confirmacao, geracao em lote, download e helpers de arquivo.
-40. `events/generator-events.js`: eventos do formulario principal, campos de texto e download.
-41. `events/preview-events.js`: eventos da previa e dos controles de layout.
-42. `events/asset-events.js`: eventos de upload, selecao e remocao de itens visuais.
-43. `events/batch-events.js`: eventos de planilha, previa e confirmacao de lote.
-44. `events/section-events.js`: eventos das abas principais e subtabs administrativas.
-45. `events/listing-events.js`: eventos de Certificados e Auditoria.
-46. `events/forms-events.js`: eventos de criacao, listagem e respostas de formularios.
-47. `events/admin-events.js`: eventos dos formularios administrativos.
-48. `events/session-events.js`: login, logout e troca de secretaria ativa.
-49. `events/dialog-events.js`: dialogos de duplicidade e exclusao.
-50. `events/startup.js`: sincronizacao inicial da interface.
-51. `app-bootstrap.js`: checagem minima e chamada dos registros de eventos.
+19. `app-certificate-email-status.js`: estado e badge de envio de e-mail dos certificados.
+20. `app-action-menu.js`: posicionamento e fechamento dos menus de acoes.
+21. `app-certificate-report.js`: relatorio CSV da listagem de certificados.
+22. `app-certificates-view.js`: tabela, selecao e acoes principais de certificados.
+23. `app-admin-tables.js`: tabelas de usuarios, secretarias, moldes e itens visuais.
+24. `app-audit-table.js`: linhas da tabela de auditoria e estado dos botoes de relatorio.
+25. `app-list-loaders.js`: carregamento das listagens de Certificados e Auditoria.
+26. `app-admin-data.js`: carregamento administrativo e exclusoes de usuarios/secretarias.
+27. `app-audit-view.js`: filtros, CSV e impressao/PDF da auditoria.
+28. `app-forms-view.js`: helpers comuns e troca entre criar/gerenciar formularios.
+29. `app-forms-builder.js`: criacao, edicao e campos extras dos formularios.
+30. `app-forms-list.js`: tabela, acoes e carregamento da lista de formularios.
+31. `app-form-responses.js`: respostas, exportacao, QR Code e carga para geracao.
+32. `app-assets-view.js`: catalogos visuais, templates, assets e exclusoes visuais.
+33. `app-layout-presets.js`: layouts salvos da secretaria e aplicacao na previa.
+34. `app-certificates-core.js`: recarregamento de dados protegidos e catalogos do gerador.
+35. `app-certificate-upload.js`: upload de PNG, retry e helpers de espera.
+36. `app-pending-certificates.js`: descarte e limpeza de certificados pendentes.
+37. `app-certificate-generation.js`: preparacao, registro e geracao individual/lote.
+38. `app-certificate-edit.js`: modo de edicao admin e salvamento seguro.
+39. `app-canvas.js`: desenho do certificado, layout visual, QR Code e canvas.
+40. `app-assets.js`: templates, logos, assinaturas, selos e controles visuais.
+41. `app-spreadsheets.js`: leitura, normalizacao e validacao de planilhas.
+42. `app-batch.js`: preview, confirmacao, geracao em lote, download e helpers de arquivo.
+43. `events/generator-events.js`: eventos do formulario principal, campos de texto e download.
+44. `events/preview-events.js`: eventos da previa e dos controles de layout.
+45. `events/asset-events.js`: eventos de upload, selecao e remocao de itens visuais.
+46. `events/batch-events.js`: eventos de planilha, previa e confirmacao de lote.
+47. `events/section-events.js`: eventos das abas principais e subtabs administrativas.
+48. `events/listing-events.js`: eventos de Certificados e Auditoria.
+49. `events/forms-events.js`: eventos de criacao, listagem e respostas de formularios.
+50. `events/admin-events.js`: eventos dos formularios administrativos.
+51. `events/session-events.js`: login, logout e troca de secretaria ativa.
+52. `events/dialog-events.js`: dialogos de duplicidade e exclusao.
+53. `events/startup.js`: sincronizacao inicial da interface.
+54. `app-bootstrap.js`: checagem minima e chamada dos registros de eventos.
 
 Os estilos em `frontend/css/` sao carregados em ordem pelo `index.html` e dependem da cascata.
 Para novas mudancas visuais, prefira mexer no arquivo CSS correspondente ao dominio da tela e no HTML da secao afetada.
