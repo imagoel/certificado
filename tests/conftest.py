@@ -23,6 +23,8 @@ MODULES_TO_RELOAD = [
     "email_utils",
     "schemas",
     "security",
+    "app_config",
+    "request_security",
     "bootstrap",
     "migrations",
     "audit_service",

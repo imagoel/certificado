@@ -1,12 +1,9 @@
 import json
 import os
 import re
-import secrets
-import time
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
-from threading import Lock
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, Request, UploadFile
@@ -18,6 +15,35 @@ from sqlalchemy.orm import Session, object_session
 from bootstrap import run_startup_bootstrap
 from database import SessionLocal, get_db
 from migrations import ensure_database_schema
+from app_config import (
+    BASE_DIR,
+    CERTIFICATE_TRASH_RETENTION_DAYS,
+    CERTIFICADOS_MEDIA_DIR,
+    CODE_REGEX,
+    DEFAULT_PREFIX,
+    ENABLE_ADMIN_DOCS,
+    MAX_IMAGE_PIXELS,
+    MAX_TEMPLATE_UPLOAD_BYTES,
+    MAX_UPLOAD_BYTES,
+    ROLE_ADMIN_GLOBAL,
+    SESSION_COOKIE_NAME,
+    SESSION_HTTPS_ONLY,
+    SESSION_MAX_AGE_SECONDS,
+    SESSION_SAME_SITE,
+    SESSION_SECRET,
+    TEMPLATES_MEDIA_DIR,
+    resolve_allowed_origins,
+    validate_security_config,
+)
+from request_security import (
+    clear_all_login_attempts_for_username,
+    clear_login_attempts,
+    ensure_csrf_token,
+    get_login_block_remaining_seconds,
+    get_request_ip,
+    register_failed_login_attempt,
+    require_csrf_protection,
+)
 from reply_email_service import (
     build_secretaria_reply_email_response,
     ensure_secretaria_has_reply_to,
@@ -47,224 +73,15 @@ from schemas import (
     UserAdminResponse,
     UserSessionResponse,
 )
-from security import (
-    DEFAULT_DEV_CERTIFICATE_HASH_SECRET,
-    get_certificate_hash_secret,
-)
 
 
-CODE_REGEX = re.compile(r"^[A-Z0-9]{1,8}-\d{4}-\d{5}$")
-DEFAULT_PREFIX = os.getenv("CODE_PREFIX", "ABC")
-DEFAULT_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "certificados"))
-CERTIFICADOS_MEDIA_DIR = Path(os.getenv("CERTIFICADOS_MEDIA_DIR", DEFAULT_MEDIA_DIR)).resolve()
-MAX_UPLOAD_BYTES = int(os.getenv("CERTIFICADOS_MAX_UPLOAD_BYTES", "8388608"))
-CERTIFICATE_TRASH_RETENTION_DAYS = max(
-    1,
-    int(os.getenv("CERTIFICATE_TRASH_RETENTION_DAYS", "30")),
-)
-DEFAULT_TEMPLATES_MEDIA_DIR = str((Path(__file__).resolve().parent / "data" / "templates"))
-TEMPLATES_MEDIA_DIR = Path(
-    os.getenv("TEMPLATES_MEDIA_DIR", DEFAULT_TEMPLATES_MEDIA_DIR)
-).resolve()
-MAX_TEMPLATE_UPLOAD_BYTES = int(os.getenv("TEMPLATES_MAX_UPLOAD_BYTES", "10485760"))
-MAX_IMAGE_PIXELS = max(1, int(os.getenv("MAX_IMAGE_PIXELS", "25000000")))
-APP_ENV = (os.getenv("APP_ENV", "development").strip().lower() or "development")
-IS_PRODUCTION = APP_ENV in {"prod", "production"}
-SESSION_SECRET = os.getenv("SESSION_SECRET", "troque-esta-chave-de-sessao")
-CERTIFICATE_HASH_SECRET = get_certificate_hash_secret()
-SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "certificado_session").strip() or "certificado_session"
-SESSION_SAME_SITE = (os.getenv("SESSION_SAME_SITE", "lax").strip().lower() or "lax")
-SESSION_HTTPS_ONLY = os.getenv("SESSION_HTTPS_ONLY", "false").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-SESSION_MAX_AGE_SECONDS = int(os.getenv("SESSION_MAX_AGE_SECONDS", "43200"))
-ENABLE_ADMIN_DOCS = os.getenv("ENABLE_ADMIN_DOCS", "true").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "false").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-LOGIN_MAX_ATTEMPTS = max(1, int(os.getenv("LOGIN_MAX_ATTEMPTS", "5")))
-LOGIN_WINDOW_SECONDS = max(60, int(os.getenv("LOGIN_WINDOW_SECONDS", "900")))
-LOGIN_BLOCK_SECONDS = max(60, int(os.getenv("LOGIN_BLOCK_SECONDS", "900")))
-ROLE_ADMIN_GLOBAL = "admin_global"
-DEFAULT_DEV_SESSION_SECRET = "troque-esta-chave-de-sessao"
-
-BASE_DIR = Path(__file__).resolve().parent
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
-if SESSION_SAME_SITE not in {"lax", "strict", "none"}:
-    SESSION_SAME_SITE = "lax"
-
-
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-
-LOGIN_ATTEMPTS_LOCK = Lock()
-LOGIN_ATTEMPTS: dict[str, dict[str, float | int]] = {}
 
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
-
-
-def resolve_allowed_origins() -> list[str]:
-    raw = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
-    default_origins = [
-        "http://localhost:28754",
-        "http://127.0.0.1:28754",
-    ]
-
-    if not raw or raw == "*":
-        return default_origins
-
-    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
-    if "*" in origins:
-        return default_origins
-
-    return origins
-
-
-def validate_security_config() -> None:
-    if not IS_PRODUCTION:
-        return
-
-    if SESSION_SECRET == DEFAULT_DEV_SESSION_SECRET or len(SESSION_SECRET) < 24:
-        raise RuntimeError(
-            "SESSION_SECRET inseguro para producao. Configure uma chave longa e exclusiva."
-        )
-
-    if (
-        CERTIFICATE_HASH_SECRET == DEFAULT_DEV_CERTIFICATE_HASH_SECRET
-        or len(CERTIFICATE_HASH_SECRET) < 24
-    ):
-        raise RuntimeError(
-            "CERTIFICATE_HASH_SECRET inseguro para producao. Configure uma chave longa e exclusiva."
-        )
-
-    if not SESSION_HTTPS_ONLY:
-        raise RuntimeError("SESSION_HTTPS_ONLY deve estar como true em producao.")
-
-    cors_raw = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
-    if not cors_raw:
-        raise RuntimeError(
-            "CORS_ALLOW_ORIGINS deve ser configurado explicitamente em producao."
-        )
-    if "*" in cors_raw:
-        raise RuntimeError("CORS_ALLOW_ORIGINS nao pode usar curinga em producao.")
-
-
-def get_request_ip(request: Request) -> str:
-    if TRUST_PROXY_HEADERS:
-        forwarded = request.headers.get("x-forwarded-for", "").strip()
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-
-    client = request.client
-    return client.host if client else "desconhecido"
-
-
-def build_login_attempt_key(username: str, request: Request) -> str:
-    return f"{username}|{get_request_ip(request)}"
-
-
-def get_login_block_remaining_seconds(username: str, request: Request) -> int:
-    key = build_login_attempt_key(username, request)
-    now = time.time()
-
-    with LOGIN_ATTEMPTS_LOCK:
-        data = LOGIN_ATTEMPTS.get(key)
-        if not data:
-            return 0
-
-        blocked_until = float(data.get("blocked_until", 0.0))
-        if blocked_until <= now:
-            return 0
-
-        return max(1, int(blocked_until - now))
-
-
-def register_failed_login_attempt(username: str, request: Request) -> int:
-    key = build_login_attempt_key(username, request)
-    now = time.time()
-
-    with LOGIN_ATTEMPTS_LOCK:
-        data = LOGIN_ATTEMPTS.get(key)
-        if not data or float(data.get("window_started_at", 0.0)) + LOGIN_WINDOW_SECONDS < now:
-            data = {
-                "count": 0,
-                "window_started_at": now,
-                "blocked_until": 0.0,
-            }
-
-        data["count"] = int(data.get("count", 0)) + 1
-
-        if int(data["count"]) >= LOGIN_MAX_ATTEMPTS:
-            data["blocked_until"] = now + LOGIN_BLOCK_SECONDS
-            data["count"] = 0
-            data["window_started_at"] = now
-
-        LOGIN_ATTEMPTS[key] = data
-        blocked_until = float(data.get("blocked_until", 0.0))
-        if blocked_until > now:
-            return max(1, int(blocked_until - now))
-        return 0
-
-
-def clear_login_attempts(username: str, request: Request) -> None:
-    key = build_login_attempt_key(username, request)
-    with LOGIN_ATTEMPTS_LOCK:
-        LOGIN_ATTEMPTS.pop(key, None)
-
-
-def clear_all_login_attempts_for_username(username: str) -> None:
-    normalized = (username or "").strip().lower()
-    if not normalized:
-        return
-
-    prefix = f"{normalized}|"
-    with LOGIN_ATTEMPTS_LOCK:
-        keys_to_remove = [key for key in LOGIN_ATTEMPTS if key.startswith(prefix)]
-        for key in keys_to_remove:
-            LOGIN_ATTEMPTS.pop(key, None)
-
-
-def ensure_csrf_token(request: Request) -> str:
-    token = request.session.get("csrf_token")
-    if not token:
-        token = secrets.token_urlsafe(32)
-        request.session["csrf_token"] = token
-    return token
-
-
-def require_csrf_protection(request: Request) -> None:
-    if request.method.upper() in {"GET", "HEAD", "OPTIONS"}:
-        return
-
-    if request.url.path == "/api/auth/login":
-        return
-
-    if request.url.path.startswith("/api/formularios/publico/"):
-        return
-
-    if not request.session.get("user_id"):
-        return
-
-    expected_token = request.session.get("csrf_token")
-    received_token = request.headers.get("x-csrf-token", "")
-    if not expected_token or not received_token:
-        raise HTTPException(status_code=403, detail="Token de seguranca ausente.")
-
-    if not secrets.compare_digest(str(expected_token), received_token):
-        raise HTTPException(status_code=403, detail="Token de seguranca invalido.")
 
 
 def run_startup_tasks() -> None:
