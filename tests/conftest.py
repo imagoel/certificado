@@ -25,6 +25,7 @@ MODULES_TO_RELOAD = [
     "security",
     "app_config",
     "request_security",
+    "certificate_files",
     "bootstrap",
     "migrations",
     "audit_service",
