@@ -38,6 +38,7 @@ MODULES_TO_RELOAD = [
     "email_attempts",
     "email_delivery",
     "routes_auth",
+    "admin_reply_emails",
     "routes_admin",
     "routes_certificates",
     "routes_forms",

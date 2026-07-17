@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
+from admin_reply_emails import router as admin_reply_emails_router
 from common import (
     BASE_DIR,
     ENABLE_ADMIN_DOCS,
@@ -97,6 +98,7 @@ async def add_security_headers(request: Request, call_next):
 app.include_router(public_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(admin_reply_emails_router)
 app.include_router(certificates_router)
 app.include_router(forms_router)
 app.include_router(templates_router)
