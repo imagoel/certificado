@@ -37,12 +37,22 @@ async function loadFormResponses(formId) {
   try {
     const responses = await apiJsonRequest(`/api/formularios/${form.id}/respostas`);
     formsState.responses = Array.isArray(responses) ? responses : [];
+    syncSelectedFormResponseCounts();
     renderFormResponsesPanel();
     setFormResponsesStatus("", "info");
   } catch (error) {
     console.error(error);
     setFormResponsesStatus(error.message || "Nao foi possivel carregar respostas.", "error");
   }
+}
+function syncSelectedFormResponseCounts() {
+  const form = getSelectedCertificateForm();
+  if (!form) return;
+  form.respostas_total = formsState.responses.length;
+  form.respostas_pendentes = formsState.responses.filter(
+    (item) => !item.certificado_codigo
+  ).length;
+  renderCertificateFormsTable();
 }
 function renderFormResponsesPanel() {
   if (!formResponsesPanel || !formResponsesListBody) return;
