@@ -308,12 +308,14 @@ async function drawCertificate(nome, curso, data, linha1, linha2, qrText = "", c
   });
 
   ctx.fillStyle = "#112031";
-  drawAdaptiveCenteredText(curso, centerX, 510, {
+  drawAdaptiveCenteredWrappedText(curso, centerX, 510, {
     family: "Georgia",
     style: "italic",
-    startSize: 46,
+    startSize: 42,
     minSize: 24,
-    maxWidth: maxTextWidth,
+    maxWidth: canvas.width - 300,
+    maxLines: 2,
+    lineHeight: 36,
   });
 
   ctx.fillStyle = "#334";

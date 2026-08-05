@@ -57,6 +57,100 @@ function drawAdaptiveCenteredText(text, x, y, options = {}) {
   ctx.fillText(fitted.text, x, y);
 }
 
+function splitTextIntoBalancedLines(text, style, weight, size, family, maxWidth, maxLines) {
+  const words = sanitizeText(text).split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return words;
+
+  let bestLines = null;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  function evaluate(lines) {
+    if (
+      lines.length > maxLines ||
+      lines.some((line) => measureTextWithFont(line, style, weight, size, family) > maxWidth)
+    ) {
+      return;
+    }
+    const widths = lines.map((line) => measureTextWithFont(line, style, weight, size, family));
+    const longest = Math.max(...widths);
+    const shortest = Math.min(...widths);
+    const score = longest + Math.abs(longest - shortest) * 0.75;
+    if (score < bestScore) {
+      bestScore = score;
+      bestLines = lines;
+    }
+  }
+
+  if (maxLines === 2) {
+    for (let index = 1; index < words.length; index += 1) {
+      evaluate([
+        words.slice(0, index).join(" "),
+        words.slice(index).join(" "),
+      ]);
+    }
+  }
+
+  return bestLines;
+}
+
+function fitTextToWrappedLines(text, options = {}) {
+  const {
+    style = "normal",
+    weight = "normal",
+    family = "sans-serif",
+    startSize = 24,
+    minSize = 14,
+    maxWidth = 0,
+    maxLines = 2,
+  } = options;
+
+  const normalized = sanitizeText(text);
+  if (!normalized) return { lines: [], size: startSize };
+
+  for (let size = startSize; size >= minSize; size -= 1) {
+    if (measureTextWithFont(normalized, style, weight, size, family) <= maxWidth) {
+      return { lines: [normalized], size };
+    }
+
+    const lines = splitTextIntoBalancedLines(
+      normalized,
+      style,
+      weight,
+      size,
+      family,
+      maxWidth,
+      maxLines
+    );
+    if (lines) return { lines, size };
+  }
+
+  const fitted = fitTextToWidth(normalized, {
+    style,
+    weight,
+    family,
+    startSize: minSize,
+    minSize,
+    maxWidth,
+  });
+  return { lines: [fitted.text], size: fitted.size };
+}
+
+function drawAdaptiveCenteredWrappedText(text, x, y, options = {}) {
+  if (!ctx) return;
+  const fitted = fitTextToWrappedLines(text, options);
+  const lineHeight = options.lineHeight || Math.round(fitted.size * 1.18);
+  const firstLineY = y - ((fitted.lines.length - 1) * lineHeight) / 2;
+  ctx.font = buildFont(
+    options.style || "normal",
+    options.weight || "normal",
+    fitted.size,
+    options.family || "sans-serif"
+  );
+  fitted.lines.forEach((line, index) => {
+    ctx.fillText(line, x, firstLineY + index * lineHeight);
+  });
+}
+
 function fitRect(srcW, srcH, maxW, maxH) {
   const ratio = Math.min(maxW / srcW, maxH / srcH);
   return {
