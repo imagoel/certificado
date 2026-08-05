@@ -404,6 +404,51 @@
   color: #b32929;
 }
 
+.form-response-cert-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-response-cert-code {
+  color: #002f65;
+  font-weight: 700;
+}
+
+.form-response-cert-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid rgba(185, 48, 48, 0.26);
+  border-radius: 999px;
+  background: #fff5f5;
+  color: #b32929;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.form-response-cert-toggle:hover,
+.form-response-cert-toggle:focus-visible {
+  border-color: rgba(185, 48, 48, 0.48);
+  background: #ffe7e7;
+}
+
+.form-response-cert-toggle.is-restore {
+  border-color: rgba(52, 168, 83, 0.3);
+  background: #edf9f0;
+  color: #087a35;
+}
+
+.form-response-cert-toggle.is-restore:hover,
+.form-response-cert-toggle.is-restore:focus-visible {
+  border-color: rgba(52, 168, 83, 0.52);
+  background: #dcf5e3;
+}
+
 .table-mobile-meta {
   display: none;
 }

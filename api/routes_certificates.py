@@ -75,6 +75,11 @@ def get_form_response_for_certificate(
             status_code=409,
             detail="Resposta de formulario ja possui certificado gerado.",
         )
+    if response.nao_gerar_certificado:
+        raise HTTPException(
+            status_code=409,
+            detail="Resposta de formulario marcada como ausente nao pode gerar certificado.",
+        )
     return response
 
 

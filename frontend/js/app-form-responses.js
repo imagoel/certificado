@@ -28,7 +28,82 @@ function buildFormConfirmationStatusBadge(item) {
   return badge;
 }
 
-async
+function isFormResponsePendingForCertificate(item) {
+  return Boolean(item) && !item.certificado_codigo && !item.nao_gerar_certificado;
+}
+
+async function toggleFormResponseCertificateAbsence(item) {
+  const form = getSelectedCertificateForm();
+  if (!form || !item || item.certificado_codigo) return;
+  const nextStatus = !item.nao_gerar_certificado;
+  try {
+    setFormResponsesStatus(
+      nextStatus ? "Marcando resposta como ausente..." : "Reativando resposta...",
+      "info"
+    );
+    const updated = await apiJsonRequest(
+      `/api/formularios/${form.id}/respostas/${item.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ nao_gerar_certificado: nextStatus }),
+      }
+    );
+    formsState.responses = formsState.responses.map((response) =>
+      Number(response.id) === Number(item.id) ? updated : response
+    );
+    syncSelectedFormResponseCounts();
+    renderFormResponsesPanel();
+    setFormResponsesStatus(
+      nextStatus
+        ? "Resposta marcada como ausente. Ela nao sera considerada na geracao."
+        : "Resposta reativada para geracao de certificado.",
+      "success"
+    );
+  } catch (error) {
+    console.error(error);
+    setFormResponsesStatus(
+      error.message || "Nao foi possivel alterar o status da resposta.",
+      "error"
+    );
+  }
+}
+
+function buildFormCertificateStatusControl(item) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "form-response-cert-status";
+
+  if (item.certificado_codigo) {
+    const code = document.createElement("span");
+    code.className = "form-response-cert-code";
+    code.textContent = item.certificado_codigo;
+    wrapper.appendChild(code);
+    return wrapper;
+  }
+
+  const status = document.createElement("span");
+  status.className = item.nao_gerar_certificado
+    ? "cert-email-status-badge is-error"
+    : "cert-email-status-badge is-pending";
+  status.textContent = item.nao_gerar_certificado ? "Ausente" : "Pendente";
+  wrapper.appendChild(status);
+
+  const action = document.createElement("button");
+  action.type = "button";
+  action.className = item.nao_gerar_certificado
+    ? "form-response-cert-toggle is-restore"
+    : "form-response-cert-toggle is-absent";
+  action.textContent = item.nao_gerar_certificado ? "OK" : "X";
+  action.title = item.nao_gerar_certificado
+    ? "Reativar resposta para gerar certificado"
+    : "Marcar como ausente";
+  action.setAttribute("aria-label", action.title);
+  action.addEventListener("click", () => {
+    void toggleFormResponseCertificateAbsence(item);
+  });
+  wrapper.appendChild(action);
+  return wrapper;
+}
+
 async function loadFormResponses(formId) {
   const form = formsState.items.find((item) => Number(item.id) === Number(formId));
   if (!form) return;
@@ -50,7 +125,7 @@ function syncSelectedFormResponseCounts() {
   if (!form) return;
   form.respostas_total = formsState.responses.length;
   form.respostas_pendentes = formsState.responses.filter(
-    (item) => !item.certificado_codigo
+    isFormResponsePendingForCertificate
   ).length;
   renderCertificateFormsTable();
 }
@@ -62,7 +137,7 @@ function renderFormResponsesPanel() {
   if (!form) return;
 
   if (formResponsesTitle) formResponsesTitle.textContent = `Respostas: ${form.titulo}`;
-  const pending = formsState.responses.filter((item) => !item.certificado_codigo).length;
+  const pending = formsState.responses.filter(isFormResponsePendingForCertificate).length;
   if (formResponsesSummary) {
     formResponsesSummary.textContent =
       `${formsState.responses.length} resposta(s), ${pending} pendente(s) para gerar certificado.`;
@@ -100,7 +175,7 @@ function renderFormResponsesPanel() {
     emailStatusCell.appendChild(buildFormConfirmationStatusBadge(item));
 
     const certCell = document.createElement("td");
-    certCell.textContent = item.certificado_codigo || "Pendente";
+    certCell.appendChild(buildFormCertificateStatusControl(item));
 
     row.append(personCell, createdCell, emailStatusCell, certCell);
     formResponsesListBody.appendChild(row);
@@ -109,7 +184,7 @@ function renderFormResponsesPanel() {
 function buildPreparedBatchFromFormResponses() {
   const form = getSelectedCertificateForm();
   if (!form) throw new Error("Selecione um formulário.");
-  const pendingResponses = formsState.responses.filter((item) => !item.certificado_codigo);
+  const pendingResponses = formsState.responses.filter(isFormResponsePendingForCertificate);
   if (!pendingResponses.length) {
     throw new Error("Este formulário não possui respostas pendentes para gerar.");
   }
@@ -240,7 +315,7 @@ function buildFormResponsesExportRows(form, responses) {
       formatDate(form.concluido),
       ...extraFields.map((field) => extras[field.nome] || ""),
       formatDateTime(item.criado_em),
-      item.certificado_codigo || "",
+      item.certificado_codigo || (item.nao_gerar_certificado ? "Ausente" : ""),
     ]);
   });
 

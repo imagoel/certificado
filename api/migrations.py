@@ -67,6 +67,22 @@ def bridge_legacy_schema(connection) -> None:
     if "email_resposta" not in secretaria_columns:
         statements.append("ALTER TABLE secretarias ADD COLUMN email_resposta VARCHAR(254)")
 
+    try:
+        form_response_columns = {
+            column["name"] for column in inspector.get_columns("certificate_form_responses")
+        }
+    except Exception:
+        form_response_columns = set()
+
+    if (
+        form_response_columns
+        and "nao_gerar_certificado" not in form_response_columns
+    ):
+        statements.append(
+            "ALTER TABLE certificate_form_responses "
+            "ADD COLUMN nao_gerar_certificado BOOLEAN NOT NULL DEFAULT 0"
+        )
+
     for statement in statements:
         connection.execute(text(statement))
 

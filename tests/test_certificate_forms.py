@@ -341,6 +341,70 @@ def test_lote_gera_certificado_a_partir_de_resposta_de_formulario(client, seed_d
     assert duplicate_response.status_code == 409
 
 
+def test_resposta_ausente_nao_entra_na_contagem_e_nao_gera_certificado(
+    client, seed_data, login
+):
+    login("operador", seed_data["operador_password"])
+    form = _create_form(client, seed_data, campos_extras=[])
+
+    submit_response = client.post(
+        f"/api/formularios/publico/{form['token']}/respostas",
+        json={"nome": "Aluno Ausente", "email": "ausente@exemplo.com", "dados_extras": {}},
+    )
+    assert submit_response.status_code == 201
+    responses_before = client.get(f"/api/formularios/{form['id']}/respostas")
+    assert responses_before.status_code == 200
+    resposta_id = responses_before.json()[0]["id"]
+    assert responses_before.json()[0]["nao_gerar_certificado"] is False
+
+    mark_absent = client.patch(
+        f"/api/formularios/{form['id']}/respostas/{resposta_id}",
+        json={"nao_gerar_certificado": True},
+    )
+    assert mark_absent.status_code == 200
+    assert mark_absent.json()["nao_gerar_certificado"] is True
+
+    forms_after_absence = client.get("/api/formularios")
+    assert forms_after_absence.status_code == 200
+    updated_form = next(item for item in forms_after_absence.json() if item["id"] == form["id"])
+    assert updated_form["respostas_total"] == 1
+    assert updated_form["respostas_pendentes"] == 0
+
+    blocked_batch = client.post(
+        "/api/certificados/lote",
+        json={
+            "prefixo": "ABC",
+            "itens": [
+                {
+                    "nome": "Aluno Ausente",
+                    "cpf": None,
+                    "email": "ausente@exemplo.com",
+                    "curso": form["curso"],
+                    "carga_h": form["carga_h"],
+                    "concluido": form["concluido"],
+                    "formulario_resposta_id": resposta_id,
+                }
+            ],
+        },
+    )
+    assert blocked_batch.status_code == 409
+    assert "ausente" in blocked_batch.json()["detail"].lower()
+
+    reactivate = client.patch(
+        f"/api/formularios/{form['id']}/respostas/{resposta_id}",
+        json={"nao_gerar_certificado": False},
+    )
+    assert reactivate.status_code == 200
+    assert reactivate.json()["nao_gerar_certificado"] is False
+
+    forms_after_reactivate = client.get("/api/formularios")
+    assert forms_after_reactivate.status_code == 200
+    updated_form = next(
+        item for item in forms_after_reactivate.json() if item["id"] == form["id"]
+    )
+    assert updated_form["respostas_pendentes"] == 1
+
+
 def test_formulario_envia_email_de_confirmacao(
     client, seed_data, login, monkeypatch, app_ctx
 ):

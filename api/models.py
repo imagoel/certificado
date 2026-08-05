@@ -270,6 +270,7 @@ class CertificateFormResponse(Base):
         ForeignKey("certificados.id"), nullable=True
     )
     certificado_codigo: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    nao_gerar_certificado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime, index=True, default=utc_now, nullable=False)
     certificado_gerado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

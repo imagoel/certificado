@@ -258,6 +258,10 @@ class CertificateFormResponseCreate(BaseModel):
         return normalize_optional_email(value)
 
 
+class CertificateFormResponseCertificateStatusUpdate(BaseModel):
+    nao_gerar_certificado: bool
+
+
 class CertificateFormResponseItem(BaseModel):
     id: int
     formulario_id: int
@@ -267,6 +271,7 @@ class CertificateFormResponseItem(BaseModel):
     criado_em: datetime
     certificado_id: Optional[int] = None
     certificado_codigo: Optional[str] = None
+    nao_gerar_certificado: bool = False
     certificado_gerado_em: Optional[datetime] = None
     email_confirmacao_status: Optional[str] = None
     email_confirmacao_em: Optional[datetime] = None

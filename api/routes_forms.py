@@ -37,6 +37,7 @@ from schemas import (
     CertificateFormCreate,
     CertificateFormPublicResponse,
     CertificateFormResponse as CertificateFormSchema,
+    CertificateFormResponseCertificateStatusUpdate,
     CertificateFormResponseCreate,
     CertificateFormResponseItem,
     CertificateFormSubmitResponse,
@@ -251,6 +252,7 @@ def build_response_item(response: CertificateFormResponse) -> CertificateFormRes
         criado_em=response.criado_em,
         certificado_id=response.certificado_id,
         certificado_codigo=response.certificado_codigo,
+        nao_gerar_certificado=response.nao_gerar_certificado,
         certificado_gerado_em=response.certificado_gerado_em,
         email_confirmacao_status=last_email_attempt.status if last_email_attempt else None,
         email_confirmacao_em=last_email_attempt.enviado_em if last_email_attempt else None,
@@ -300,6 +302,7 @@ def list_certificate_forms(
         .filter(
             CertificateFormResponse.formulario_id.in_([form.id for form in forms] or [0]),
             CertificateFormResponse.certificado_id.is_(None),
+            CertificateFormResponse.nao_gerar_certificado.is_(False),
         )
         .group_by(CertificateFormResponse.formulario_id)
         .all()
@@ -458,6 +461,61 @@ def list_certificate_form_responses(
     return [build_response_item(response) for response in responses]
 
 
+@router.patch(
+    "/api/formularios/{form_id}/respostas/{response_id}",
+    response_model=CertificateFormResponseItem,
+)
+def update_certificate_form_response_certificate_status(
+    form_id: int,
+    response_id: int,
+    payload: CertificateFormResponseCertificateStatusUpdate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> CertificateFormResponseItem:
+    form = get_form_by_id(db, form_id)
+    ensure_form_access(db, usuario, form)
+    response = (
+        db.query(CertificateFormResponse)
+        .filter(
+            CertificateFormResponse.id == response_id,
+            CertificateFormResponse.formulario_id == form.id,
+        )
+        .first()
+    )
+    if not response:
+        raise HTTPException(status_code=404, detail="Resposta de formulario nao encontrada.")
+    if response.certificado_id or response.certificado_codigo:
+        raise HTTPException(
+            status_code=409,
+            detail="Resposta ja possui certificado gerado e nao pode ser marcada como ausente.",
+        )
+
+    new_status = bool(payload.nao_gerar_certificado)
+    if response.nao_gerar_certificado != new_status:
+        response.nao_gerar_certificado = new_status
+        form.atualizado_em = utc_now()
+        record_audit_event(
+            db,
+            evento=(
+                "formulario_resposta_marcada_ausente"
+                if new_status
+                else "formulario_resposta_reativada_certificado"
+            ),
+            descricao=(
+                f"Resposta {response.id} do formulario {form.titulo} marcada como "
+                f"{'ausente' if new_status else 'pendente para certificado'} por {usuario.username}."
+            ),
+            usuario=usuario,
+            secretaria=form.secretaria,
+            entidade_tipo="formulario_resposta",
+            entidade_id=response.id,
+        )
+        db.commit()
+        db.refresh(response)
+
+    return build_response_item(response)
+
+
 @router.post("/api/formularios/{form_id}/respostas/padronizar-nomes", response_model=ActionResponse)
 def normalize_certificate_form_response_names(
     form_id: int,
@@ -471,6 +529,7 @@ def normalize_certificate_form_response_names(
         .filter(
             CertificateFormResponse.formulario_id == form.id,
             CertificateFormResponse.certificado_id.is_(None),
+            CertificateFormResponse.nao_gerar_certificado.is_(False),
         )
         .order_by(CertificateFormResponse.criado_em.asc(), CertificateFormResponse.id.asc())
         .all()
@@ -534,7 +593,11 @@ def export_certificate_form_responses_csv(
             form.concluido.strftime("%d/%m/%Y"),
         ]
         row.extend(str(data.get(field["nome"], "")) for field in extra_fields)
-        row.extend([response.criado_em.strftime("%d/%m/%Y %H:%M:%S"), response.certificado_codigo or ""])
+        certificado_status = (
+            response.certificado_codigo
+            or ("Ausente" if response.nao_gerar_certificado else "")
+        )
+        row.extend([response.criado_em.strftime("%d/%m/%Y %H:%M:%S"), certificado_status])
         writer.writerow(row)
 
     safe_course_name = sanitize_export_filename(form.curso, f"formulario-{form.id}")
