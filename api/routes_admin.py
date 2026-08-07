@@ -64,6 +64,8 @@ LOW_SIGNAL_AUDIT_EVENTS = (
     "auth_logout",
     "troca_secretaria",
     "certificado_png_acessado",
+    "formulario_resposta_recebida",
+    "formulario_email_confirmacao_enviado",
 )
 
 

@@ -151,6 +151,41 @@ def test_operador_cria_formulario_publico_e_lista_respostas(client, seed_data, l
     assert responses.json()[0]["email_confirmacao_status"] == "falhou"
 
 
+def test_auditoria_padrao_oculta_eventos_automaticos_de_formulario(
+    client, seed_data, login
+):
+    login("operador", seed_data["operador_password"])
+    form = _create_form(client, seed_data, campos_extras=[])
+    submit_response = client.post(
+        f"/api/formularios/publico/{form['token']}/respostas",
+        json={
+            "nome": "Aluno Auditoria",
+            "email": "aluno.auditoria@example.com",
+            "dados_extras": {},
+            "website": "",
+        },
+    )
+    assert submit_response.status_code == 201
+
+    login("admin", seed_data["admin_password"])
+    audit_response = client.get("/api/admin/auditoria")
+    assert audit_response.status_code == 200
+    assert all(
+        item["evento"] != "formulario_resposta_recebida"
+        for item in audit_response.json()["itens"]
+    )
+
+    filtered_response = client.get(
+        "/api/admin/auditoria",
+        params={"evento": "formulario_resposta_recebida"},
+    )
+    assert filtered_response.status_code == 200
+    assert any(
+        "Aluno Auditoria" in item["descricao"]
+        for item in filtered_response.json()["itens"]
+    )
+
+
 def test_operador_padroniza_nomes_de_respostas_antigas(client, seed_data, login, app_ctx):
     login("operador", seed_data["operador_password"])
     form = _create_form(client, seed_data)

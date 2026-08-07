@@ -502,8 +502,9 @@ def update_certificate_form_response_certificate_status(
                 else "formulario_resposta_reativada_certificado"
             ),
             descricao=(
-                f"Resposta {response.id} do formulario {form.titulo} marcada como "
-                f"{'ausente' if new_status else 'pendente para certificado'} por {usuario.username}."
+                f"{response.nome} no formulario {form.titulo} "
+                f"{'foi marcado(a) como ausente' if new_status else 'voltou para pendente'} "
+                f"por {usuario.username}."
             ),
             usuario=usuario,
             secretaria=form.secretaria,
@@ -683,7 +684,7 @@ def submit_public_certificate_form_response(
     record_audit_event(
         db,
         evento="formulario_resposta_recebida",
-        descricao=f"Nova resposta recebida no formulario {form.titulo}.",
+        descricao=f"Inscricao de {response.nome} recebida no formulario {form.titulo}.",
         secretaria=form.secretaria,
         entidade_tipo="formulario_resposta",
         entidade_id=response.id,
